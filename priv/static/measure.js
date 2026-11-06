@@ -5,6 +5,9 @@ const BOTTOMS = ["baseline", "descender"];
 const TEXT_TOP = "ascender";
 const TEXT_BOTTOM = "descender";
 const SKIP = new Set(["script", "style", "template", "noscript"]);
+/** Measuring gets most markup right; these are for the places it does not. */
+const HINT_BLOCK = "skullet-block";
+const HINT_IGNORE = "skullet-ignore";
 /** Drawn as one block at their box — there is no text inside to measure. */
 const MEDIA = new Set([
     "audio",
@@ -55,7 +58,14 @@ export function measure(contentEl, originEl) {
         }
         else {
             const element = node;
-            if (SKIP.has(element.localName)) {
+            if (element.hasAttribute(HINT_IGNORE)) {
+                skipped = element;
+            }
+            else if (element.hasAttribute(HINT_BLOCK)) {
+                blocks.push(toRect(element.getBoundingClientRect(), origin));
+                skipped = element;
+            }
+            else if (SKIP.has(element.localName)) {
                 skipped = element;
             }
             else if (isSkeleton(element)) {

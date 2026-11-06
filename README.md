@@ -94,6 +94,8 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 | `--skullet-radius` | `0.25em` | how round each bar is |
 | `--skullet-animation` | `shimmer` | `shimmer`, `pulse` or `none` |
 | `--skullet-speed` | `slow` | `slow` or `fast` |
+| `--skullet-text-top` | `ascender` | `ascender`, `cap-height` or `x-height` — where each line's bar starts |
+| `--skullet-text-bottom` | `descender` | `baseline` or `descender` — where it ends |
 
 ```heex
 <Skullet.skeleton id="profile" sample={@sample_user} theme={%{speed: "fast", radius: "8px"}}>
@@ -104,6 +106,16 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 Dark mode is a `prefers-color-scheme` block in `skullet.css`; override the two colours to
 follow a different switch. Under `prefers-reduced-motion` bars hold still and every reveal
 is instant.
+
+## Hints
+
+Measuring gets most markup right. Where it does not — a logo, a chart, a canvas — say so
+in the markup:
+
+```heex
+<div skullet-block>…</div>          <!-- one block, nothing inside it measured -->
+<span skullet-ignore>New</span>     <!-- left out entirely -->
+```
 
 ## Reveals
 
@@ -120,9 +132,9 @@ mix phx.server`, then open <http://localhost:4000/demo>.
 
 ## Not implemented yet
 
-Skeleton shape memory, measurement hints (`skullet-block` / `skullet-ignore`),
-per-component skeletons, the debug overlay, `SkeletonBox`, a Suspense equivalent, and the
-`together` / `sequence` / `sweep` reveals are not in this version.
+Skeleton shape memory, per-component skeletons, the debug overlay, `SkeletonBox`, a
+Suspense equivalent, and the `together` / `sequence` / `sweep` reveals are not in this
+version.
 
 ## Working on the engine
 

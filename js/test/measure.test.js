@@ -298,3 +298,68 @@ test("a 500-element subtree measures inside a frame", async () => {
     assert.ok(elapsed < 16, `measure pass took ${elapsed.toFixed(2)}ms, over one frame`)
   })
 })
+
+test("skullet-ignore leaves an element out", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const ignored = await box(page, "#ignored")
+    const all = await bars(page)
+
+    for (const bar of all) {
+      assert.ok(!overlaps(bar, ignored), `a bar covers an ignored element: ${JSON.stringify(bar)}`)
+    }
+
+    // The paragraph around it still measures, as one line.
+    assert.equal(within(all, await box(page, "#hinted")).length, 1)
+  })
+})
+
+test("skullet-block draws an element as one block", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const boxed = await box(page, "#hint-block")
+    const inside = within(await bars(page), boxed)
+
+    assert.equal(inside.length, 1, `expected one block, got ${JSON.stringify(inside)}`)
+    assert.ok(near(inside[0], boxed))
+  })
+})
+
+test("the text knobs change how much of a line is drawn", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const lineHeights = () =>
+      page.evaluate(() => {
+        const root = document.getElementById("root")
+        const overlay = root.querySelector("[data-skullet-overlay]")
+        const box = document.getElementById("three").getBoundingClientRect()
+        return [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
+          .map(bar => bar.getBoundingClientRect())
+          .filter(rect => rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1)
+          .map(rect => Math.round(rect.height))
+      })
+
+    const before = await lineHeights()
+    assert.equal(before.length, 3)
+
+    await page.evaluate(() => {
+      const root = document.getElementById("root")
+      root.style.setProperty("--skullet-text-top", "x-height")
+      root.style.setProperty("--skullet-text-bottom", "baseline")
+      document.getElementById("inline").append(" ")   // the engine re-measures the pane
+    })
+    await page.waitForTimeout(250)
+
+    const after = await lineHeights()
+    assert.equal(after.length, 3)
+    after.forEach((height, index) =>
+      assert.ok(height < before[index], `bar ${index}: ${height}px is not shorter than ${before[index]}px`)
+    )
+  })
+})

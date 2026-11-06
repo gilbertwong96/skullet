@@ -4,6 +4,10 @@
   --skullet-radius: 0.25em;
   --skullet-animation: shimmer;
   --skullet-speed: slow;
+  /* How much of each line is drawn: from the font's ascender/cap-height/x-height
+     down to its baseline/descender. */
+  --skullet-text-top: ascender;
+  --skullet-text-bottom: descender;
 }
 
 /*
