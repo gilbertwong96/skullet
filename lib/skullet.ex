@@ -123,9 +123,7 @@ defmodule Skullet do
   end
 
   defp theme_var!(key) do
-    name = to_string(key)
-
-    case Map.fetch(@theme_vars, name) do
+    case Map.fetch(@theme_vars, theme_key(key)) do
       {:ok, var} ->
         var
 
@@ -134,4 +132,7 @@ defmodule Skullet do
               "unknown theme key #{inspect(key)}, allowed keys: #{Enum.join(Map.keys(@theme_vars), ", ")}"
     end
   end
+
+  defp theme_key(key) when is_atom(key) or is_binary(key), do: to_string(key)
+  defp theme_key(_key), do: ""
 end
