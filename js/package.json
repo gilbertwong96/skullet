@@ -1,0 +1,12 @@
+{
+  "name": "skullet-tests",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}
