@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <.live_title default="SkulletDemo" suffix=" · Phoenix Framework" phx-no-format>{assigns[:page_title]}</.live_title>
+    <%!-- A fresh query string every render: no browser can hold a stale bundle. --%>
+    <link phx-track-static rel="stylesheet" href={"#{~p"/assets/css/app.css"}?v=#{System.system_time(:second)}"} />
+    <script defer phx-track-static type="text/javascript" src={"#{~p"/assets/js/app.js"}?v=#{System.system_time(:second)}"}>
+    </script>
+    <script>
+      (() => {
+        const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+
+        const setTheme = (theme) => {
+          if (theme === "system") {
+            localStorage.removeItem("phx:theme");
+            document.documentElement.setAttribute("data-theme", systemTheme());
+            document.documentElement.setAttribute("data-theme-source", "system");
+          } else {
+            localStorage.setItem("phx:theme", theme);
+            document.documentElement.setAttribute("data-theme", theme);
+            document.documentElement.setAttribute("data-theme-source", "user");
+          }
+        };
+        if (!document.documentElement.hasAttribute("data-theme")) {
+          setTheme(localStorage.getItem("phx:theme") || "system");
+        }
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+        window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+
+        matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+          if (document.documentElement.getAttribute("data-theme-source") === "system") {
+            document.documentElement.setAttribute("data-theme", systemTheme());
+          }
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    {@inner_content}
+    <!-- Outside the LiveView: its patches never clear this. -->
+    <div
+      data-skullet-build
+      class="fixed top-0 left-0 right-0 z-50 px-3 py-1 font-mono text-xs"
+      style="background:#0b3d2c;color:#7CFC9B"
+    ></div>
+  </body>
+</html>
