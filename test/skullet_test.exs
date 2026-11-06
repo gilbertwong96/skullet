@@ -94,6 +94,15 @@ defmodule SkulletTest do
     assert text(query(html, "#content")) == "Sample Name"
   end
 
+  test "the overlay is rendered by the server, so LiveView keeps it" do
+    # LiveView prunes children it does not know about: an overlay created only by JS
+    # is removed by the first patch, taking the reveal with it.
+    overlay = query(skeleton_html([]), "[data-skullet-overlay]")
+
+    assert Enum.count(overlay) == 1
+    assert LazyHTML.attribute(overlay, "aria-hidden") == ["true"]
+  end
+
   test "the status span carries the label outside the content pane" do
     html = skeleton_html(label: "Loading profile")
 

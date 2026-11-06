@@ -215,20 +215,32 @@ export class SkulletEngine {
     if (this.content) settle(this.content)
   }
 
+  /**
+   * The overlay is server-rendered: LiveView prunes children it does not know about, so
+   * an overlay the engine created itself would vanish on the first patch. A plain page
+   * may still leave it out; then one is made here.
+   */
   private createOverlay(): void {
     if (this.overlay) return
 
-    const overlay = document.createElement("div")
+    const overlay =
+      this.root.querySelector<HTMLElement>("[data-skullet-overlay]") ??
+      document.createElement("div")
+
     overlay.setAttribute("data-skullet-overlay", "")
     overlay.setAttribute("aria-hidden", "true")
+    if (!overlay.isConnected) this.root.append(overlay)
 
-    const shadow = overlay.attachShadow({ mode: "open" })
-    const bars = document.createElement("div")
-    bars.setAttribute("data-skullet-bars", "")
-    shadow.append(bars)
-    applyShadowStyle(shadow)
+    const shadow = overlay.shadowRoot ?? overlay.attachShadow({ mode: "open" })
+    let bars = shadow.querySelector<HTMLElement>("[data-skullet-bars]")
 
-    this.root.append(overlay)
+    if (!bars) {
+      bars = document.createElement("div")
+      bars.setAttribute("data-skullet-bars", "")
+      shadow.append(bars)
+      applyShadowStyle(shadow)
+    }
+
     this.overlay = overlay
     this.bars = bars
   }

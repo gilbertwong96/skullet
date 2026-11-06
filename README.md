@@ -29,6 +29,9 @@ let liveSocket = new LiveSocket("/live", Socket, { hooks: { Skullet: SkulletHook
 @import "../../deps/skullet/priv/static/skullet.css";
 ```
 
+With a `path:` or `git:` dependency there is no `deps/skullet` directory — point the two
+imports at that checkout instead.
+
 The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
 
 ## With an async assign
