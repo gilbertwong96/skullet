@@ -199,7 +199,9 @@ test("destroy leaves nothing behind", async () => {
     await page.evaluate(() => window.harness.destroy("root"))
 
     const destroyed = await rootInfo(page)
-    assert.equal(destroyed.hasOverlay, false)
+    // The overlay element is the server's markup; the engine empties it, never removes it.
+    assert.equal(destroyed.hasOverlay, true)
+    assert.equal(destroyed.bars, 0)
     assert.equal(destroyed.phase, null)
     assert.equal(destroyed.inlineHeight, "")
 
@@ -263,6 +265,25 @@ test("a patch that strips unknown attributes leaves the skeleton intact", async 
     const after = await rootInfo(page)
     assert.equal(after.phase, "bars")
     assert.ok(after.bars > 0, "the bars did not survive")
+  })
+})
+
+test("an overlay lost to a patch is rebuilt, not drawn into", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+    assert.ok((await rootInfo(page)).bars > 0)
+
+    // LiveView replaced or pruned the overlay: the engine must not keep drawing into it.
+    await page.evaluate(() => document.querySelector("#root > [data-skullet-overlay]").remove())
+    await swap(page, "root", "<p>sample</p>", "loading")
+    await page.waitForTimeout(350)
+
+    const after = await rootInfo(page)
+    assert.equal(after.hasOverlay, true, "the overlay was not rebuilt")
+    assert.ok(after.bars > 0, "the engine drew into a detached overlay")
+    assert.equal(after.phase, "bars")
   })
 })
 

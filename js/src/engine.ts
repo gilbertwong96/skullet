@@ -29,7 +29,7 @@ type Pass = "instant" | "fade"
 export class SkulletEngine {
   readonly root: HTMLElement
 
-  private readonly content: HTMLElement | null
+  private content: HTMLElement | null
   private overlay: HTMLElement | null = null
   private bars: HTMLElement | null = null
   private frame = 0
@@ -68,6 +68,7 @@ export class SkulletEngine {
   /** Runs before LiveView patches the content in: the last moment the old shape exists. */
   beforeUpdate(): void {
     if (!this.started) return
+    this.resolve()
     this.state = stateOf(this.root)
 
     if (this.state !== "loading" || this.phase !== "bars" || this.instant) {
@@ -90,6 +91,7 @@ export class SkulletEngine {
   /** Runs after the patch: reveal what arrived, or start over. */
   update(): void {
     if (!this.started) return
+    this.resolve()
 
     const next = stateOf(this.root)
     const previous = this.state
@@ -122,7 +124,7 @@ export class SkulletEngine {
     this.mutations = null
 
     this.phase = null
-    this.overlay?.remove()
+    this.hideOverlay()
     this.overlay = null
     this.bars = null
     this.release()
@@ -208,7 +210,7 @@ export class SkulletEngine {
     this.clearHold()
     this.clearSafety()
     this.phase = null
-    this.overlay?.remove()
+    this.hideOverlay()
     this.overlay = null
     this.bars = null
     this.release()
@@ -229,12 +231,29 @@ export class SkulletEngine {
    * an overlay the engine created itself would vanish on the first patch. A plain page
    * may still leave it out; then one is made here.
    */
-  private createOverlay(): void {
-    if (this.overlay) return
+  /**
+   * LiveView reuses nodes positionally: after a structural change the node the engine
+   * holds can be a different element, or detached entirely. Both are looked up again by
+   * selector before every use, so the engine never measures or draws into a node that is
+   * no longer the content pane or the overlay.
+   */
+  private resolve(): void {
+    const content = this.root.querySelector<HTMLElement>("[data-skullet-content]")
+    if (content && content !== this.content) this.content = content
 
+    const overlay = this.root.querySelector<HTMLElement>("[data-skullet-overlay]")
+    if (overlay && overlay !== this.overlay) {
+      this.overlay = overlay
+      this.bars = overlay.shadowRoot?.querySelector<HTMLElement>("[data-skullet-bars]") ?? null
+    }
+  }
+
+  private createOverlay(): void {
     const overlay =
-      this.root.querySelector<HTMLElement>("[data-skullet-overlay]") ??
-      document.createElement("div")
+      this.overlay?.isConnected === true
+        ? this.overlay
+        : (this.root.querySelector<HTMLElement>("[data-skullet-overlay]") ??
+          document.createElement("div"))
 
     overlay.setAttribute("data-skullet-overlay", "")
     overlay.setAttribute("aria-hidden", "true")
@@ -295,9 +314,16 @@ export class SkulletEngine {
   }
 
   private draw(): void {
+    this.resolve()
+    if (stateOf(this.root) !== "loading") return
+
+    if (!this.overlay?.isConnected || !this.bars?.isConnected) {
+      this.createOverlay()
+      this.setPhase(this.phase)
+    }
+
     const { content, overlay, bars } = this
     if (!content || !overlay || !bars) return
-    if (stateOf(this.root) !== "loading") return
 
     const { lines, blocks } = measure(content, overlay)
     const rects: Rect[] = [...blocks]

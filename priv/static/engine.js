@@ -50,6 +50,7 @@ export class SkulletEngine {
     beforeUpdate() {
         if (!this.started)
             return;
+        this.resolve();
         this.state = stateOf(this.root);
         if (this.state !== "loading" || this.phase !== "bars" || this.instant) {
             this.pass = "instant";
@@ -70,6 +71,7 @@ export class SkulletEngine {
     update() {
         if (!this.started)
             return;
+        this.resolve();
         const next = stateOf(this.root);
         const previous = this.state;
         this.state = next;
@@ -103,7 +105,7 @@ export class SkulletEngine {
         this.mutations?.disconnect();
         this.mutations = null;
         this.phase = null;
-        this.overlay?.remove();
+        this.hideOverlay();
         this.overlay = null;
         this.bars = null;
         this.release();
@@ -180,7 +182,7 @@ export class SkulletEngine {
         this.clearHold();
         this.clearSafety();
         this.phase = null;
-        this.overlay?.remove();
+        this.hideOverlay();
         this.overlay = null;
         this.bars = null;
         this.release();
@@ -199,11 +201,27 @@ export class SkulletEngine {
      * an overlay the engine created itself would vanish on the first patch. A plain page
      * may still leave it out; then one is made here.
      */
+    /**
+     * LiveView reuses nodes positionally: after a structural change the node the engine
+     * holds can be a different element, or detached entirely. Both are looked up again by
+     * selector before every use, so the engine never measures or draws into a node that is
+     * no longer the content pane or the overlay.
+     */
+    resolve() {
+        const content = this.root.querySelector("[data-skullet-content]");
+        if (content && content !== this.content)
+            this.content = content;
+        const overlay = this.root.querySelector("[data-skullet-overlay]");
+        if (overlay && overlay !== this.overlay) {
+            this.overlay = overlay;
+            this.bars = overlay.shadowRoot?.querySelector("[data-skullet-bars]") ?? null;
+        }
+    }
     createOverlay() {
-        if (this.overlay)
-            return;
-        const overlay = this.root.querySelector("[data-skullet-overlay]") ??
-            document.createElement("div");
+        const overlay = this.overlay?.isConnected === true
+            ? this.overlay
+            : (this.root.querySelector("[data-skullet-overlay]") ??
+                document.createElement("div"));
         overlay.setAttribute("data-skullet-overlay", "");
         overlay.setAttribute("aria-hidden", "true");
         if (!overlay.isConnected)
@@ -257,10 +275,15 @@ export class SkulletEngine {
         });
     }
     draw() {
+        this.resolve();
+        if (stateOf(this.root) !== "loading")
+            return;
+        if (!this.overlay?.isConnected || !this.bars?.isConnected) {
+            this.createOverlay();
+            this.setPhase(this.phase);
+        }
         const { content, overlay, bars } = this;
         if (!content || !overlay || !bars)
-            return;
-        if (stateOf(this.root) !== "loading")
             return;
         const { lines, blocks } = measure(content, overlay);
         const rects = [...blocks];
