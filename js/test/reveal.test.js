@@ -21,7 +21,8 @@ const rootInfo = (page, id = "root") =>
       height: root.getBoundingClientRect().height,
       contentHeight: root.querySelector("[data-skullet-content]").getBoundingClientRect().height,
       bars: bars?.querySelectorAll("[data-skullet-bar]").length ?? 0,
-      overlayOpacity: bars ? getComputedStyle(bars).opacity : null
+      overlayOpacity: bars ? getComputedStyle(bars).opacity : null,
+      hostOpacity: overlay ? getComputedStyle(overlay).opacity : null
     }
   }, id)
 
@@ -304,8 +305,11 @@ test("a second loading cycle shows the skeleton again", async () => {
     assert.equal((await paneInfo(page)).visibility, "hidden")
 
     await page.waitForTimeout(250)
-    assert.equal((await rootInfo(page)).phase, "bars")
-    assert.ok((await rootInfo(page)).bars > 0)
+    const shown = await rootInfo(page)
+    assert.equal(shown.phase, "bars")
+    assert.ok(shown.bars > 0)
+    // The previous reveal left the overlay faded out; a new skeleton must be opaque again.
+    assert.equal(shown.hostOpacity, "1")
 
     await swap(page, "root", "<p>real two</p>", "loaded")
     await page.waitForTimeout(400)
