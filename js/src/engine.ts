@@ -91,7 +91,8 @@ export class SkulletEngine {
     this.state = next
 
     if (next === "loaded") {
-      this.reveal()
+      // A later patch on an already revealed skeleton must not touch its animations.
+      if (previous === "loading") this.reveal()
     } else if (next === "failed") {
       this.stop()
     } else {
