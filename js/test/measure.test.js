@@ -185,6 +185,25 @@ test("nothing to measure still initialises", async () => {
   })
 })
 
+test("the overlay's styles are a constructable sheet, not an inline element", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const shadow = await page.evaluate(() => {
+      const root = document.querySelector("#root > [data-skullet-overlay]").shadowRoot
+      return {
+        adopted: root.adoptedStyleSheets.length,
+        inline: root.querySelectorAll("style").length
+      }
+    })
+
+    // A strict style-src CSP blocks inline <style>; a constructable sheet it does not.
+    assert.equal(shadow.adopted, 1)
+    assert.equal(shadow.inline, 0)
+  })
+})
+
 test("bars fall back without canvas metrics", async () => {
   await withPage(async page => {
     await page.addInitScript(() => {
