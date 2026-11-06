@@ -223,11 +223,10 @@ export class SkulletEngine {
     overlay.setAttribute("aria-hidden", "true")
 
     const shadow = overlay.attachShadow({ mode: "open" })
-    const style = document.createElement("style")
-    style.textContent = SHADOW_CSS
     const bars = document.createElement("div")
     bars.setAttribute("data-skullet-bars", "")
-    shadow.append(style, bars)
+    shadow.append(bars)
+    applyShadowStyle(shadow)
 
     this.root.append(overlay)
     this.overlay = overlay
@@ -299,6 +298,20 @@ export class SkulletEngine {
 
     bars.replaceChildren(fragment)
   }
+}
+
+/** Constructable, so a strict `style-src` CSP — which blocks inline <style> — still paints. */
+function applyShadowStyle(shadow: ShadowRoot): void {
+  if (typeof CSSStyleSheet === "function" && "adoptedStyleSheets" in shadow) {
+    const sheet = new CSSStyleSheet()
+    sheet.replaceSync(SHADOW_CSS)
+    shadow.adoptedStyleSheets = [sheet]
+    return
+  }
+
+  const style = document.createElement("style")
+  style.textContent = SHADOW_CSS
+  shadow.append(style)
 }
 
 function createBar(rect: Rect): HTMLElement {
