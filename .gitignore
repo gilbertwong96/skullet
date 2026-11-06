@@ -25,3 +25,6 @@ skullet-*.tar
 
 # git worktrees
 /.worktrees/
+
+# js tooling
+/js/node_modules/

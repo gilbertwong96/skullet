@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+  </head>
+  <body>
+    <div
+      id="loading"
+      class="skullet"
+      phx-hook="Skullet"
+      data-skullet-state="loading"
+      data-skullet-reveal="smart"
+    >
+      <span class="skullet-status">Loading profile</span>
+      <div class="skullet-content" data-skullet-content>
+        <p>Sample text</p>
+      </div>
+    </div>
+
+    <div
+      id="loaded"
+      class="skullet"
+      phx-hook="Skullet"
+      data-skullet-state="loaded"
+      data-skullet-reveal="smart"
+    >
+      <span class="skullet-status">Loading profile</span>
+      <div class="skullet-content" data-skullet-content>
+        <p>Sample text</p>
+      </div>
+    </div>
+  </body>
+</html>

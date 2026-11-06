@@ -1,0 +1,55 @@
+:root {
+  --skullet-base: rgb(128 128 128 / 0.2);
+  --skullet-highlight: rgb(255 255 255 / 0.12);
+  --skullet-radius: 0.25em;
+  --skullet-animation: shimmer;
+  --skullet-speed: slow;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --skullet-base: rgb(255 255 255 / 0.09);
+    --skullet-highlight: rgb(255 255 255 / 0.16);
+  }
+}
+
+.skullet {
+  position: relative;
+}
+
+.skullet > [data-skullet-overlay] {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.skullet-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The sample is never seen: the engine draws the bars, or nothing does. */
+.skullet[data-skullet-state="loading"] > [data-skullet-content] {
+  visibility: hidden;
+  animation: skullet-nojs-reveal 0s 5000ms forwards;
+}
+
+/* An engine that started owns the pane from here; the fallback above is cancelled. */
+.skullet[data-skullet-phase] > [data-skullet-content] {
+  animation: none;
+}
+
+/* With no JS at all, show the sample rather than an empty box forever. */
+@keyframes skullet-nojs-reveal {
+  to {
+    visibility: visible;
+  }
+}
