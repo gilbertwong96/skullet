@@ -1,6 +1,7 @@
 import { measure } from "./measure.js";
 import { barBox } from "./metrics.js";
 import { drawShimmer, motionOf } from "./shimmer.js";
+import { FADE_MS, HOLD_MS, RESIZE_MS, easeHeight, fadeIn, fadeOut, prefersReducedMotion, settle } from "./reveal.js";
 const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
 [data-skullet-bars]{position:absolute;inset:0}
 [data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
@@ -18,6 +19,13 @@ export class SkulletEngine {
     started = false;
     resizes = [];
     mutations = null;
+    state = "loading";
+    phase = null;
+    pass = "instant";
+    pinned = 0;
+    holdTimer = 0;
+    safetyTimer = 0;
+    easing = false;
     constructor(root) {
         this.root = root;
         this.content = root.querySelector("[data-skullet-content]");
@@ -28,6 +36,158 @@ export class SkulletEngine {
         this.started = true;
         const content = this.content;
         if (!content)
+            return;
+        this.state = stateOf(this.root);
+        if (this.state === "loading")
+            this.show();
+        this.observe(content);
+    }
+    /** Runs before LiveView patches the content in: the last moment the old shape exists. */
+    beforeUpdate() {
+        if (!this.started)
+            return;
+        this.state = stateOf(this.root);
+        if (this.state !== "loading" || this.phase !== "bars" || this.instant) {
+            this.pass = "instant";
+            return;
+        }
+        this.pass = "fade";
+        this.pinned = this.root.getBoundingClientRect().height;
+        this.root.style.height = `${this.pinned}px`;
+        this.root.style.overflow = "hidden";
+        if (this.content)
+            fadeIn(this.content, FADE_MS);
+        this.safetyTimer = window.setTimeout(() => {
+            this.safetyTimer = 0;
+            this.release();
+        }, FADE_MS + 200);
+    }
+    /** Runs after the patch: reveal what arrived, or start over. */
+    update() {
+        if (!this.started)
+            return;
+        const next = stateOf(this.root);
+        const previous = this.state;
+        this.state = next;
+        if (next === "loaded") {
+            this.reveal();
+        }
+        else if (next === "failed") {
+            this.stop();
+        }
+        else {
+            this.pass = "instant";
+            this.clearSafety();
+            this.release();
+            if (previous === "loaded")
+                this.show();
+            else
+                this.schedule();
+        }
+    }
+    destroy() {
+        this.clearHold();
+        this.clearSafety();
+        if (this.frame)
+            cancelAnimationFrame(this.frame);
+        this.frame = 0;
+        for (const resize of this.resizes)
+            resize.disconnect();
+        this.resizes = [];
+        this.mutations?.disconnect();
+        this.mutations = null;
+        this.phase = null;
+        this.root.removeAttribute("data-skullet-phase");
+        this.overlay?.remove();
+        this.overlay = null;
+        this.bars = null;
+        this.release();
+        this.started = false;
+    }
+    get instant() {
+        return this.root.getAttribute("data-skullet-reveal") === "instant" || prefersReducedMotion();
+    }
+    show() {
+        if (this.state !== "loading")
+            return;
+        this.createOverlay();
+        this.pass = "instant";
+        this.easing = false;
+        if (this.instant) {
+            this.showBars();
+        }
+        else {
+            this.phase = "holding";
+            this.root.setAttribute("data-skullet-phase", "holding");
+            if (this.overlay)
+                this.overlay.style.opacity = "0";
+            this.holdTimer = window.setTimeout(() => {
+                this.holdTimer = 0;
+                if (this.phase === "holding")
+                    this.showBars();
+            }, HOLD_MS);
+        }
+        this.schedule();
+    }
+    showBars() {
+        this.phase = "bars";
+        this.root.setAttribute("data-skullet-phase", "bars");
+        if (this.overlay)
+            this.overlay.style.opacity = "1";
+        this.schedule();
+    }
+    reveal() {
+        this.clearHold();
+        const fade = this.pass === "fade" && !this.instant;
+        this.pass = "instant";
+        this.phase = null;
+        this.root.removeAttribute("data-skullet-phase");
+        const overlay = this.overlay;
+        if (!overlay || !fade) {
+            this.hideOverlay();
+            this.clearSafety();
+            this.release();
+            return;
+        }
+        const target = this.content ? this.content.getBoundingClientRect().height : this.pinned;
+        const fadeOutAnimation = fadeOut(overlay, FADE_MS);
+        this.easing = true;
+        let settled = false;
+        const finish = () => {
+            if (settled)
+                return;
+            settled = true;
+            this.easing = false;
+            this.clearSafety();
+            this.hideOverlay();
+            this.release();
+        };
+        const ease = easeHeight(this.root, this.pinned, target, RESIZE_MS);
+        const settled_at = ease ?? fadeOutAnimation;
+        settled_at.finished.then(finish, finish);
+    }
+    stop() {
+        this.clearHold();
+        this.clearSafety();
+        this.phase = null;
+        this.root.removeAttribute("data-skullet-phase");
+        this.overlay?.remove();
+        this.overlay = null;
+        this.bars = null;
+        this.release();
+    }
+    hideOverlay() {
+        this.bars?.replaceChildren();
+        if (this.overlay)
+            this.overlay.style.opacity = "0";
+    }
+    release() {
+        settle(this.root);
+        if (this.content)
+            settle(this.content);
+    }
+    createOverlay() {
+        if (this.overlay)
             return;
         const overlay = document.createElement("div");
         overlay.setAttribute("data-skullet-overlay", "");
@@ -41,35 +201,13 @@ export class SkulletEngine {
         this.root.append(overlay);
         this.overlay = overlay;
         this.bars = bars;
-        this.root.setAttribute("data-skullet-phase", "bars");
-        if (stateOf(this.root) === "loading")
-            this.schedule();
-        this.observe(content);
-    }
-    beforeUpdate() {
-        // The reveal lives here from Task 6 on.
-    }
-    update() {
-        if (stateOf(this.root) === "loading")
-            this.schedule();
-    }
-    destroy() {
-        if (this.frame)
-            cancelAnimationFrame(this.frame);
-        this.frame = 0;
-        for (const resize of this.resizes)
-            resize.disconnect();
-        this.resizes = [];
-        this.mutations?.disconnect();
-        this.mutations = null;
-        this.overlay?.remove();
-        this.overlay = null;
-        this.bars = null;
-        this.root.removeAttribute("data-skullet-phase");
-        this.started = false;
     }
     observe(content) {
-        const resize = new ResizeObserver(() => this.schedule());
+        const resize = new ResizeObserver(() => {
+            if (this.easing)
+                return;
+            this.schedule();
+        });
         resize.observe(this.root);
         resize.observe(content);
         this.resizes.push(resize);
@@ -80,6 +218,18 @@ export class SkulletEngine {
             if (!image.complete)
                 image.addEventListener("load", () => this.schedule(), { once: true });
         }
+    }
+    clearHold() {
+        if (!this.holdTimer)
+            return;
+        clearTimeout(this.holdTimer);
+        this.holdTimer = 0;
+    }
+    clearSafety() {
+        if (!this.safetyTimer)
+            return;
+        clearTimeout(this.safetyTimer);
+        this.safetyTimer = 0;
     }
     schedule() {
         if (this.frame)

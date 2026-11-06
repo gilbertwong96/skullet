@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+    <style>
+      .skullet {
+        width: 480px;
+        font: 16px/24px system-ui, sans-serif;
+      }
+      p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="skullet" phx-hook="Skullet" data-skullet-state="loading">
+      <span class="skullet-status">Loading</span>
+      <div class="skullet-content" data-skullet-content><p>sample</p></div>
+    </div>
+
+    <div id="tall" class="skullet" phx-hook="Skullet" data-skullet-state="loading">
+      <span class="skullet-status">Loading</span>
+      <div class="skullet-content" data-skullet-content>
+        <p>one</p>
+        <p>two</p>
+        <p>three</p>
+        <p>four</p>
+        <p>five</p>
+      </div>
+    </div>
+
+    <div id="flat" class="skullet" phx-hook="Skullet" data-skullet-state="loading">
+      <span class="skullet-status">Loading</span>
+      <div class="skullet-content" data-skullet-content></div>
+    </div>
+
+    <div
+      id="instant"
+      class="skullet"
+      phx-hook="Skullet"
+      data-skullet-state="loading"
+      data-skullet-reveal="instant"
+    >
+      <span class="skullet-status">Loading</span>
+      <div class="skullet-content" data-skullet-content><p>sample</p></div>
+    </div>
+
+    <script type="module">
+      import { attach } from "/skullet.js"
+
+      const engines = new Map()
+
+      window.harness = {
+        mount(id) {
+          engines.set(id, attach(document.getElementById(id)))
+        },
+        swap(id, html, state) {
+          const root = document.getElementById(id)
+          const content = root.querySelector("[data-skullet-content]")
+          const engine = engines.get(id)
+          engine.beforeUpdate()
+          content.innerHTML = html
+          root.setAttribute("data-skullet-state", state)
+          engine.update()
+        },
+        destroy(id) {
+          engines.get(id)?.destroy()
+        }
+      }
+    </script>
+  </body>
+</html>
