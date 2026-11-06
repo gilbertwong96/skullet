@@ -207,6 +207,26 @@ test("destroy leaves nothing behind", async () => {
   })
 })
 
+test("a later patch leaves a running reveal alone", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p><p>d</p><p>e</p>", "loaded")
+    assert.deepEqual((await rootInfo(page)).animations, [280])
+
+    // LiveView patches the same skeleton again while the ease is still running.
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p><p>d</p><p>e</p>", "loaded")
+
+    assert.deepEqual(
+      (await rootInfo(page)).animations,
+      [280],
+      "a second patch cancelled the height ease"
+    )
+  })
+})
+
 test("a second loading cycle shows the skeleton again", async () => {
   await withPage(async page => {
     await open(page, "reveal")
