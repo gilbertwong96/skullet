@@ -43,6 +43,10 @@ defmodule Skullet do
 
   Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as
   one block and `skullet-ignore` leaves it out of the skeleton entirely.
+
+  Pass `remember` — usually the current user's id — to have the next skeleton drawn from
+  the data this one last showed instead of from the sample. It is held in ETS, expires,
+  and is per node; call `Skullet.Memory.forget/1` on sign-out.
   """
 
   use Phoenix.Component
@@ -77,6 +81,7 @@ defmodule Skullet do
 
   def skeleton(assigns) do
     {state, value} = state_and_value(assigns)
+    if state == :loaded, do: remember(assigns, value)
     style = theme_style(assigns.theme)
 
     assigns =
@@ -111,20 +116,34 @@ defmodule Skullet do
     """
   end
 
-  defp state_and_value(%{loading: true, sample: sample}), do: {:loading, sample}
+  defp state_and_value(%{loading: true} = assigns), do: {:loading, sample(assigns)}
 
   defp state_and_value(%{async: %AsyncResult{ok?: true, result: result}}),
     do: {:loaded, result}
 
-  defp state_and_value(%{async: %AsyncResult{failed: reason}, sample: sample})
+  defp state_and_value(%{async: %AsyncResult{failed: reason}} = assigns)
        when not is_nil(reason),
-       do: {:failed, sample}
+       do: {:failed, sample(assigns)}
 
-  defp state_and_value(%{async: %AsyncResult{}, sample: sample}), do: {:loading, sample}
+  defp state_and_value(%{async: %AsyncResult{}} = assigns), do: {:loading, sample(assigns)}
 
   defp state_and_value(%{data: data}) when not is_nil(data), do: {:loaded, data}
 
-  defp state_and_value(%{sample: sample}), do: {:loading, sample}
+  defp state_and_value(assigns), do: {:loading, sample(assigns)}
+
+  defp sample(assigns) do
+    case Map.get(assigns, :remember) do
+      nil -> assigns.sample
+      scope -> Skullet.Memory.get(scope, assigns.id) || assigns.sample
+    end
+  end
+
+  defp remember(assigns, value) do
+    case Map.get(assigns, :remember) do
+      nil -> :ok
+      scope -> Skullet.Memory.put(scope, assigns.id, value)
+    end
+  end
 
   defp theme_style(theme) when map_size(theme) == 0, do: nil
 

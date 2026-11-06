@@ -23,6 +23,7 @@ defmodule Skullet.TestComponents do
       theme={@theme}
       label={@label}
       reveal={@reveal}
+      remember={@remember}
     >
       <div id="content">{user.name}</div>
     </.skeleton>
