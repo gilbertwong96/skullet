@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+    <style>
+      .skullet {
+        width: 600px;
+        font: 16px/24px system-ui, sans-serif;
+      }
+      #single {
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      class="skullet"
+      phx-hook="Skullet"
+      data-skullet-state="loading"
+      data-skullet-reveal="smart"
+    >
+      <span class="skullet-status">Loading</span>
+      <div class="skullet-content" data-skullet-content>
+        <p id="single">one line</p>
+        <p id="three">first<br />second<br />third</p>
+        <p id="inline">some <b>bold</b> and <i>italic</i> text</p>
+        <p id="empty">&nbsp;</p>
+        <img
+          id="img"
+          width="80"
+          height="80"
+          alt=""
+          src="data:image/gif;base64,R0lGODlhAQABAAAAACw="
+        />
+        <span id="chip" style="background: #eee; padding: 4px 8px; border-radius: 99px">
+          New
+        </span>
+        <span
+          id="sr"
+          style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%)"
+          >hidden</span
+        >
+        <div id="inner" class="skullet" phx-hook="Skullet" data-skullet-state="loaded">
+          <div class="skullet-content" data-skullet-content><p>inner</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="empty-root" class="skullet" phx-hook="Skullet" data-skullet-state="loading">
+      <span class="skullet-status">Loading</span>
+      <div class="skullet-content" data-skullet-content></div>
+    </div>
+
+    <script type="module">
+      import { attach } from "/skullet.js"
+
+      window.engines = [
+        attach(document.getElementById("root")),
+        attach(document.getElementById("empty-root"))
+      ]
+    </script>
+  </body>
+</html>
