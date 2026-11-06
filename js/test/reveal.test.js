@@ -1,0 +1,245 @@
+import { test, after } from "node:test"
+import assert from "node:assert/strict"
+import { withPage, open, closeBrowser } from "./harness.js"
+
+after(closeBrowser)
+
+const mount = (page, id = "root") => page.evaluate(id => window.harness.mount(id), id)
+const swap = (page, id, html, state) =>
+  page.evaluate(([id, html, state]) => window.harness.swap(id, html, state), [id, html, state])
+
+const rootInfo = (page, id = "root") =>
+  page.evaluate(id => {
+    const root = document.getElementById(id)
+    const overlay = root.querySelector("[data-skullet-overlay]")
+    return {
+      phase: root.getAttribute("data-skullet-phase"),
+      hasOverlay: Boolean(overlay),
+      inlineHeight: root.style.height,
+      animations: root.getAnimations().map(animation => animation.effect.getTiming().duration),
+      height: root.getBoundingClientRect().height,
+      contentHeight: root.querySelector("[data-skullet-content]").getBoundingClientRect().height,
+      bars: overlay?.shadowRoot.querySelectorAll("[data-skullet-bar]").length ?? 0,
+      overlayOpacity: overlay ? getComputedStyle(overlay).opacity : null
+    }
+  }, id)
+
+const paneInfo = (page, id = "root") =>
+  page.evaluate(id => {
+    const pane = document.querySelector(`#${id} > [data-skullet-content]`)
+    const style = getComputedStyle(pane)
+    return {
+      animations: pane.getAnimations().map(animation => animation.effect.getTiming().duration),
+      opacity: style.opacity,
+      visibility: style.visibility,
+      animationName: style.animationName,
+      text: pane.textContent.trim()
+    }
+  }, id)
+
+test("data inside the hold never shows a skeleton", async () => {
+  await withPage(async page => {
+    await page.clock.install()
+    await open(page, "reveal")
+    await mount(page)
+    await page.clock.runFor(100)
+    await swap(page, "root", "<p>real</p>", "loaded")
+
+    const root = await rootInfo(page)
+    const pane = await paneInfo(page)
+
+    assert.equal(root.bars, 0)
+    assert.deepEqual(pane.animations, [])
+    assert.equal(pane.visibility, "visible")
+    assert.equal(pane.text, "real")
+  })
+})
+
+test("bars wait out the hold", async () => {
+  await withPage(async page => {
+    await page.clock.install()
+    await open(page, "reveal")
+    await mount(page)
+
+    const holding = await rootInfo(page)
+    assert.equal(holding.phase, "holding")
+    assert.equal(holding.overlayOpacity, "0")
+
+    await page.clock.runFor(200)
+
+    const shown = await rootInfo(page)
+    assert.equal(shown.phase, "bars")
+    assert.equal(shown.overlayOpacity, "1")
+  })
+})
+
+test("a shown skeleton crossfades", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(300)
+    assert.equal((await rootInfo(page)).phase, "bars")
+
+    await swap(page, "root", "<p>real</p>", "loaded")
+    assert.deepEqual((await paneInfo(page)).animations, [200])
+
+    await page.waitForTimeout(400)
+    assert.equal((await rootInfo(page)).bars, 0)
+    assert.equal((await paneInfo(page)).opacity, "1")
+  })
+})
+
+test("a taller reveal eases, then settles", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p><p>d</p><p>e</p>", "loaded")
+
+    const easing = await rootInfo(page)
+    assert.match(easing.inlineHeight, /px$/)
+    assert.deepEqual(easing.animations, [280])
+
+    await page.waitForTimeout(600)
+
+    const settled = await rootInfo(page)
+    assert.equal(settled.inlineHeight, "")
+    assert.ok(
+      Math.abs(settled.height - settled.contentHeight) < 1,
+      `root ${settled.height} vs content ${settled.contentHeight}`
+    )
+  })
+})
+
+test("a shorter reveal eases down", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page, "tall")
+    await page.waitForTimeout(250)
+
+    await swap(page, "tall", "<p>only</p>", "loaded")
+    assert.deepEqual((await rootInfo(page, "tall")).animations, [280])
+
+    await page.waitForTimeout(600)
+
+    const settled = await rootInfo(page, "tall")
+    assert.equal(settled.inlineHeight, "")
+    assert.ok(
+      Math.abs(settled.height - settled.contentHeight) < 1,
+      `root ${settled.height} vs content ${settled.contentHeight}`
+    )
+  })
+})
+
+test("nothing to measure still reveals", async () => {
+  await withPage(async page => {
+    const errors = []
+    page.on("pageerror", error => errors.push(error.message))
+
+    await open(page, "reveal")
+    await mount(page, "flat")
+    await page.waitForTimeout(250)
+
+    await swap(page, "flat", "<p>content</p>", "loaded")
+    await page.waitForTimeout(400)
+
+    assert.equal((await rootInfo(page, "flat")).bars, 0)
+    assert.equal((await paneInfo(page, "flat")).visibility, "visible")
+    assert.deepEqual(errors, [])
+  })
+})
+
+test("instant skips the hold and the fade", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page, "instant")
+
+    const shown = await rootInfo(page, "instant")
+    assert.equal(shown.phase, "bars")
+    assert.equal(shown.overlayOpacity, "1")
+
+    await page.waitForTimeout(50)
+    await swap(page, "instant", "<p>real</p>", "loaded")
+
+    const revealed = await rootInfo(page, "instant")
+    assert.equal(revealed.bars, 0)
+    assert.equal(revealed.phase, null)
+    assert.deepEqual((await paneInfo(page, "instant")).animations, [])
+  })
+})
+
+test("reduced motion reveals instantly", async () => {
+  await withPage(
+    async page => {
+      await open(page, "reveal")
+      await mount(page)
+      await page.waitForTimeout(50)
+
+      await swap(page, "root", "<p>real</p>", "loaded")
+
+      const root = await rootInfo(page)
+      const pane = await paneInfo(page)
+
+      assert.deepEqual(pane.animations, [])
+      assert.deepEqual(root.animations, [])
+      assert.equal(pane.visibility, "visible")
+    },
+    { reducedMotion: "reduce" }
+  )
+})
+
+test("destroy leaves nothing behind", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+
+    await page.evaluate(() => window.harness.destroy("root"))
+
+    const destroyed = await rootInfo(page)
+    assert.equal(destroyed.hasOverlay, false)
+    assert.equal(destroyed.phase, null)
+    assert.equal(destroyed.inlineHeight, "")
+
+    await swap(page, "root", "<p>real</p>", "loaded")
+    assert.equal((await rootInfo(page)).bars, 0)
+  })
+})
+
+test("a second loading cycle shows the skeleton again", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+
+    await swap(page, "root", "<p>real</p>", "loaded")
+    await page.waitForTimeout(400)
+    assert.equal((await rootInfo(page)).bars, 0)
+
+    await swap(page, "root", "<p>sample</p>", "loading")
+
+    const holding = await rootInfo(page)
+    assert.equal(holding.phase, "holding")
+    assert.equal((await paneInfo(page)).visibility, "hidden")
+
+    await page.waitForTimeout(250)
+    assert.equal((await rootInfo(page)).phase, "bars")
+    assert.ok((await rootInfo(page)).bars > 0)
+
+    await swap(page, "root", "<p>real two</p>", "loaded")
+    await page.waitForTimeout(400)
+
+    assert.equal((await paneInfo(page)).text, "real two")
+    assert.equal((await rootInfo(page)).bars, 0)
+  })
+})
+
+test("the no-JS fallback is cancelled once bars are up", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+
+    assert.equal((await paneInfo(page)).animationName, "none")
+  })
+})
