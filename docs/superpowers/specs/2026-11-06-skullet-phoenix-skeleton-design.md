@@ -135,14 +135,19 @@ later.
      data-skullet-reveal={@reveal}
      style={theme_vars(@theme)}>
   <span class="skullet-status">{@label}</span>
+  <div data-skullet-overlay aria-hidden="true"></div>
   <div class="skullet-content" data-skullet-content>
     {render_slot(@inner_block, value)}
   </div>
 </div>
 ```
 
-- The root is `position: relative`; the JS overlay is its only other child,
-  `pointer-events: none`, so a fade in progress never eats a click.
+- The root is `position: relative`; the overlay is `pointer-events: none`, so a fade in
+  progress never eats a click.
+- **The overlay element is rendered by the server.** LiveView prunes child elements it did
+  not render, so an overlay the engine created itself is removed by the first patch — bars
+  and reveal with it. The engine attaches its shadow root to the server's element and
+  creates one only when a page left it out (verified against a real Phoenix app).
 - `data-skullet-state` is **server-owned**. The engine never writes it. `aria-busy` is
   rendered from it too.
 - The engine owns its own attributes (`data-skullet-phase`) and the shadow root.
