@@ -37,9 +37,12 @@ defmodule Skullet do
   `AsyncResult.loading()`) to have the skeleton return.
 
   Theme through custom properties (`--skullet-base`, `--skullet-highlight`,
-  `--skullet-radius`, `--skullet-animation`, `--skullet-speed`), set per skeleton with the
-  `theme` attribute or globally in CSS. `reveal` is `"smart"` (waits 150 ms, then
-  crossfades) or `"instant"`.
+  `--skullet-radius`, `--skullet-animation`, `--skullet-speed`, `--skullet-text-top`,
+  `--skullet-text-bottom`), set per skeleton with the `theme` attribute or globally in CSS.
+  `reveal` is `"smart"` (waits 150 ms, then crossfades) or `"instant"`.
+
+  Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as
+  one block and `skullet-ignore` leaves it out of the skeleton entirely.
   """
 
   use Phoenix.Component
@@ -51,7 +54,9 @@ defmodule Skullet do
     "highlight" => "--skullet-highlight",
     "radius" => "--skullet-radius",
     "animation" => "--skullet-animation",
-    "speed" => "--skullet-speed"
+    "speed" => "--skullet-speed",
+    "text_top" => "--skullet-text-top",
+    "text_bottom" => "--skullet-text-bottom"
   }
 
   attr(:id, :string, required: true, doc: "DOM id for the hook; also the future shape key")
