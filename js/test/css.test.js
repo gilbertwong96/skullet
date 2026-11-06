@@ -52,28 +52,49 @@ test("theme defaults are on :root", async () => {
   })
 })
 
-test("dark mode changes the base and highlight", async () => {
-  const read = (page) =>
-    page.evaluate(() => {
-      const style = getComputedStyle(document.documentElement)
-      return [
-        style.getPropertyValue("--skullet-base").trim(),
-        style.getPropertyValue("--skullet-highlight").trim()
-      ]
-    })
+/* Custom properties keep `light-dark()` unresolved until they are used, so the colours
+   are read off a probe that actually paints with them. */
+const readTheme = page =>
+  page.evaluate(() => {
+    let probe = document.getElementById("theme-probe")
 
-  let light
-  await withPage(async page => {
-    await open(page, "css")
-    light = await read(page)
+    if (!probe) {
+      probe = document.createElement("div")
+      probe.id = "theme-probe"
+      probe.style.background = "var(--skullet-base)"
+      probe.style.borderTop = "1px solid var(--skullet-highlight)"
+      document.body.append(probe)
+    }
+
+    const style = getComputedStyle(probe)
+    return [style.backgroundColor, style.borderTopColor]
   })
 
+test("a dark page gets different bars than a light one", async () => {
+  await withPage(async page => {
+    await open(page, "css")
+    const light = await readTheme(page)
+
+    await page.evaluate(() => {
+      document.documentElement.style.colorScheme = "dark"
+    })
+    const dark = await readTheme(page)
+
+
+    assert.notEqual(dark[0], light[0])
+    assert.notEqual(dark[1], light[1])
+  })
+})
+
+test("a light page keeps light bars on a dark desktop", async () => {
+  // The bug this pins: bars used to follow prefers-color-scheme, so a light page on a
+  // dark desktop painted near-white bars into a near-white card and they vanished.
   await withPage(
     async page => {
       await open(page, "css")
-      const dark = await read(page)
-      assert.notEqual(dark[0], light[0])
-      assert.notEqual(dark[1], light[1])
+      const [base] = await readTheme(page)
+
+      assert.match(base, /^rgba?\(128, 128, 128/)
     },
     { colorScheme: "dark" }
   )

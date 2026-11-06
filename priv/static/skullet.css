@@ -6,10 +6,16 @@
   --skullet-speed: slow;
 }
 
-@media (prefers-color-scheme: dark) {
+/*
+ * The bars follow the page's colour scheme, not the operating system's. A page that
+ * declares `color-scheme: light` gets light-page bars even on a dark desktop — the old
+ * `prefers-color-scheme` block painted white bars on a light page and they vanished.
+ * Where `light-dark()` is missing, the grey works on either.
+ */
+@supports (color: light-dark(#000, #fff)) {
   :root {
-    --skullet-base: rgb(255 255 255 / 0.09);
-    --skullet-highlight: rgb(255 255 255 / 0.16);
+    --skullet-base: light-dark(rgb(128 128 128 / 0.2), rgb(255 255 255 / 0.09));
+    --skullet-highlight: light-dark(rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.16));
   }
 }
 
