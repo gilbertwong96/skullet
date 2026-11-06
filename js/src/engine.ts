@@ -7,14 +7,13 @@ import {
   RESIZE_MS,
   easeHeight,
   fadeIn,
-  fadeOut,
   prefersReducedMotion,
   settle
 } from "./reveal.js"
 
 const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
-[data-skullet-bars]{position:absolute;inset:0}
-[data-skullet-phase="holding"]{opacity:0}
+[data-skullet-bars]{position:absolute;inset:0;opacity:0;transition:opacity ${FADE_MS}ms ease}
+[data-skullet-bars][data-skullet-phase="bars"]{opacity:1}
 [data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
 @keyframes skullet-shimmer{from{background-position-x:0}to{background-position-x:var(--skullet-band)}}
 @keyframes skullet-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`
@@ -124,7 +123,7 @@ export class SkulletEngine {
     this.mutations = null
 
     this.phase = null
-    this.hideOverlay()
+    this.hideOverlay(false)
     this.overlay = null
     this.bars = null
     this.release()
@@ -177,19 +176,17 @@ export class SkulletEngine {
     const fade = this.pass === "fade" && !this.instant
     this.pass = "instant"
     this.phase = null
-    this.setPhase(null)
 
-    const overlay = this.overlay
-    if (!overlay || !fade) {
-      this.hideOverlay()
+    if (!this.overlay || !fade) {
+      this.hideOverlay(false)
       this.clearSafety()
       this.release()
       return
     }
 
     const target = this.content ? this.content.getBoundingClientRect().height : this.pinned
-    const fadeOutAnimation = fadeOut(overlay, FADE_MS)
     this.easing = true
+    this.hideOverlay(true)
 
     let settled = false
     const finish = () => {
@@ -197,28 +194,39 @@ export class SkulletEngine {
       settled = true
       this.easing = false
       this.clearSafety()
-      this.hideOverlay()
       this.release()
     }
 
     const ease = easeHeight(this.root, this.pinned, target, RESIZE_MS)
-    const settled_at = ease ?? fadeOutAnimation
-    settled_at.finished.then(finish, finish)
+    if (ease) ease.finished.then(finish, finish)
+    else window.setTimeout(finish, FADE_MS)
   }
 
   private stop(): void {
     this.clearHold()
     this.clearSafety()
     this.phase = null
-    this.hideOverlay()
+    this.hideOverlay(false)
     this.overlay = null
     this.bars = null
     this.release()
   }
 
-  private hideOverlay(): void {
-    this.bars?.replaceChildren()
+  /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
+   * cleared a beat later — unless a new cycle has already taken the container over. */
+  private hideOverlay(animate: boolean): void {
     this.setPhase(null)
+    const bars = this.bars
+    if (!bars) return
+
+    if (!animate) {
+      bars.replaceChildren()
+      return
+    }
+
+    window.setTimeout(() => {
+      if (this.bars === bars && this.phase === null) bars.replaceChildren()
+    }, FADE_MS)
   }
 
   private release(): void {
@@ -268,10 +276,6 @@ export class SkulletEngine {
       shadow.append(bars)
       applyShadowStyle(shadow)
     }
-
-    // A reveal's fade-out holds the overlay at opacity 0 (`fill: forwards`); a later
-    // skeleton must not inherit it, so anything left running is cleared here.
-    settle(overlay)
 
     this.overlay = overlay
     this.bars = bars

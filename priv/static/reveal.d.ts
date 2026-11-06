@@ -4,7 +4,6 @@ export declare const FADE_MS = 200;
 export declare const RESIZE_MS = 280;
 export declare function prefersReducedMotion(): boolean;
 export declare function fadeIn(element: HTMLElement, duration: number): Animation;
-export declare function fadeOut(element: HTMLElement, duration: number): Animation;
 /** The reveal easing to its new height, when the sample guessed the content wrong. */
 export declare function easeHeight(element: HTMLElement, from: number, to: number, duration: number): Animation | null;
 /**

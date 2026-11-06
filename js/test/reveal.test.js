@@ -59,7 +59,6 @@ test("data inside the hold never shows a skeleton", async () => {
 
 test("bars wait out the hold", async () => {
   await withPage(async page => {
-    await page.clock.install()
     await open(page, "reveal")
     await mount(page)
 
@@ -67,7 +66,7 @@ test("bars wait out the hold", async () => {
     assert.equal(holding.phase, "holding")
     assert.equal(holding.overlayOpacity, "0")
 
-    await page.clock.runFor(200)
+    await page.waitForTimeout(500)   // the hold, then the fade in
 
     const shown = await rootInfo(page)
     assert.equal(shown.phase, "bars")
@@ -304,12 +303,12 @@ test("a second loading cycle shows the skeleton again", async () => {
     assert.equal(holding.phase, "holding")
     assert.equal((await paneInfo(page)).visibility, "hidden")
 
-    await page.waitForTimeout(250)
+    await page.waitForTimeout(500)   // the hold, then the fade in
     const shown = await rootInfo(page)
     assert.equal(shown.phase, "bars")
     assert.ok(shown.bars > 0)
-    // The previous reveal left the overlay faded out; a new skeleton must be opaque again.
-    assert.equal(shown.hostOpacity, "1")
+    // The previous reveal faded the bars out; a new skeleton must paint again.
+    assert.equal(shown.overlayOpacity, "1")
 
     await swap(page, "root", "<p>real two</p>", "loaded")
     await page.waitForTimeout(400)

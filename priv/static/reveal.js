@@ -12,13 +12,6 @@ export function fadeIn(element, duration) {
         fill: "forwards"
     });
 }
-export function fadeOut(element, duration) {
-    return element.animate([{ opacity: 1 }, { opacity: 0 }], {
-        duration,
-        easing: "ease",
-        fill: "forwards"
-    });
-}
 /** The reveal easing to its new height, when the sample guessed the content wrong. */
 export function easeHeight(element, from, to, duration) {
     if (Math.abs(to - from) < 1)

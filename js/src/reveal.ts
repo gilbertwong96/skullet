@@ -15,14 +15,6 @@ export function fadeIn(element: HTMLElement, duration: number): Animation {
   })
 }
 
-export function fadeOut(element: HTMLElement, duration: number): Animation {
-  return element.animate([{ opacity: 1 }, { opacity: 0 }], {
-    duration,
-    easing: "ease",
-    fill: "forwards"
-  })
-}
-
 /** The reveal easing to its new height, when the sample guessed the content wrong. */
 export function easeHeight(
   element: HTMLElement,

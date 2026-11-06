@@ -29,6 +29,8 @@ export declare class SkulletEngine {
     private setPhase;
     private reveal;
     private stop;
+    /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
+     * cleared a beat later — unless a new cycle has already taken the container over. */
     private hideOverlay;
     private release;
     /**
