@@ -15,7 +15,8 @@ defmodule SkulletTest do
           loading: false,
           theme: %{},
           label: "Loading",
-          reveal: "smart"
+          reveal: "smart",
+          remember: nil
         ],
         opts
       )
@@ -103,6 +104,44 @@ defmodule SkulletTest do
     assert LazyHTML.attribute(overlay, "aria-hidden") == ["true"]
   end
 
+  test "remembering the last data draws the next skeleton from it" do
+    scope = {:test, System.unique_integer()}
+
+    assert text(query(skeleton_html(data: @real, remember: scope), "#content")) == "Real Name"
+
+    # loading again: no data, so the remembered value stands in for the sample
+    assert text(query(skeleton_html(remember: scope), "#content")) == "Real Name"
+    assert attr(skeleton_html(remember: scope), "data-skullet-state") == "loading"
+  end
+
+  test "without a scope nothing is remembered" do
+    scope = {:test, System.unique_integer()}
+    skeleton_html(data: @real, remember: scope)
+
+    assert text(query(skeleton_html([]), "#content")) == "Sample Name"
+  end
+
+  test "forget clears one scope and leaves the others" do
+    kept = {:test, System.unique_integer()}
+    forgotten = {:test, System.unique_integer()}
+
+    skeleton_html(data: @real, remember: kept)
+    skeleton_html(data: @real, remember: forgotten)
+
+    Skullet.Memory.forget(forgotten)
+
+    assert text(query(skeleton_html(remember: kept), "#content")) == "Real Name"
+    assert text(query(skeleton_html(remember: forgotten), "#content")) == "Sample Name"
+  end
+
+  test "a remembered value expires" do
+    scope = {:test, System.unique_integer()}
+    skeleton_html(data: @real, remember: scope)
+
+    assert Skullet.Memory.get(scope, "profile") == @real
+    assert Skullet.Memory.get(scope, "profile", ttl_ms: -1) == nil
+  end
+
   test "the status span carries the label outside the content pane" do
     html = skeleton_html(label: "Loading profile")
 
@@ -134,6 +173,13 @@ defmodule SkulletTest do
     html = skeleton_html(theme: %{radius: 8})
 
     assert attr(html, "style") =~ "--skullet-radius: 8"
+  end
+
+  test "the text knobs are reachable from a theme" do
+    html = skeleton_html(theme: %{text_top: "x-height", text_bottom: "baseline"})
+
+    assert attr(html, "style") =~ "--skullet-text-top: x-height"
+    assert attr(html, "style") =~ "--skullet-text-bottom: baseline"
   end
 
   test "a theme key that is neither atom nor string still raises ArgumentError" do

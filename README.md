@@ -79,6 +79,7 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 | `reveal` | `"smart"` \| `"instant"` | `"smart"` | how content replaces its skeleton |
 | `theme` | map | `%{}` | custom properties for this skeleton alone |
 | `label` | string | `"Loading"` | read to screen readers while loading |
+| `remember` | any | `nil` | opt in to memory under this scope (see below) |
 
 Slots: `inner_block` (required, receives the sample then the real value) and `error`
 (rendered in place of the content when the async assign failed).
@@ -107,6 +108,30 @@ Dark mode is a `prefers-color-scheme` block in `skullet.css`; override the two c
 follow a different switch. Under `prefers-reduced-motion` bars hold still and every reveal
 is instant.
 
+## Memory
+
+The first skeleton of a session is drawn from your `sample`. Every one after that can be
+drawn from the *real* data instead, which makes it exact at any viewport size:
+
+```heex
+<Skullet.skeleton :let={user} id="profile" async={@user} remember={@current_user.id}>
+  <Profile.card user={user} />
+</Skullet.skeleton>
+```
+
+`remember` is the scope — usually the user's id — and `id` completes the key. Once the
+skeleton has shown real data, the next loading render uses that data in place of the
+sample.
+
+It is stored server-side (ETS), not in the browser: no shapes in `localStorage`, nothing
+left on a shared device, and it works across devices because it is data rather than pixels.
+It is per node, and it expires after `config :skullet, :memory_ttl_ms` (30 minutes by
+default). Clear a person's memory when they sign out:
+
+```elixir
+Skullet.Memory.forget(current_user.id)
+```
+
 ## Hints
 
 Measuring gets most markup right. Where it does not — a logo, a chart, a canvas — say so
@@ -132,9 +157,8 @@ mix phx.server`, then open <http://localhost:4000/demo>.
 
 ## Not implemented yet
 
-Skeleton shape memory, per-component skeletons, the debug overlay, `SkeletonBox`, a
-Suspense equivalent, and the `together` / `sequence` / `sweep` reveals are not in this
-version.
+Per-component skeletons, the debug overlay, `SkeletonBox`, a Suspense equivalent, and the
+`together` / `sequence` / `sweep` reveals are not in this version.
 
 ## Working on the engine
 

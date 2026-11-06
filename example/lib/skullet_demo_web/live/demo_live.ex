@@ -54,6 +54,7 @@ defmodule SkulletDemoWeb.DemoLive do
           async={@user}
           loading={@pinned}
           sample={@sample_user}
+          remember="demo"
           label="Loading profile"
         >
           <div id="card" class="w-96 border rounded-lg p-4">

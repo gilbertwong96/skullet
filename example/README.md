@@ -30,6 +30,9 @@ caught, and it is the quickest way to tell "the engine is wrong" from "the page 
   card crossfades in, easing to the real height.
 - **Press *Show loading***: the skeleton comes back, at full opacity, and stays as long as
   you leave it. This is the path that regressed twice; it has a test now.
+- Press *Show loaded*, reload the page: the skeleton is now drawn from the **real** data
+  (it passes `remember="demo"`), not from the sample — same size, so nothing moves. That is
+  the shape memory, server-side.
 - The state line reads `assign: … · pinned: …`, so you can see which of the two decides
   the visible state: `pinned` (the `loading` attribute) wins over the async assign.
 
