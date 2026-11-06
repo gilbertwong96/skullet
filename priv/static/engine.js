@@ -234,6 +234,9 @@ export class SkulletEngine {
             shadow.append(bars);
             applyShadowStyle(shadow);
         }
+        // A reveal's fade-out holds the overlay at opacity 0 (`fill: forwards`); a later
+        // skeleton must not inherit it, so anything left running is cleared here.
+        settle(overlay);
         this.overlay = overlay;
         this.bars = bars;
     }
