@@ -12,8 +12,9 @@ import {
 } from "./reveal.js"
 
 const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
-[data-skullet-bars]{position:absolute;inset:0;opacity:0;transition:opacity ${FADE_MS}ms ease}
+[data-skullet-bars]{position:absolute;inset:0;opacity:0}
 [data-skullet-bars][data-skullet-phase="bars"]{opacity:1}
+[data-skullet-bars]:not([data-skullet-phase="bars"]){transition:opacity ${FADE_MS}ms ease}
 [data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
 @keyframes skullet-shimmer{from{background-position-x:0}to{background-position-x:var(--skullet-band)}}
 @keyframes skullet-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`
