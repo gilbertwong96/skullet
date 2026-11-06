@@ -52,6 +52,11 @@ While `@user` is loading, `Profile.card` is rendered from `@sample_user` and mea
 the assign resolves and LiveView patches the real user in, the skeleton crossfades out.
 During the dead render the skeleton is the whole page, so the layout never jumps on connect.
 
+A background refetch keeps the content on screen: `assign_async/3` leaves the previous
+result in place while the new one loads, and the skeleton only returns when the assign is
+reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
+
+
 ## With plain data
 
 ```heex

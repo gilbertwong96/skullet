@@ -32,6 +32,10 @@ defmodule Skullet do
   The CSS is not optional: it keeps the sample invisible before the engine runs, and shows
   it instead of a blank box if the engine never does.
 
+  A background refetch keeps the content on screen: `assign_async/3` leaves the previous
+  result in place while the new one loads, so pass `reset: true` (or assign a fresh
+  `AsyncResult.loading()`) to have the skeleton return.
+
   Theme through custom properties (`--skullet-base`, `--skullet-highlight`,
   `--skullet-radius`, `--skullet-animation`, `--skullet-speed`), set per skeleton with the
   `theme` attribute or globally in CSS. `reveal` is `"smart"` (waits 150 ms, then
