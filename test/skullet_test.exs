@@ -127,6 +127,12 @@ defmodule SkulletTest do
     assert attr(html, "style") =~ "--skullet-radius: 8"
   end
 
+  test "a theme key that is neither atom nor string still raises ArgumentError" do
+    assert_raise ArgumentError, ~r/allowed keys/, fn ->
+      skeleton_html(theme: %{{:base} => "red"})
+    end
+  end
+
   test "an unknown key raises" do
     assert_raise ArgumentError, ~r/allowed keys/, fn ->
       skeleton_html(theme: %{colour: "red"})
