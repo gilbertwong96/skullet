@@ -12,15 +12,16 @@ const rootInfo = (page, id = "root") =>
   page.evaluate(id => {
     const root = document.getElementById(id)
     const overlay = root.querySelector("[data-skullet-overlay]")
+    const bars = overlay?.shadowRoot?.querySelector("[data-skullet-bars]")
     return {
-      phase: root.getAttribute("data-skullet-phase"),
+      phase: bars?.getAttribute("data-skullet-phase") ?? null,
       hasOverlay: Boolean(overlay),
       inlineHeight: root.style.height,
       animations: root.getAnimations().map(animation => animation.effect.getTiming().duration),
       height: root.getBoundingClientRect().height,
       contentHeight: root.querySelector("[data-skullet-content]").getBoundingClientRect().height,
-      bars: overlay?.shadowRoot.querySelectorAll("[data-skullet-bar]").length ?? 0,
-      overlayOpacity: overlay ? getComputedStyle(overlay).opacity : null
+      bars: bars?.querySelectorAll("[data-skullet-bar]").length ?? 0,
+      overlayOpacity: bars ? getComputedStyle(bars).opacity : null
     }
   }, id)
 
@@ -224,6 +225,44 @@ test("a later patch leaves a running reveal alone", async () => {
       [280],
       "a second patch cancelled the height ease"
     )
+  })
+})
+
+test("a patch that strips unknown attributes leaves the skeleton intact", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+
+    // What LiveView does on every patch: every attribute its own render did not produce
+    // is removed, inline styles included.
+    await page.evaluate(() => {
+      const root = document.getElementById("root")
+      const keep = new Set([
+        "class",
+        "id",
+        "phx-hook",
+        "data-skullet-state",
+        "data-skullet-reveal",
+        "aria-busy",
+        "data-skullet-content",
+        "data-skullet-overlay",
+        "aria-hidden"
+      ])
+      for (const element of [
+        root,
+        root.querySelector("[data-skullet-content]"),
+        root.querySelector("[data-skullet-overlay]")
+      ]) {
+        for (const { name } of [...element.attributes]) {
+          if (!keep.has(name)) element.removeAttribute(name)
+        }
+      }
+    })
+
+    const after = await rootInfo(page)
+    assert.equal(after.phase, "bars")
+    assert.ok(after.bars > 0, "the bars did not survive")
   })
 })
 

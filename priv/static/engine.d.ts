@@ -25,6 +25,8 @@ export declare class SkulletEngine {
     private get instant();
     private show;
     private showBars;
+    /** Phase lives in the shadow root: LiveView patches the light DOM, not this. */
+    private setPhase;
     private reveal;
     private stop;
     private hideOverlay;

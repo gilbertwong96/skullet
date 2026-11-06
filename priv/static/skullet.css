@@ -39,12 +39,15 @@
 /* The sample is never seen: the engine draws the bars, or nothing does. */
 .skullet[data-skullet-state="loading"] > [data-skullet-content] {
   visibility: hidden;
-  animation: skullet-nojs-reveal 0s 5000ms forwards;
 }
 
-/* An engine that started owns the pane from here; the fallback above is cancelled. */
-.skullet[data-skullet-phase] > [data-skullet-content] {
-  animation: none;
+/*
+ * With no JS at all the fallback below is the only thing that will show the sample, so
+ * it is on until the engine says otherwise. The flag lives on <html>, which LiveView
+ * never patches; an attribute on the skeleton would be stripped by the next patch.
+ */
+html:not(.skullet-js) .skullet[data-skullet-state="loading"] > [data-skullet-content] {
+  animation: skullet-nojs-reveal 0s 5000ms forwards;
 }
 
 /* With no JS at all, show the sample rather than an empty box forever. */
