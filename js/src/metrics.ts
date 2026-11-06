@@ -33,14 +33,20 @@ function metricsOf(font: string): Metrics | null {
     canvas.font = font
     const box = canvas.measureText("H")
     const ink = (text: string) => canvas.measureText(text).actualBoundingBoxAscent
+    const ascent = box.fontBoundingBoxAscent
+    const descent = box.fontBoundingBoxDescent
 
-    metrics = {
-      ascent: box.fontBoundingBoxAscent,
-      descent: box.fontBoundingBoxDescent,
-      ascender: ink("bdfhkl"),
-      capHeight: box.actualBoundingBoxAscent,
-      xHeight: ink("xz"),
-      descender: canvas.measureText("gjpqy").actualBoundingBoxDescent
+    // A shorthand the canvas refuses reads back as zeros, and a bar built from those
+    // is a 1px line: better the fallback than a wrong bar.
+    if (Number.isFinite(ascent) && Number.isFinite(descent) && ascent + descent > 0) {
+      metrics = {
+        ascent,
+        descent,
+        ascender: ink("bdfhkl"),
+        capHeight: box.actualBoundingBoxAscent,
+        xHeight: ink("xz"),
+        descender: canvas.measureText("gjpqy").actualBoundingBoxDescent
+      }
     }
   }
 

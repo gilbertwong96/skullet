@@ -17,14 +17,20 @@ function metricsOf(font) {
         canvas.font = font;
         const box = canvas.measureText("H");
         const ink = (text) => canvas.measureText(text).actualBoundingBoxAscent;
-        metrics = {
-            ascent: box.fontBoundingBoxAscent,
-            descent: box.fontBoundingBoxDescent,
-            ascender: ink("bdfhkl"),
-            capHeight: box.actualBoundingBoxAscent,
-            xHeight: ink("xz"),
-            descender: canvas.measureText("gjpqy").actualBoundingBoxDescent
-        };
+        const ascent = box.fontBoundingBoxAscent;
+        const descent = box.fontBoundingBoxDescent;
+        // A shorthand the canvas refuses reads back as zeros, and a bar built from those
+        // is a 1px line: better the fallback than a wrong bar.
+        if (Number.isFinite(ascent) && Number.isFinite(descent) && ascent + descent > 0) {
+            metrics = {
+                ascent,
+                descent,
+                ascender: ink("bdfhkl"),
+                capHeight: box.actualBoundingBoxAscent,
+                xHeight: ink("xz"),
+                descender: canvas.measureText("gjpqy").actualBoundingBoxDescent
+            };
+        }
     }
     byFont.set(font, metrics);
     return metrics;
