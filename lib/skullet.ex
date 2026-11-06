@@ -7,8 +7,7 @@ defmodule Skullet do
   per wrapped line, one block per image or control. Nothing is guessed, so nothing moves
   when the content arrives.
 
-  Pass the sample data as `sample`; the inner block receives the sample while loading and
-  the real value once it is there:
+  The inner block receives the sample while loading, and the real value once it is there:
 
       <Skullet.skeleton :let={user} id="profile" async={@user} sample={@sample_user}>
         <Profile.card user={user} />
@@ -18,8 +17,10 @@ defmodule Skullet do
         <Profile.card user={user} />
       </Skullet.skeleton>
 
-  `id` is required twice over: `phx-hook` needs one, and it is the key the engine remembers
-  a shape under. A generated id would change on every render and remount the hook.
+  `sample` is required: it is the only data available during a dead render, and writing a
+  second skeleton is the thing this component exists to delete. `id` is required twice
+  over — `phx-hook` needs one, and it is the key shape memory will use; a generated id
+  would change on every render and remount the hook.
 
   Wiring, in the app's `assets/js/app.js` and `assets/css/app.css`:
 
@@ -27,6 +28,14 @@ defmodule Skullet do
       new LiveSocket("/live", Socket, { hooks: { Skullet: SkulletHook } })
 
       @import "../../deps/skullet/priv/static/skullet.css";
+
+  The CSS is not optional: it keeps the sample invisible before the engine runs, and shows
+  it instead of a blank box if the engine never does.
+
+  Theme through custom properties (`--skullet-base`, `--skullet-highlight`,
+  `--skullet-radius`, `--skullet-animation`, `--skullet-speed`), set per skeleton with the
+  `theme` attribute or globally in CSS. `reveal` is `"smart"` (waits 150 ms, then
+  crossfades) or `"instant"`.
   """
 
   use Phoenix.Component
