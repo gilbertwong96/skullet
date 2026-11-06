@@ -44,12 +44,24 @@ server-side variant this platform makes possible), hints (`skullet-block` /
 - A second skeleton to write and keep in step with the component. That is the thing this
   library exists to delete.
 - Fake sample data ever reaching a screen reader or being shown as if it were content.
-- A build step in this repo. The JS ships as source.
+- A bundler, a minifier, or a runtime JS dependency. The engine is TypeScript compiled to
+  plain ES modules that stay readable inside a consumer's bundle.
 
 ## Constraints
 
 - Elixir 1.20.5, OTP 29, Phoenix LiveView 1.2.
-- Node 26 available for dev/test only; no Node at runtime.
+- Node 26 and pnpm for dev and test only; no Node at runtime.
+- The engine is TypeScript (`js/src/*.ts`) compiled by `tsc` to `priv/static/*.js`:
+  `strict` and `noUncheckedIndexedAccess`, `nodenext` resolution — which means relative
+  imports are written with a `.js` extension, or the output is not loadable.
+- `target` and `lib` are both `ES2022`, and are raised together or not at all. That is the
+  syntax floor and the built-in floor at once, and it matches what Phoenix 1.8's own
+  generator hands esbuild (`--target=es2022`). The engine calls no built-in newer than
+  2022 — `toSorted()`, `Object.groupBy` and the iterator helpers earn nothing here — and a
+  higher `lib` would quietly raise the browser floor past the DOM APIs the engine already
+  needs (Web Animations, `ResizeObserver`, shadow DOM, roughly 2021).
+- The compiled output is committed, because a Hex consumer has no Node. `pnpm --dir js
+  build` followed by `git diff --exit-code -- priv/static` guards against drift.
 - The engine needs real layout. jsdom/happy-dom cannot test measurement (no
   `getClientRects` layout, no canvas text metrics) — upstream has the same constraint and
   tests in a browser.
@@ -167,10 +179,22 @@ happens.
 
 ### 4. JS engine
 
-One ES module, `priv/static/skullet.js`, no build step, no dependencies. Exports
-`SkulletHook` (the `phx-hook` object) plus its internals for tests. The engine is written
-framework-agnostically (it takes a root element and a state string) with the hook as a
-thin adapter, so a plain-HTML entry point can be added later without rewriting it.
+TypeScript in `js/src/`, compiled by `tsc` to `priv/static/*.js` — plain ES modules with
+relative imports intact, so a consumer's esbuild follows them exactly as it would
+hand-written source. No bundler, no runtime dependencies; the output stays readable in a
+consumer's bundle and needs no source map. `js/src/skullet.ts` is the entry and emits
+`priv/static/skullet.js` plus `skullet.d.ts`, which types the hook object for consumers.
+
+One job per module: `skullet.ts` (entry and the `phx-hook` adapter over `attach/1`),
+`engine.ts` (the root's state machine, overlay, observers, lifecycle), `measure.ts` (DOM
+walk → line and block rects), `metrics.ts` (canvas font metrics → bar boxes), `shimmer.ts`
+(gradient, pace, phase), `reveal.ts` (hold, fade, height ease, settle).
+
+The engine takes a root element and a state string, with the hook as a thin adapter, so a
+plain-HTML entry point can be added later without rewriting it.
+
+The compiled files are committed: a Hex consumer has no Node. Editing the engine means
+`pnpm --dir js build`; the suite builds first and then fails if `priv/static` is dirty.
 
 Wiring in a consuming app:
 
@@ -283,14 +307,16 @@ shadow trees, the overlay needs no theme plumbing of its own.
 
 ```
 lib/skullet.ex                    # the component
-priv/static/skullet.js            # the engine (one ES module)
+js/src/{skullet,engine,measure,metrics,shimmer,reveal}.ts
+js/tsconfig.json                  # strict, nodenext, outDir ../priv/static
+js/package.json                   # dev-only: typescript, playwright (pnpm)
+js/test/*.test.js                 # node --test + playwright
+js/fixtures/*.html                # static pages the browser tests drive
 priv/static/skullet.css
+priv/static/*.js, priv/static/*.d.ts   # compiled, committed
 test/skullet_test.exs             # component tests
 test/support/…                    # sample fixtures/components
-js/package.json                   # dev-only: playwright
-js/fixtures/*.html                # static pages the browser tests drive
-js/*.test.js                      # node --test + playwright
-docs/superpowers/specs/…
+docs/superpowers/{specs,plans}/…
 ```
 
 `mix.exs` gains `phoenix_live_view ~> 1.2`, `phoenix_html ~> 4.3`, and `lazy_html` (test).
@@ -301,12 +327,13 @@ docs/superpowers/specs/…
   the `:let` value is the sample while loading and the real value once loaded; the
   `data-skullet-state` attribute flips; `aria-busy`; `label`; theme map → inline style;
   `:error` slot on failure; missing `sample` warns at compile time.
-- **JS** (`node --test` + Playwright/Chromium against static fixtures): bar count and
-  geometry for known markup (one bar per wrapped line, block per image, painted chip as one
-  block, visually-hidden label skipped, inline markup merged to one bar); bar positions
-  within tolerance of the line boxes; shared shimmer phase across two mounts; hold, fade
-  and height ease timings; `instant`; reduced motion; teardown removes observers and the
-  overlay.
+- **JS** (`pnpm --dir js build && node --test` + Playwright/Chromium against static
+  fixtures): the suite runs against the compiled modules, which is what consumers get.
+  Bar count and geometry for known markup (one bar per wrapped line, block per image,
+  painted chip as one block, visually-hidden label skipped, inline markup merged to one
+  bar); bar positions within tolerance of the line boxes; shared shimmer phase across two
+  mounts; hold, fade and height ease timings; `instant`; reduced motion; teardown removes
+  observers and the overlay.
 - Fixtures emulate the LiveView swap (replace the content pane, flip the state attribute,
   call the hook's lifecycle) so the engine can be verified end-to-end without a Phoenix app
   in CI. Component-to-hook integration is covered by the contract in §2–§3 plus a manual
@@ -334,6 +361,8 @@ docs/superpowers/specs/…
 - **Observer feedback.** The height ease writes to the root the `ResizeObserver` watches.
   The engine ignores resize entries for the duration of its own ease, or the two chase each
   other.
+- **Compiled output drifting from source.** Mitigated by the build-then-diff check; without
+  it the library silently ships last week's engine.
 - **Measurement cost.** A large view measures tens of thousands of nodes on mount. Budget:
   ≤ 4 ms for a 500-element subtree; re-measure is debounced to one frame.
 - **Upstream drift.** Skullet is at v0.0.3 and may change; this design fixes its own

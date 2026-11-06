@@ -6,16 +6,18 @@
 
 **Architecture:** HEEx renders the sample inside `[data-skullet-content]` with the server-owned `data-skullet-state` on the root. A `phx-hook` (thin adapter over a framework-agnostic engine) measures the laid-out sample — one bar per wrapped line from `Range.getClientRects()` plus canvas font metrics, one block per media/painted box — and draws the bars into a shadow root over an invisible content pane. LiveView's attribute diff flips the state, which is the engine's reveal cue.
 
-**Tech Stack:** Elixir 1.20.5 / OTP 29, Phoenix LiveView 1.2, Phoenix.Component, `lazy_html` (test), plain ES modules (no build step, no runtime deps), Playwright/Chromium via Node 26 for engine tests.
+**Tech Stack:** Elixir 1.20.5 / OTP 29, Phoenix LiveView 1.2, Phoenix.Component, `lazy_html` (test), TypeScript compiled by `tsc` to plain ES modules (no bundler, no runtime deps), pnpm + Playwright/Chromium on Node 26 for the engine tests.
 
 **Spec:** `docs/superpowers/specs/2026-11-06-skullet-phoenix-skeleton-design.md`
 
-**Deviation from the spec, for the record:** the spec says "one ES module". The engine ships as `priv/static/skullet.js` (the entry, unchanged) plus sibling modules it imports with relative specifiers. The contract — one import path for consumers, no build step — is unchanged; the split is so each file has one job. Node resolves the relative imports natively and esbuild bundles them.
+**Deviation from the spec, for the record:** the spec first said the JS ships as source with no build step; it now says TypeScript compiled by `tsc`. Sources live in `js/src/*.ts`; the compiled ES modules are committed to `priv/static/`. The consumer contract is unchanged — one import path, no bundler, no runtime dependencies — and the compiled output stays readable in a consumer's bundle.
 
 ## Global Constraints
 
 - Elixir `~> 1.20`, Phoenix LiveView `~> 1.2`, Phoenix HTML `~> 4.3`, `lazy_html` test-only.
-- No build step and no runtime JS dependencies. Engine files are plain ES modules with explicit `.js` import specifiers.
+- No bundler and no runtime JS dependencies. `tsc` with `strict` + `noUncheckedIndexedAccess` compiles `js/src/*.ts` to `priv/static/*.js`; relative imports are written with a `.js` extension (`nodenext` resolution rejects a bare `./measure`).
+- The compiled output is committed — a Hex consumer has no Node. `pnpm --dir js test` builds first; `git diff --exit-code -- priv/static` proves the commit matches the source.
+- `tsconfig` is `target: ES2022` **and** `lib: ["ES2022", "DOM", "DOM.Iterable"]` — both together, matching the `--target=es2022` Phoenix 1.8's generator passes to esbuild. Never raise `lib` alone: the engine uses no built-in newer than ES2022, and a higher floor would exceed the DOM floor it already needs (Web Animations, `ResizeObserver`, shadow DOM).
 - `id` is required on `<Skullet.skeleton>`. `sample` is required. `reveal` is `"smart"` or `"instant"`, default `"smart"`.
 - **`data-skullet-state` is server-owned. The engine must never write it** (nor `aria-busy`, nor `class` on the root). LiveView only patches attributes that changed against its own previous render, so a JS-side edit is silently permanent.
 - The engine's own attributes are `data-skullet-phase` on the root and `data-skullet-overlay` on its overlay child; bars inside the shadow root carry `data-skullet-bar`.
@@ -263,12 +265,13 @@ git commit -m "Theme a skeleton with custom properties"
   "name": "skullet-tests",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.16.1",
   "scripts": { "test": "node --test test/" },
   "devDependencies": { "playwright": "^1.56.0" }
 }
 ```
 
-Run `npm install --prefix js` then `npx --prefix js playwright install chromium`.
+Run `pnpm --dir js install` then `pnpm --dir js exec playwright install chromium`.
 
 `js/test/harness.js` exports `withPage(callback, opts = {})`: launches chromium once per module, creates a context with `opts`, a page, routes `http://skullet.test/**` to files on disk with the right `content-type` (`text/javascript` for `.js` — a wrong type silently breaks module loading), and closes everything afterwards. Export `open(page, name)` → `page.goto("http://skullet.test/fixtures/" + name + ".html")`.
 
@@ -287,7 +290,7 @@ test("with JS disabled the sample appears within 6s", …)  // {javaScriptEnable
 
 - [ ] **Step 2: Run to verify failure**
 
-Run: `npm test --prefix js`
+Run: `pnpm --dir js test`
 Expected: FAIL — 404s on `/skullet.css`, so the first two assertions fail (visibility `visible` while loading).
 
 - [ ] **Step 3: Write `priv/static/skullet.css`**
@@ -301,13 +304,13 @@ Contents, in this order:
 
 - [ ] **Step 4: Run to verify a pass**
 
-Run: `npm test --prefix js`
+Run: `pnpm --dir js test`
 Expected: PASS, 6 tests.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add .gitignore priv/static/skullet.css js/package.json js/package-lock.json js/test js/fixtures
+git add .gitignore priv/static/skullet.css js/package.json js/pnpm-lock.yaml js/test js/fixtures
 git commit -m "Show a skeleton's sample only when JS can draw it"
 ```
 
@@ -316,21 +319,20 @@ git commit -m "Show a skeleton's sample only when JS can draw it"
 ### Task 4: Measure the sample and draw the bars
 
 **Files:**
-- Create: `priv/static/measure.js`
-- Create: `priv/static/metrics.js`
-- Create: `priv/static/engine.js`
-- Create: `priv/static/skullet.js`
+- Create: `js/tsconfig.json`
+- Create: `js/src/measure.ts`, `js/src/metrics.ts`, `js/src/engine.ts`, `js/src/skullet.ts`
 - Create: `js/fixtures/measure.html`
 - Create: `js/test/measure.test.js`
+- Build output (committed): `priv/static/{skullet,engine,measure,metrics}.js` and `.d.ts`
 - Test: `js/test/measure.test.js`
 
 **Interfaces:**
 - Consumes: the markup from Task 1, the CSS from Task 3.
-- Produces:
-  - `measure.js`: `measure(contentEl: Element, originEl: Element) → { lines: TextLine[], blocks: Rect[] }`, `Rect = { x, y, width, height }`, `TextLine = Rect & { font: string, fontSize: number, textTop: string, textBottom: string }`; `mergeLines(rects, fontSize) → Rect[]`; `LINE_GAP = 0.4`.
-  - `metrics.js`: `barBox(line: TextLine) → { y: number, height: number }`; `resetFontCache()`.
-  - `engine.js`: `class SkulletEngine { constructor(root: Element); start(); beforeUpdate(); update(); destroy() }` — only `start()` and `destroy()` are meaningful until Task 6.
-  - `skullet.js`: `attach(root: Element) → SkulletEngine`; `SkulletHook` = `{ mounted, beforeUpdate, updated, destroyed }` delegating to it.
+- Produces (TypeScript in `js/src/`, compiled one-for-one to `priv/static/`):
+  - `measure.ts`: `measure(contentEl: Element, originEl: Element): { lines: TextLine[], blocks: Rect[] }`, `type Rect = { x: number, y: number, width: number, height: number }`, `type TextLine = Rect & { font: string, fontSize: number, textTop: TextTop, textBottom: TextBottom }`; `mergeLines(rects: Rect[], fontSize: number): Rect[]`; `const LINE_GAP = 0.4`.
+  - `metrics.ts`: `barBox(line: TextLine): { y: number, height: number }`; `resetFontCache(): void`.
+  - `engine.ts`: `class SkulletEngine { constructor(root: Element); start(): void; beforeUpdate(): void; update(): void; destroy(): void }` — only `start()` and `destroy()` are meaningful until Task 6.
+  - `skullet.ts`: `attach(root: Element): SkulletEngine`; `const SkulletHook` = `{ mounted, beforeUpdate, updated, destroyed }` delegating to it.
   - Overlay: `<div data-skullet-overlay aria-hidden="true">` inside the root, `attachShadow({ mode: "open" })`, bars as `<span data-skullet-bar>` positioned by `transform: translate(x, y)` with width/height and `background: var(--skullet-base)`.
 
 - [ ] **Step 1: Build the fixture and the failing tests**
@@ -367,32 +369,56 @@ test("nothing to measure still initialises", …) // a root whose pane is empty 
 test("bars fall back without canvas metrics", …) // page.evaluate stubs getContext("2d") to null before attach → bars still exist, one per line, centred in the line at ≤ 0.75 × fontSize tall
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [ ] **Step 2: Add TypeScript and the build**
 
-Run: `npm test --prefix js` (only `js/test/measure.test.js`)
+`pnpm --dir js add -D typescript` and `js/tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "../priv/static",
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
+```
+
+Scripts become `"build": "tsc -p tsconfig.json"`, `"test": "pnpm build && node --test test/"`, `"verify": "pnpm build && git diff --exit-code -- ../priv/static"`. The build emits `priv/static/{skullet,engine,measure,metrics}.js` plus their `.d.ts`; `skullet.ts` is the entry, so the consumer's import path never changes. `ES2022` for both `target` and `lib` is deliberate, not stale: it is Phoenix 1.8's own esbuild target, the engine needs no newer built-in, and raising `lib` on its own would assume built-ins older browsers lack.
+
+- [ ] **Step 3: Run to verify failure**
+
+Run: `node --test js/test/measure.test.js`
 Expected: FAIL — `/skullet.js` 404s; no `[data-skullet-overlay]` in the DOM.
 
-- [ ] **Step 3: Implement `measure.js`**
+- [ ] **Step 4: Implement `js/src/measure.ts`**
 
 Walk the pane with a `TreeWalker` (`SHOW_TEXT | SHOW_ELEMENT`). Skip `script`, `style`, `template`, `noscript`. A nested skeleton — an element with `phx-hook="Skullet"` (or `class` containing `skullet`) — emits one block for its own box and is **not** descended into, so the inner skeleton keeps its own bars. For text nodes: skip blank text, skip when the parent's box is under 2×2, `Range.selectNodeContents` + `getClientRects()`, drop zero-size rects, then `mergeLines`. For elements: media tags and painted boxes (`isPainted` per §5) emit a block; do not double-count a media element's own text. All rects are translated by the origin element's bounding rect. Read `font` (`"#{fontStyle} #{fontWeight} #{fontSize} #{fontFamily}"`), `fontSize` in px, `--skullet-text-top`, `--skullet-text-bottom` from the text node's parent's computed style.
 
-- [ ] **Step 4: Implement `metrics.js`**
+- [ ] **Step 5: Implement `js/src/metrics.ts`**
 
 `barBox(line)` builds a cached canvas metrics record per `line.font` (`fontBoundingBoxAscent/Descent`, `actualBoundingBoxAscent` for `bdfhkl` / `H` / `xz`, `actualBoundingBoxDescent` for `gjpqy`), computes the baseline as line top + (line height − font box) / 2 + ascent, and returns the bar from the `textTop` rule to the `textBottom` rule. No canvas (`getContext("2d")` null, or jsdom) → `{ y: line.y + (line.height − h) / 2, height: min(0.72 × fontSize, line.height) }`.
 
-- [ ] **Step 5: Implement `engine.js` and `skullet.js`**
+- [ ] **Step 6: Implement `js/src/engine.ts` and `js/src/skullet.ts`**
 
 `start()`: create the overlay + open shadow root, put one `<style>` in it (`:host`/bar rules), cancel the no-JS animation by setting `data-skullet-phase="bars"` on the root, draw, and wire the observers (see Task 6 for reveal; here just draw on `ResizeObserver`/`MutationObserver`/`fonts.ready`/image `load`). Coalesce every observer callback into one `requestAnimationFrame` draw, so a burst of mutations measures once. `draw()` is `measure()` → `barBox()` for lines → replace the shadow bars in one pass. `destroy()` removes the overlay, the phase attribute, and every observer. `skullet.js` is the four-line hook adapter over `attach`.
 
-- [ ] **Step 6: Run to verify a pass**
+- [ ] **Step 7: Run to verify a pass**
 
-Run: `npm test --prefix js`
+Run: `pnpm --dir js test`
 Expected: PASS, 16 tests (6 CSS + 10 measure).
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add priv/static/measure.js priv/static/metrics.js priv/static/engine.js priv/static/skullet.js js/fixtures/measure.html js/test/measure.test.js
+git add js/package.json js/pnpm-lock.yaml js/tsconfig.json js/src js/fixtures/measure.html js/test/measure.test.js priv/static
 git commit -m "Draw a skeleton from the sample's measured lines"
 ```
 
@@ -401,15 +427,16 @@ git commit -m "Draw a skeleton from the sample's measured lines"
 ### Task 5: Shimmer and motion
 
 **Files:**
-- Create: `priv/static/shimmer.js`
-- Modify: `priv/static/engine.js`
+- Create: `js/src/shimmer.ts`
+- Modify: `js/src/engine.ts`
 - Create: `js/fixtures/shimmer.html`
 - Create: `js/test/shimmer.test.js`
+- Build output (committed): `priv/static/shimmer.js`, rebuilt `priv/static/engine.js`
 - Test: `js/test/shimmer.test.js`
 
 **Interfaces:**
 - Consumes: `SkulletEngine` and the bar elements from Task 4.
-- Produces: `shimmer.js`: `motionOf(element) → { animation: "shimmer" | "pulse" | "none", duration: number }`; `drawShimmer(bar: HTMLElement, width: number, motion) → void`; `SHIMMER_DURATIONS = { slow: 4000, fast: 2000 }`, `PULSE_DURATIONS = { slow: 2400, fast: 1200 }`, `REFERENCE_WIDTH = 1280`, `MAX_BAND = 320`, `SPACING = 2.5`, `SLANT = "110deg"`.
+- Produces: `shimmer.ts`: `motionOf(element: Element): Motion` where `type Motion = { animation: "shimmer" | "pulse" | "none", duration: number }`; `drawShimmer(bar: HTMLElement, width: number, motion: Motion): void`; `SHIMMER_DURATIONS = { slow: 4000, fast: 2000 }`, `PULSE_DURATIONS = { slow: 2400, fast: 1200 }`, `REFERENCE_WIDTH = 1280`, `MAX_BAND = 320`, `SPACING = 2.5`, `SLANT = "110deg"`.
 
 - [ ] **Step 1: Build the fixture and the failing tests**
 
@@ -429,23 +456,23 @@ test("reduced motion stops every animation", …)         // reducedMotion: "red
 Run: `node --test js/test/shimmer.test.js`
 Expected: FAIL — no `animationName` on the bars.
 
-- [ ] **Step 3: Implement `shimmer.js`**
+- [ ] **Step 3: Implement `js/src/shimmer.ts`**
 
 `motionOf` reads `--skullet-animation` and `--skullet-speed` off `getComputedStyle(element)`, validating against the allowed values with the documented fallbacks. `drawShimmer` builds `repeating-linear-gradient(110deg, …)` with a band of `min(MAX_BAND, …)`, stops spaced `SPACING` band-widths apart, sets `backgroundImage`, `animationName`, `animationDuration` = `duration × width / REFERENCE_WIDTH` clamped to ≥ 1 ms, `animationTimingFunction: "linear"`, `animationIterationCount: "infinite"`, and `animationDelay` = `-((document.timeline.currentTime ?? performance.now()) % duration)` so every bar joins the sweep already running. `none` sets no animation. `pulse` sets `animationName: "skullet-pulse"` with the pulse duration and a keyframe in the shadow stylesheet.
 
-- [ ] **Step 4: Wire it into `engine.js`**
+- [ ] **Step 4: Wire it into `js/src/engine.ts`**
 
 `draw()` calls `motionOf(root)` once per pass and `drawShimmer(bar, rect.width, motion)` per bar.
 
 - [ ] **Step 5: Run to verify a pass**
 
-Run: `npm test --prefix js`
+Run: `pnpm --dir js test`
 Expected: PASS, 22 tests.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add priv/static/shimmer.js priv/static/engine.js js/fixtures/shimmer.html js/test/shimmer.test.js
+git add js/src js/fixtures/shimmer.html js/test/shimmer.test.js priv/static
 git commit -m "Shimmer every skeleton on one clock"
 ```
 
@@ -454,15 +481,16 @@ git commit -m "Shimmer every skeleton on one clock"
 ### Task 6: Reveal, resize, and teardown
 
 **Files:**
-- Create: `priv/static/reveal.js`
-- Modify: `priv/static/engine.js`
+- Create: `js/src/reveal.ts`
+- Modify: `js/src/engine.ts`
 - Create: `js/fixtures/reveal.html`
 - Create: `js/test/reveal.test.js`
+- Build output (committed): `priv/static/reveal.js`, rebuilt `priv/static/engine.js`
 - Test: `js/test/reveal.test.js`
 
 **Interfaces:**
 - Consumes: `SkulletEngine`, `attach`, the bars from Tasks 4–5, `data-skullet-state` from Task 1.
-- Produces: `reveal.js`: `HOLD_MS = 150`, `FADE_MS = 200`, `RESIZE_MS = 280`, `prefersReducedMotion() → boolean`, `fadeIn(el, duration) → Animation`, `fadeOut(el, duration) → Animation`, `easeHeight(el, from, to, duration) → Animation`, `settle(el)` (clears inline height/overflow/opacity). Engine gains: hold timer, `beforeUpdate()`, `update()`, self-resize suppression.
+- Produces: `reveal.ts`: `HOLD_MS = 150`, `FADE_MS = 200`, `RESIZE_MS = 280`, `prefersReducedMotion(): boolean`, `fadeIn(el: HTMLElement, duration: number): Animation`, `fadeOut(el: HTMLElement, duration: number): Animation`, `easeHeight(el: HTMLElement, from: number, to: number, duration: number): Animation`, `settle(el: HTMLElement): void` (clears inline height/overflow/opacity). Engine gains: hold timer, `beforeUpdate()`, `update()`, self-resize suppression.
 
 - [ ] **Step 1: Build the fixture and the failing tests**
 
@@ -487,7 +515,7 @@ test("the no-JS fallback is cancelled once bars are up", …) // computed animat
 Run: `node --test js/test/reveal.test.js`
 Expected: FAIL — a swap leaves the bars in place and never touches the pane.
 
-- [ ] **Step 3: Implement `reveal.js`**
+- [ ] **Step 3: Implement `js/src/reveal.ts`**
 
 `fadeIn`/`fadeOut` are `el.animate([{ opacity }, { opacity }], { duration, easing: "ease", fill: "forwards" })`; `fadeOut` resolves a promise on `finish`. `easeHeight` animates `height` from `from` to `to` with `fill: "forwards"` and an ease-in-out curve. `settle(el)` removes `style.height`, `style.overflow`, and any `style.opacity` left by a fade, and cancels pending animations on `el` — so a patch that never lands cannot leave the pane invisible. `prefersReducedMotion` wraps `matchMedia("(prefers-reduced-motion: reduce)").matches`.
 
@@ -501,18 +529,18 @@ Expected: FAIL — a swap leaves the bars in place and never touches the pane.
 
 - [ ] **Step 5: Run to verify a pass**
 
-Run: `npm test --prefix js`
+Run: `pnpm --dir js test`
 Expected: PASS, 33 tests.
 
 - [ ] **Step 6: Run the whole suite**
 
-Run: `mix format --check-formatted && mix compile --warnings-as-errors && mix test && npm test --prefix js`
-Expected: all pass, 13 Elixir tests, 33 JS tests.
+Run: `mix format --check-formatted && mix compile --warnings-as-errors && mix test && pnpm --dir js test && git diff --exit-code -- priv/static`
+Expected: all pass, 13 Elixir tests, 33 JS tests, and `priv/static` matches the sources it was compiled from.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add priv/static/reveal.js priv/static/engine.js js/fixtures/reveal.html js/test/reveal.test.js
+git add js/src js/fixtures/reveal.html js/test/reveal.test.js priv/static
 git commit -m "Reveal the content over its skeleton"
 ```
 
@@ -531,7 +559,7 @@ git commit -m "Reveal the content over its skeleton"
 
 - [ ] **Step 1: Write the README**
 
-Sections: what it does (one paragraph, the sample-render idea); installation (`{:skullet, "~> 0.1.0"}`); the LiveView wiring (`hooks: { Skullet: SkulletHook }` importing `../../deps/skullet/priv/static/skullet.js`, and the `@import` of `skullet.css` in `assets/css/app.css`); a `assign_async` example; a plain `data` example; the attributes table from §1 of the spec; theme variables from §8; what is not implemented yet (the spec's non-goals), naming shape memory and hints first, since those are what readers will look for; a note that a generated `id` would remount the hook, hence required.
+Sections: what it does (one paragraph, the sample-render idea); installation (`{:skullet, "~> 0.1.0"}`); the LiveView wiring (`hooks: { Skullet: SkulletHook }` importing `../../deps/skullet/priv/static/skullet.js`, and the `@import` of `skullet.css` in `assets/css/app.css`); a `assign_async` example; a plain `data` example; the attributes table from §1 of the spec; theme variables from §8; what is not implemented yet (the spec's non-goals), naming shape memory and hints first, since those are what readers will look for; a note that a generated `id` would remount the hook, hence required. Add a short line for anyone hacking on the engine: consumers need no Node, but changing it means `pnpm --dir js install && pnpm --dir js build`, and `SkulletHook` is typed by the shipped `priv/static/skullet.d.ts`.
 
 - [ ] **Step 2: Write the `@moduledoc`**
 
@@ -539,8 +567,8 @@ Same content, tighter: the two usage modes, the `:let` contract (sample while lo
 
 - [ ] **Step 3: Verify**
 
-Run: `mix format --check-formatted && mix compile --warnings-as-errors && mix test && npm test --prefix js`
-Expected: pass; the moduledoc compiles without warnings.
+Run: `mix format --check-formatted && mix compile --warnings-as-errors && mix test && pnpm --dir js test && git diff --exit-code -- priv/static`
+Expected: pass; the moduledoc compiles without warnings; `priv/static` is clean after a build.
 
 - [ ] **Step 4: Commit**
 
