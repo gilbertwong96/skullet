@@ -185,6 +185,38 @@ test("nothing to measure still initialises", async () => {
   })
 })
 
+test("bars fall back when the font yields no metrics", async () => {
+  await withPage(async page => {
+    // A font the canvas refuses reads back as zeros; a bar built from that is 1px tall.
+    await page.addInitScript(() => {
+      CanvasRenderingContext2D.prototype.measureText = function () {
+        return {
+          fontBoundingBoxAscent: 0,
+          fontBoundingBoxDescent: 0,
+          actualBoundingBoxAscent: 0,
+          actualBoundingBoxDescent: 0,
+          width: 0
+        }
+      }
+    })
+    await open(page, "measure")
+    await drawn(page)
+
+    const three = await box(page, "#three")
+    const lines = within(await bars(page), three)
+    assert.equal(lines.length, 3)
+
+    lines.forEach((line, index) => {
+      const centre = three.y + index * 24 + 12
+      assert.ok(
+        Math.abs(line.y + line.height / 2 - centre) < 1.5,
+        `bar ${index} is not centred: ${line.y + line.height / 2} vs ${centre}`
+      )
+      assert.ok(line.height > 6, `bar ${index} is ${line.height}px tall`)
+    })
+  })
+})
+
 test("the overlay's styles are a constructable sheet, not an inline element", async () => {
   await withPage(async page => {
     await open(page, "measure")
