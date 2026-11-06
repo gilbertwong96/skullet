@@ -258,3 +258,25 @@ test("bars fall back without canvas metrics", async () => {
     })
   })
 })
+
+test("a 500-element subtree measures inside a frame", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const elapsed = await page.evaluate(() => {
+      const content = document.querySelector("#root > [data-skullet-content]")
+      content.innerHTML = Array.from(
+        { length: 100 },
+        (_, index) => `<p>row ${index} <b>bold</b> <i>italic</i> <span>text</span> <em>more</em></p>`
+      ).join("")
+
+      const start = performance.now()
+      window.measureOnce()
+      return performance.now() - start
+    })
+
+    console.log(`   measure pass over 500 elements: ${elapsed.toFixed(2)}ms`)
+    assert.ok(elapsed < 16, `measure pass took ${elapsed.toFixed(2)}ms, over one frame`)
+  })
+})

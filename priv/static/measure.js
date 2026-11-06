@@ -31,6 +31,7 @@ export function measure(contentEl, originEl) {
     const candidates = [];
     const blocks = [];
     const walker = document.createTreeWalker(contentEl, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    const styles = new Map();
     let skipped = null;
     let node = walker.nextNode();
     while (node) {
@@ -48,7 +49,7 @@ export function measure(contentEl, originEl) {
                         .filter(rect => rect.width > 0 && rect.height > 0)
                         .map(rect => relative(rect, origin));
                     if (rects.length > 0)
-                        candidates.push(...toLines(rects, parent));
+                        candidates.push(...toLines(rects, parent, styles));
                 }
             }
         }
@@ -61,7 +62,7 @@ export function measure(contentEl, originEl) {
                 blocks.push(toRect(element.getBoundingClientRect(), origin));
                 skipped = element;
             }
-            else if (MEDIA.has(element.localName) || isPainted(element)) {
+            else if (MEDIA.has(element.localName) || isPainted(element, styles)) {
                 blocks.push(toRect(element.getBoundingClientRect(), origin));
             }
         }
@@ -100,8 +101,8 @@ function sharesLine(a, b, gap) {
     const distance = Math.max(a.x, b.x) - Math.min(a.x + a.width, b.x + b.width);
     return distance <= gap;
 }
-function toLines(rects, parent) {
-    const style = getComputedStyle(parent);
+function toLines(rects, parent, styles) {
+    const style = styleOf(parent, styles);
     const fontSize = Number.parseFloat(style.fontSize) || 16;
     const font = [style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily].join(" ");
     const textTop = oneOf(style.getPropertyValue("--skullet-text-top").trim(), TOPS, TEXT_TOP);
@@ -123,8 +124,17 @@ function oneOf(value, allowed, fallback) {
 function isSkeleton(element) {
     return element.getAttribute("phx-hook") === "Skullet" || element.classList.contains("skullet");
 }
-function isPainted(element) {
+/** One computed style per element per pass: the getter, not the read, is the cost. */
+function styleOf(element, styles) {
+    const cached = styles.get(element);
+    if (cached)
+        return cached;
     const style = getComputedStyle(element);
+    styles.set(element, style);
+    return style;
+}
+function isPainted(element, styles) {
+    const style = styleOf(element, styles);
     const background = style.backgroundColor;
     const painted = background !== "" && background !== "transparent" && !/[,/]\s*0\)$/.test(background);
     return (painted ||

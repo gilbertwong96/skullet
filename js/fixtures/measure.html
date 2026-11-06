@@ -55,6 +55,16 @@
 
     <script type="module">
       import { attach } from "/skullet.js"
+      import { measure } from "/measure.js"
+
+      // One measure pass, for timing the hot path without the draw around it.
+      window.measureOnce = () => {
+        const root = document.getElementById("root")
+        measure(
+          root.querySelector("[data-skullet-content]"),
+          root.querySelector("[data-skullet-overlay]")
+        )
+      }
 
       window.engines = [
         attach(document.getElementById("root")),

@@ -56,6 +56,7 @@ export function measure(
     contentEl,
     NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT
   )
+  const styles = new Map<Element, CSSStyleDeclaration>()
 
   let skipped: Element | null = null
   let node: Node | null = walker.nextNode()
@@ -75,7 +76,7 @@ export function measure(
           const rects = [...range.getClientRects()]
             .filter(rect => rect.width > 0 && rect.height > 0)
             .map(rect => relative(rect, origin))
-          if (rects.length > 0) candidates.push(...toLines(rects, parent))
+          if (rects.length > 0) candidates.push(...toLines(rects, parent, styles))
         }
       }
     } else {
@@ -86,7 +87,7 @@ export function measure(
       } else if (isSkeleton(element)) {
         blocks.push(toRect(element.getBoundingClientRect(), origin))
         skipped = element
-      } else if (MEDIA.has(element.localName) || isPainted(element)) {
+      } else if (MEDIA.has(element.localName) || isPainted(element, styles)) {
         blocks.push(toRect(element.getBoundingClientRect(), origin))
       }
     }
@@ -133,8 +134,12 @@ function sharesLine(a: Rect, b: Rect, gap: number): boolean {
   return distance <= gap
 }
 
-function toLines(rects: LineRect[], parent: Element): TextLine[] {
-  const style = getComputedStyle(parent)
+function toLines(
+  rects: LineRect[],
+  parent: Element,
+  styles: Map<Element, CSSStyleDeclaration>
+): TextLine[] {
+  const style = styleOf(parent, styles)
   const fontSize = Number.parseFloat(style.fontSize) || 16
   const font = [style.fontStyle, style.fontWeight, style.fontSize, style.fontFamily].join(" ")
   const textTop = oneOf(style.getPropertyValue("--skullet-text-top").trim(), TOPS, TEXT_TOP)
@@ -164,8 +169,18 @@ function isSkeleton(element: Element): boolean {
   return element.getAttribute("phx-hook") === "Skullet" || element.classList.contains("skullet")
 }
 
-function isPainted(element: Element): boolean {
+/** One computed style per element per pass: the getter, not the read, is the cost. */
+function styleOf(element: Element, styles: Map<Element, CSSStyleDeclaration>): CSSStyleDeclaration {
+  const cached = styles.get(element)
+  if (cached) return cached
+
   const style = getComputedStyle(element)
+  styles.set(element, style)
+  return style
+}
+
+function isPainted(element: Element, styles: Map<Element, CSSStyleDeclaration>): boolean {
+  const style = styleOf(element, styles)
   const background = style.backgroundColor
 
   const painted =
