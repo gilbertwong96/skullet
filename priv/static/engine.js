@@ -188,18 +188,28 @@ export class SkulletEngine {
         if (this.content)
             settle(this.content);
     }
+    /**
+     * The overlay is server-rendered: LiveView prunes children it does not know about, so
+     * an overlay the engine created itself would vanish on the first patch. A plain page
+     * may still leave it out; then one is made here.
+     */
     createOverlay() {
         if (this.overlay)
             return;
-        const overlay = document.createElement("div");
+        const overlay = this.root.querySelector("[data-skullet-overlay]") ??
+            document.createElement("div");
         overlay.setAttribute("data-skullet-overlay", "");
         overlay.setAttribute("aria-hidden", "true");
-        const shadow = overlay.attachShadow({ mode: "open" });
-        const bars = document.createElement("div");
-        bars.setAttribute("data-skullet-bars", "");
-        shadow.append(bars);
-        applyShadowStyle(shadow);
-        this.root.append(overlay);
+        if (!overlay.isConnected)
+            this.root.append(overlay);
+        const shadow = overlay.shadowRoot ?? overlay.attachShadow({ mode: "open" });
+        let bars = shadow.querySelector("[data-skullet-bars]");
+        if (!bars) {
+            bars = document.createElement("div");
+            bars.setAttribute("data-skullet-bars", "");
+            shadow.append(bars);
+            applyShadowStyle(shadow);
+        }
         this.overlay = overlay;
         this.bars = bars;
     }

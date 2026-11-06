@@ -88,6 +88,9 @@ defmodule Skullet do
       {@style_attrs}
     >
       <span class="skullet-status">{@label}</span>
+      <%!-- Rendered here, not created by the engine: LiveView prunes children it does
+      not know about, and would take the bars with them on the first patch. --%>
+      <div data-skullet-overlay aria-hidden="true"></div>
       <%= if @state == :failed do %>
         {render_slot(@error)}
       <% else %>

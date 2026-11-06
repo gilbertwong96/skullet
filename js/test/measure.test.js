@@ -217,6 +217,24 @@ test("bars fall back when the font yields no metrics", async () => {
   })
 })
 
+test("the server's overlay is reused, not replaced", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const overlays = await page.evaluate(() =>
+      [...document.querySelectorAll("#root > [data-skullet-overlay]")].map(element => ({
+        server: element.hasAttribute("data-test-overlay"),
+        bars: element.shadowRoot?.querySelectorAll("[data-skullet-bar]").length ?? 0
+      }))
+    )
+
+    assert.equal(overlays.length, 1)
+    assert.equal(overlays[0].server, true)
+    assert.ok(overlays[0].bars > 0)
+  })
+})
+
 test("the overlay's styles are a constructable sheet, not an inline element", async () => {
   await withPage(async page => {
     await open(page, "measure")

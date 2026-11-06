@@ -29,6 +29,11 @@ export declare class SkulletEngine {
     private stop;
     private hideOverlay;
     private release;
+    /**
+     * The overlay is server-rendered: LiveView prunes children it does not know about, so
+     * an overlay the engine created itself would vanish on the first patch. A plain page
+     * may still leave it out; then one is made here.
+     */
     private createOverlay;
     private observe;
     private clearHold;
