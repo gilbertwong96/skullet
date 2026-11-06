@@ -4,6 +4,7 @@ import { drawShimmer, motionOf } from "./shimmer.js";
 import { FADE_MS, HOLD_MS, RESIZE_MS, easeHeight, fadeIn, fadeOut, prefersReducedMotion, settle } from "./reveal.js";
 const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
 [data-skullet-bars]{position:absolute;inset:0}
+[data-skullet-phase="holding"]{opacity:0}
 [data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
 @keyframes skullet-shimmer{from{background-position-x:0}to{background-position-x:var(--skullet-band)}}
 @keyframes skullet-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`;
@@ -37,6 +38,9 @@ export class SkulletEngine {
         const content = this.content;
         if (!content)
             return;
+        // Every attribute the engine set on the skeleton's own elements would be removed by
+        // LiveView's next patch, so the no-JS fallback is switched off on <html> instead.
+        document.documentElement.classList.add("skullet-js");
         this.state = stateOf(this.root);
         if (this.state === "loading")
             this.show();
@@ -99,7 +103,6 @@ export class SkulletEngine {
         this.mutations?.disconnect();
         this.mutations = null;
         this.phase = null;
-        this.root.removeAttribute("data-skullet-phase");
         this.overlay?.remove();
         this.overlay = null;
         this.bars = null;
@@ -120,9 +123,7 @@ export class SkulletEngine {
         }
         else {
             this.phase = "holding";
-            this.root.setAttribute("data-skullet-phase", "holding");
-            if (this.overlay)
-                this.overlay.style.opacity = "0";
+            this.setPhase("holding");
             this.holdTimer = window.setTimeout(() => {
                 this.holdTimer = 0;
                 if (this.phase === "holding")
@@ -133,17 +134,24 @@ export class SkulletEngine {
     }
     showBars() {
         this.phase = "bars";
-        this.root.setAttribute("data-skullet-phase", "bars");
-        if (this.overlay)
-            this.overlay.style.opacity = "1";
+        this.setPhase("bars");
         this.schedule();
+    }
+    /** Phase lives in the shadow root: LiveView patches the light DOM, not this. */
+    setPhase(phase) {
+        if (!this.bars)
+            return;
+        if (phase)
+            this.bars.setAttribute("data-skullet-phase", phase);
+        else
+            this.bars.removeAttribute("data-skullet-phase");
     }
     reveal() {
         this.clearHold();
         const fade = this.pass === "fade" && !this.instant;
         this.pass = "instant";
         this.phase = null;
-        this.root.removeAttribute("data-skullet-phase");
+        this.setPhase(null);
         const overlay = this.overlay;
         if (!overlay || !fade) {
             this.hideOverlay();
@@ -172,7 +180,6 @@ export class SkulletEngine {
         this.clearHold();
         this.clearSafety();
         this.phase = null;
-        this.root.removeAttribute("data-skullet-phase");
         this.overlay?.remove();
         this.overlay = null;
         this.bars = null;
@@ -180,8 +187,7 @@ export class SkulletEngine {
     }
     hideOverlay() {
         this.bars?.replaceChildren();
-        if (this.overlay)
-            this.overlay.style.opacity = "0";
+        this.setPhase(null);
     }
     release() {
         settle(this.root);
