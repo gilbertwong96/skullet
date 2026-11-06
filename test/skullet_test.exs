@@ -29,6 +29,7 @@ defmodule SkulletTest do
   defp text(html) when is_binary(html), do: html |> LazyHTML.from_document() |> LazyHTML.text()
   defp query(html, selector), do: html |> LazyHTML.from_document() |> LazyHTML.query(selector)
   defp empty?(html, selector), do: html |> query(selector) |> Enum.empty?()
+  defp attrs(html), do: html |> root() |> LazyHTML.attributes() |> List.flatten() |> Map.new()
 
   test "a dead render is loading, and renders the sample" do
     html = skeleton_html([])
@@ -98,5 +99,37 @@ defmodule SkulletTest do
 
     assert text(query(html, ".skullet-status")) == "Loading profile"
     assert empty?(html, "[data-skullet-content] .skullet-status")
+  end
+
+  test "a theme renders as custom properties on the root" do
+    html = skeleton_html(theme: %{base: "rgb(0 0 0 / 0.1)", radius: "8px"})
+    style = attr(html, "style")
+
+    assert style =~ "--skullet-base: rgb(0 0 0 / 0.1)"
+    assert style =~ "--skullet-radius: 8px"
+  end
+
+  test "string keys are accepted" do
+    html = skeleton_html(theme: %{"speed" => "fast"})
+
+    assert attr(html, "style") =~ "--skullet-speed: fast"
+  end
+
+  test "an empty theme renders no style attribute" do
+    html = skeleton_html(theme: %{})
+
+    refute Map.has_key?(attrs(html), "style")
+  end
+
+  test "non-string values are stringified" do
+    html = skeleton_html(theme: %{radius: 8})
+
+    assert attr(html, "style") =~ "--skullet-radius: 8"
+  end
+
+  test "an unknown key raises" do
+    assert_raise ArgumentError, ~r/allowed keys/, fn ->
+      skeleton_html(theme: %{colour: "red"})
+    end
   end
 end

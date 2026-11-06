@@ -33,6 +33,14 @@ defmodule Skullet do
 
   alias Phoenix.LiveView.AsyncResult
 
+  @theme_vars %{
+    "base" => "--skullet-base",
+    "highlight" => "--skullet-highlight",
+    "radius" => "--skullet-radius",
+    "animation" => "--skullet-animation",
+    "speed" => "--skullet-speed"
+  }
+
   attr(:id, :string, required: true, doc: "DOM id for the hook; also the future shape key")
   attr(:async, :any, default: nil, doc: "a `%Phoenix.LiveView.AsyncResult{}`")
 
@@ -51,7 +59,14 @@ defmodule Skullet do
 
   def skeleton(assigns) do
     {state, value} = state_and_value(assigns)
-    assigns = assign(assigns, state: state, value: value, style: nil)
+    style = theme_style(assigns.theme)
+
+    assigns =
+      assign(assigns,
+        state: state,
+        value: value,
+        style_attrs: if(style, do: [{"style", style}], else: [])
+      )
 
     ~H"""
     <div
@@ -61,7 +76,7 @@ defmodule Skullet do
       data-skullet-state={@state}
       data-skullet-reveal={@reveal}
       aria-busy={to_string(@state == :loading)}
-      style={@style}
+      {@style_attrs}
     >
       <span class="skullet-status">{@label}</span>
       <%= if @state == :failed do %>
@@ -89,4 +104,25 @@ defmodule Skullet do
   defp state_and_value(%{data: data}) when not is_nil(data), do: {:loaded, data}
 
   defp state_and_value(%{sample: sample}), do: {:loading, sample}
+
+  defp theme_style(theme) when map_size(theme) == 0, do: nil
+
+  defp theme_style(theme) do
+    theme
+    |> Enum.map(fn {key, value} -> "#{theme_var!(key)}: #{value}" end)
+    |> Enum.join("; ")
+  end
+
+  defp theme_var!(key) do
+    name = to_string(key)
+
+    case Map.fetch(@theme_vars, name) do
+      {:ok, var} ->
+        var
+
+      :error ->
+        raise ArgumentError,
+              "unknown theme key #{inspect(key)}, allowed keys: #{Enum.join(Map.keys(@theme_vars), ", ")}"
+    end
+  end
 end
