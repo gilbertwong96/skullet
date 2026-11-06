@@ -4,9 +4,12 @@
   "type": "module",
   "packageManager": "pnpm@12.16.1",
   "scripts": {
-    "test": "node --test test/"
+    "build": "tsc -p tsconfig.json",
+    "test": "pnpm build && node --test test/",
+    "verify": "pnpm build && git diff --exit-code -- ../priv/static"
   },
   "devDependencies": {
-    "playwright": "^1.56.0"
+    "playwright": "^1.56.0",
+    "typescript": "^7.0.2"
   }
 }
