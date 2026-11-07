@@ -363,3 +363,39 @@ test("the text knobs change how much of a line is drawn", async () => {
     )
   })
 })
+
+test("a font that lands late re-measures instead of reusing stale metrics", async () => {
+  await withPage(async page => {
+    await open(page, "measure")
+    await drawn(page)
+
+    const heights = () =>
+      page.evaluate(() => {
+        const overlay = document.querySelector("#root > [data-skullet-overlay]")
+        return [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map(
+          bar => Math.round(bar.getBoundingClientRect().height * 10) / 10
+        )
+      })
+
+    const before = await heights()
+    assert.ok(before.length >= 3)
+
+    await page.evaluate(() => {
+      // A different face reports different metrics under the same font string.
+      CanvasRenderingContext2D.prototype.measureText = () => ({
+        fontBoundingBoxAscent: 40,
+        fontBoundingBoxDescent: 10,
+        actualBoundingBoxAscent: 30,
+        actualBoundingBoxDescent: 8,
+        width: 10
+      })
+      document.fonts.dispatchEvent(new Event("loadingdone"))
+    })
+    await page.waitForTimeout(250)
+
+    const after = await heights()
+    assert.equal(after.length, before.length)
+    assert.notDeepEqual(after, before, "bars kept the metrics of the font that loaded first")
+  })
+})
+

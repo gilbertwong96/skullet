@@ -1,5 +1,5 @@
 import { measure, type Rect } from "./measure.js"
-import { barBox } from "./metrics.js"
+import { barBox, resetFontCache } from "./metrics.js"
 import { drawShimmer, motionOf } from "./shimmer.js"
 import {
   FADE_MS,
@@ -295,7 +295,15 @@ export class SkulletEngine {
     this.mutations = new MutationObserver(() => this.schedule())
     this.mutations.observe(content, { childList: true, subtree: true, characterData: true })
 
-    document.fonts?.ready.then(() => this.schedule())
+    // A font that lands late changes the metrics the bars are trimmed with, but not the
+    // font string they are cached under — so the cache has to go, not just the geometry.
+    const afterFonts = () => {
+      resetFontCache()
+      this.schedule()
+    }
+
+    document.fonts?.addEventListener?.("loadingdone", afterFonts)
+    document.fonts?.ready.then(afterFonts)
 
     for (const image of content.querySelectorAll("img")) {
       if (!image.complete) image.addEventListener("load", () => this.schedule(), { once: true })
