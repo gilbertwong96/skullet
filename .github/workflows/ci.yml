@@ -5,32 +5,54 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   elixir:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: erlef/setup-beam@v1
         with:
           elixir-version: "1.18"
           otp-version: "27"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+
       - run: mix deps.get
       - run: mix format --check-formatted
       - run: mix compile --warnings-as-errors
       - run: mix test
+      - run: mix hex.build
 
   engine:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: js
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          package_json_file: js/package.json
+
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      - run: pnpm --dir js install --frozen-lockfile
-      - run: pnpm --dir js exec playwright install --with-deps chromium
-      - run: pnpm --dir js run check
-      - run: pnpm --dir js test
-      - run: pnpm --dir js verify
+          node-version: "24"
+          cache: pnpm
+          cache-dependency-path: js/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run check
+      - run: pnpm test
+      - run: pnpm run verify
