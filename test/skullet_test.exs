@@ -104,6 +104,16 @@ defmodule SkulletTest do
     assert LazyHTML.attribute(overlay, "aria-hidden") == ["true"]
   end
 
+  test "a box stands in for what cannot be measured" do
+    html = render_component(&Skullet.box/1, width: 240, height: 120, radius: "8px")
+    box = LazyHTML.from_document(html) |> LazyHTML.query(".skullet-box")
+
+    assert LazyHTML.attribute(box, "skullet-block") == [""]
+    assert LazyHTML.attribute(box, "style") |> List.first() =~ "width:240px"
+    assert LazyHTML.attribute(box, "style") |> List.first() =~ "height:120px"
+    assert LazyHTML.attribute(box, "style") |> List.first() =~ "border-radius:8px"
+  end
+
   test "remembering the last data draws the next skeleton from it" do
     scope = {:test, System.unique_integer()}
 

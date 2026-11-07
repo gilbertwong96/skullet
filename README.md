@@ -76,7 +76,7 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 | `async` | `%AsyncResult{}` | `nil` | from `assign_async/3` |
 | `data` | any | `nil` | plain data; `nil` is loading |
 | `loading` | boolean | `false` | forces the skeleton, even over data |
-| `reveal` | `"smart"` \| `"instant"` | `"smart"` | how content replaces its skeleton |
+| `reveal` | `"smart"` \| `"together"` \| `"sequence"` \| `"instant"` | `"smart"` | how content replaces its skeleton |
 | `theme` | map | `%{}` | custom properties for this skeleton alone |
 | `label` | string | `"Loading"` | read to screen readers while loading |
 | `remember` | any | `nil` | opt in to memory under this scope (see below) |
@@ -116,6 +116,24 @@ follow the same rule as upstream: the band is capped at 320px, bands are 2.5 ban
 apart on a 110° slant, and the loop is timed to a 1280px reference width so the pace is the
 same on any screen.
 
+## Boxes
+
+For what cannot be measured — a logo, a chart, a canvas — put a box in the sample in place
+of the thing:
+
+```heex
+<Skullet.box width={240} height={120} radius="12px" />
+```
+
+It is drawn as a single block, like anything marked `skullet-block`.
+
+## Debugging
+
+Add `?skullet-debug` to the URL to outline every skeleton: blue while it loads, then green
+if the content arrived where the skeleton was, red with the distance in the title if it
+moved. `skullet-debug` on any one element does the same for that subtree, and
+`skullet-xray` on an ancestor shows the sample through the skeleton.
+
 ## Memory
 
 The first skeleton of a session is drawn from your `sample`. Every one after that can be
@@ -152,10 +170,13 @@ in the markup:
 
 ## Reveals
 
-`smart` (the default) waits 150 ms before drawing a skeleton at all, so data that lands
-quickly never shows one; then it crossfades over 200 ms, easing to the content's real
-height if the sample guessed it wrong. `instant` shows and removes the skeleton with no
-transition.
+`smart` (the default) waits `--skullet-hold` (150 ms) before drawing a skeleton at all, so
+data that lands quickly never shows one; then it crossfades over `--skullet-fade` (200 ms),
+easing to the content's real height over `--skullet-resize` (280 ms) if the sample guessed
+it wrong.
+
+`together` is the crossfade without the wait. `sequence` takes the bars out one after
+another, top to bottom. `instant` shows and removes the skeleton with no transition.
 
 ## Example app
 

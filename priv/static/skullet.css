@@ -63,6 +63,11 @@ html:not(.skullet-js) .skullet[data-skullet-state="loading"] > [data-skullet-con
   animation: skullet-nojs-reveal 0s 5000ms forwards;
 }
 
+/* skullet-debug on any ancestor shows the skeleton through what is being measured. */
+html.skullet-xray .skullet[data-skullet-state="loading"] > [data-skullet-content] {
+  visibility: visible;
+}
+
 /* With no JS at all, show the sample rather than an empty box forever. */
 @keyframes skullet-nojs-reveal {
   to {

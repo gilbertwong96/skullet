@@ -18,6 +18,29 @@ const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidde
 @keyframes skullet-group-shimmer{from{background-position-x:var(--skullet-from)}to{background-position-x:var(--skullet-to)}}
 @keyframes skullet-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`
 
+const DEBUG = (() => {
+  try {
+    return new URLSearchParams(location.search).has("skullet-debug")
+  } catch {
+    return false
+  }
+})()
+
+const DEBUG_LOADING = "2px solid #3b82f6"
+const DEBUG_STILL = "2px solid #22c55e"
+const DEBUG_MOVED = "2px solid #ef4444"
+
+function debugOn(root: Element): boolean {
+  return debug || root.hasAttribute("skullet-debug")
+}
+
+/** Turns the overlay on or off for the whole page, from a console or a devtool. */
+export function setDebug(on: boolean): void {
+  debug = on
+}
+
+let debug = DEBUG
+
 export function stateOf(root: Element): string {
   return root.getAttribute("data-skullet-state") ?? "loading"
 }
@@ -42,6 +65,7 @@ export class SkulletEngine {
   private holdTimer = 0
   private safetyTimer = 0
   private easing = false
+
 
   constructor(root: Element) {
     this.root = root as HTMLElement
@@ -181,13 +205,17 @@ export class SkulletEngine {
       this.hideOverlay(false)
       this.clearSafety()
       this.release()
+
+      if (this.content) this.markMovement(this.content.getBoundingClientRect().height)
       return
     }
 
     const target = this.content ? this.content.getBoundingClientRect().height : this.pinned
     const durations = durationsOf(this.root)
     this.easing = true
-    this.hideOverlay(true)
+
+    if (this.root.getAttribute("data-skullet-reveal") === "sequence") this.fadeInSequence(durations.fade)
+    else this.hideOverlay(true)
 
     let settled = false
     const finish = () => {
@@ -196,6 +224,7 @@ export class SkulletEngine {
       this.easing = false
       this.clearSafety()
       this.release()
+      this.markMovement(target)
     }
 
     const ease = easeHeight(this.root, this.pinned, target, durations.resize)
@@ -215,6 +244,42 @@ export class SkulletEngine {
 
   /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
    * cleared a beat later — unless a new cycle has already taken the container over. */
+  /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */
+  private fadeInSequence(fade: number): void {
+    const bars = this.bars
+    if (!bars) return
+
+    const stagger = 30
+    const longest = fade + Math.min(bars.children.length * stagger, 600)
+
+    // The container stays opaque; each bar takes itself out, in reading order.
+    bars.style.transition = "none"
+
+    for (const [index, bar] of [...bars.children].entries()) {
+      const element = bar as HTMLElement
+      element.style.transition = `opacity ${fade}ms ease ${Math.min(index * stagger, 600)}ms`
+      element.style.opacity = "0"
+    }
+
+    window.setTimeout(() => {
+      bars.style.removeProperty("transition")
+
+      if (this.bars === bars && this.phase === null) {
+        bars.replaceChildren()
+        this.setPhase(null)
+      }
+    }, longest)
+  }
+
+  /** Debug: did the reveal move the page? Red with the distance, green when it didn't. */
+  private markMovement(revealed: number): void {
+    if (!debugOn(this.root)) return
+
+    const moved = Math.abs(revealed - this.pinned)
+    this.root.style.outline = moved < 1 ? DEBUG_STILL : DEBUG_MOVED
+    this.root.title = moved < 1 ? "skullet: no movement" : `skullet: moved ${moved.toFixed(1)}px`
+  }
+
   private hideOverlay(animate: boolean): void {
     this.setPhase(null)
     const bars = this.bars
@@ -306,6 +371,7 @@ export class SkulletEngine {
 
     for (const image of content.querySelectorAll("img")) {
       if (!image.complete) image.addEventListener("load", () => this.schedule(), { once: true })
+      image.decode?.().then(() => this.schedule()).catch(() => {})
     }
   }
 
@@ -349,6 +415,8 @@ export class SkulletEngine {
       const box = barBox(line)
       rects.push({ x: line.x, y: box.y, width: line.width, height: box.height })
     }
+
+    if (debugOn(this.root)) this.root.style.outline = DEBUG_LOADING
 
     const motion = motionOf(this.root)
     const host = this.root.getBoundingClientRect()
