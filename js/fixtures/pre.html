@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+    <style>
+      .skullet {
+        width: 480px;
+        font: 16px/24px system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      class="skullet"
+      phx-hook="Skullet"
+      data-skullet-state="loading"
+      data-skullet-reveal="smart"
+    >
+      <span class="skullet-status">Loading</span>
+      <div data-skullet-overlay aria-hidden="true"></div>
+      <div class="skullet-content" data-skullet-content>
+        <p>one line</p>
+        <p>two line</p>
+      </div>
+    </div>
+
+    <div
+      id="instant"
+      class="skullet"
+      phx-hook="Skullet"
+      data-skullet-state="loading"
+      style="--skullet-hold: 0ms"
+    >
+      <span class="skullet-status">Loading</span>
+      <div data-skullet-overlay aria-hidden="true"></div>
+      <div class="skullet-content" data-skullet-content><p>one line</p></div>
+    </div>
+
+    <script src="/skullet.pre.js"></script>
+    <script>
+      window.__skulletPre.boot()
+    </script>
+    <!-- the engine, for the takeover test; the pre-paint script runs before it -->
+    <script type="module" src="/skullet.js"></script>
+  </body>
+</html>

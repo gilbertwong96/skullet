@@ -2,6 +2,15 @@ import { SkulletEngine } from "./engine.js"
 
 export { setDebug } from "./engine.js"
 
+declare global {
+  interface Window {
+    __skulletEngine?: { attach: typeof attach }
+  }
+}
+
+// A plain page (and the pre-paint tests) can reach the engine without a bundler.
+window.__skulletEngine = { attach }
+
 /** The engine for one `.skullet` root: what the hook drives, and what a plain page can. */
 export function attach(root: Element): SkulletEngine {
   const engine = new SkulletEngine(root)
