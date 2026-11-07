@@ -51,7 +51,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: js/pnpm-lock.yaml
 
-      - run: pnpm install --frozen-lockfile
+      # esbuild's postinstall is a build script pnpm declines to run by default; on a cold
+      # store that is an error (ERR_PNPM_IGNORED_BUILDS), so approve it explicitly.
+      - run: pnpm install --frozen-lockfile --allow-build=esbuild
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run check
       - run: pnpm test
