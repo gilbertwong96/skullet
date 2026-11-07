@@ -11,7 +11,7 @@
     "format": "oxfmt src test",
     "format:check": "oxfmt --check src test",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check",
-    "test": "pnpm build && node --test test/",
+    "test": "pnpm build && node --test test/*.test.js",
     "verify": "pnpm build && git diff --exit-code -- ../priv/static"
   },
   "devDependencies": {
