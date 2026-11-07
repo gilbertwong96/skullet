@@ -1,4 +1,6 @@
 defmodule Skullet.TestComponents do
+  @moduledoc false
+
   use Phoenix.Component
   import Skullet
 
