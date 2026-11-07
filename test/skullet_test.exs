@@ -144,8 +144,11 @@ defmodule SkulletTest do
 
   test "the status span carries the label outside the content pane" do
     html = skeleton_html(label: "Loading profile")
+    status = query(html, ".skullet-status")
 
-    assert text(query(html, ".skullet-status")) == "Loading profile"
+    assert text(status) == "Loading profile"
+    assert LazyHTML.attribute(status, "role") == ["status"]
+    assert LazyHTML.attribute(status, "aria-live") == ["polite"]
     assert empty?(html, "[data-skullet-content] .skullet-status")
   end
 

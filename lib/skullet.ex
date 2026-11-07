@@ -107,7 +107,7 @@ defmodule Skullet do
       aria-busy={to_string(@state == :loading)}
       {@style_attrs}
     >
-      <span class="skullet-status">{@label}</span>
+      <span class="skullet-status" role="status" aria-live="polite">{@label}</span>
       <%!-- Rendered here, not created by the engine: LiveView prunes children it does
       not know about, and would take the bars with them on the first patch. --%>
       <div data-skullet-overlay aria-hidden="true"></div>
