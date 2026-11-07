@@ -5,6 +5,7 @@ defmodule SkulletDemoWeb.DemoLive do
 
   # Must match BUILD in assets/js/app.js. A tab running another build reloads itself.
   @build "engine-4 instant-bars single-owner resolve-nodes"
+  @animations ~w(shimmer group-shimmer pulse none)
 
   @sample %{
     name: "Sample Person",
@@ -23,10 +24,20 @@ defmodule SkulletDemoWeb.DemoLive do
     {:ok,
      socket
      |> assign(:build, @build)
+     |> assign(:animations, @animations)
+     |> assign(:animation, "shimmer")
      |> assign(:sample_user, @sample)
      |> assign(:pinned, true)
      |> load()}
   end
+
+  @impl true
+  def handle_event("animation", %{"animation" => animation}, socket)
+      when animation in @animations do
+    {:noreply, assign(socket, :animation, animation)}
+  end
+
+  def handle_event("animation", _params, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("toggle", _params, socket) do
@@ -43,6 +54,14 @@ defmodule SkulletDemoWeb.DemoLive do
           <button id="toggle" phx-click="toggle" class="btn btn-primary">
             {if @pinned, do: "Show loaded", else: "Show loading"}
           </button>
+          <form phx-change="animation" class="flex items-center gap-2">
+            <label class="text-sm opacity-70" for="animation">animation</label>
+            <select id="animation" name="animation" class="select select-sm">
+              <option :for={animation <- @animations} value={animation} selected={animation == @animation}>
+                {animation}
+              </option>
+            </select>
+          </form>
           <span id="state" class="text-sm opacity-70">
             assign: <b>{state(@user)}</b> · pinned: <b>{@pinned}</b>
           </span>
@@ -55,6 +74,7 @@ defmodule SkulletDemoWeb.DemoLive do
           loading={@pinned}
           sample={@sample_user}
           remember="demo"
+          theme={%{animation: @animation}}
           label="Loading profile"
         >
           <div id="card" class="w-96 border rounded-lg p-4">

@@ -26,6 +26,8 @@ caught, and it is the quickest way to tell "the engine is wrong" from "the page 
 
 ## What to look at
 
+- The **animation** select switches `shimmer` / `group-shimmer` / `pulse` / `none` live:
+  it is just the `theme` attribute (`theme={%{animation: …}}`), nothing special in the demo.
 - **On load** the skeleton holds, because the demo starts pinned. Press *Show loaded*: the
   card crossfades in, easing to the real height.
 - **Press *Show loading***: the skeleton comes back, at full opacity, and stays as long as

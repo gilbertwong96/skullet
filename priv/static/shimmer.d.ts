@@ -1,4 +1,4 @@
-export type Animation = "shimmer" | "pulse" | "none";
+export type Animation = "shimmer" | "group-shimmer" | "pulse" | "none";
 export type Motion = {
     animation: Animation;
     duration: number;
@@ -18,6 +18,12 @@ export declare const MAX_BAND = 320;
 /** Bands follow each other this many band-widths apart, start to start. */
 export declare const SPACING = 2.5;
 export declare const SLANT = "110deg";
+export type Box = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
 /** The animation an element inherits: `--skullet-animation` and `--skullet-speed`. */
 export declare function motionOf(element: Element): Motion;
 /**
@@ -25,4 +31,7 @@ export declare function motionOf(element: Element): Motion;
  * position, so a bar that mounts late joins the sweep already running instead of
  * starting its own.
  */
-export declare function drawShimmer(bar: HTMLElement, width: number, motion: Motion): void;
+export declare function drawShimmer(bar: HTMLElement, box: Box, container: {
+    width: number;
+    height: number;
+}, motion: Motion): void;

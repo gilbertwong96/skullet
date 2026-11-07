@@ -8,6 +8,7 @@ const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidde
 [data-skullet-bars]:not([data-skullet-phase="bars"]){transition:opacity ${FADE_MS}ms ease}
 [data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
 @keyframes skullet-shimmer{from{background-position-x:0}to{background-position-x:var(--skullet-band)}}
+@keyframes skullet-group-shimmer{from{background-position-x:var(--skullet-from)}to{background-position-x:var(--skullet-to)}}
 @keyframes skullet-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`;
 export function stateOf(root) {
     return root.getAttribute("data-skullet-state") ?? "loading";
@@ -304,11 +305,12 @@ export class SkulletEngine {
             rects.push({ x: line.x, y: box.y, width: line.width, height: box.height });
         }
         const motion = motionOf(this.root);
-        const width = this.root.getBoundingClientRect().width;
+        const host = this.root.getBoundingClientRect();
+        const container = { width: host.width, height: host.height };
         const fragment = document.createDocumentFragment();
         for (const rect of rects) {
             const bar = createBar(rect);
-            drawShimmer(bar, width, motion);
+            drawShimmer(bar, rect, container, motion);
             fragment.append(bar);
         }
         bars.replaceChildren(fragment);

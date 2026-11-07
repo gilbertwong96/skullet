@@ -100,6 +100,68 @@ test("two roots share one sweep", async () => {
   })
 })
 
+test("the shimmer's band is eased, not a two-stop ramp", async () => {
+  await withPage(async page => {
+    await open(page, "shimmer")
+    await mount(page, "a")
+    // The computed value resolves color-mix into colours; the inline style is the ramp.
+    const image = await page.evaluate(() => {
+      const overlay = document.querySelector("#a > [data-skullet-overlay]")
+      return overlay.shadowRoot.querySelector("[data-skullet-bar]").style.backgroundImage
+    })
+
+    assert.match(image, /color-mix/)
+    assert.ok(
+      (image.match(/color-mix/gu) ?? []).length >= 20,
+      "the band should be a many-stop ramp, not one hard highlight"
+    )
+  })
+})
+
+test("group-shimmer sweeps one band across the whole skeleton", async () => {
+  await withPage(async page => {
+    await open(page, "shimmer")
+    await page.evaluate(() => {
+      document.getElementById("a").style.setProperty("--skullet-animation", "group-shimmer")
+    })
+    await mount(page, "a")
+
+    const bars = await page.evaluate(() => {
+      const root = document.getElementById("a")
+      const overlay = root.querySelector("[data-skullet-overlay]")
+      const host = root.getBoundingClientRect()
+      const origin = overlay.getBoundingClientRect()
+
+      return {
+        host: [Math.round(host.width), Math.round(host.height)],
+        bars: [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map(bar => {
+          const rect = bar.getBoundingClientRect()
+          const style = getComputedStyle(bar)
+          return {
+            animation: style.animationName,
+            size: style.backgroundSize,
+            position: bar.style.backgroundPosition,
+            x: Math.round(rect.left - origin.left),
+            y: Math.round(rect.top - origin.top)
+          }
+        })
+      }
+    })
+
+    if (bars.bars.length === 0) throw new Error("no bars drawn")
+    const [width, height] = bars.host
+
+    for (const bar of bars.bars) {
+      assert.equal(bar.animation, "skullet-group-shimmer")
+      assert.match(bar.size, new RegExp(`^${width}px ${height}px$`), `grain size ${bar.size}`)
+      assert.ok(
+        Math.abs(Number.parseFloat(bar.position) + bar.x) < 1.5,
+        `bar at x=${bar.x} starts at ${bar.position}`
+      )
+    }
+  })
+})
+
 test("pulse and none are honoured", async () => {
   await withPage(async page => {
     await open(page, "shimmer")

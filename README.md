@@ -93,7 +93,7 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 | `--skullet-base` | `rgb(128 128 128 / 0.2)` | the bars |
 | `--skullet-highlight` | `rgb(255 255 255 / 0.12)` | the shimmer's band |
 | `--skullet-radius` | `0.25em` | how round each bar is |
-| `--skullet-animation` | `shimmer` | `shimmer`, `pulse` or `none` |
+| `--skullet-animation` | `shimmer` | `shimmer`, `group-shimmer`, `pulse` or `none` |
 | `--skullet-speed` | `slow` | `slow` or `fast` |
 | `--skullet-text-top` | `ascender` | `ascender`, `cap-height` or `x-height` — where each line's bar starts |
 | `--skullet-text-bottom` | `descender` | `baseline` or `descender` — where it ends |
@@ -104,9 +104,14 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 </Skullet.skeleton>
 ```
 
-Dark mode is a `prefers-color-scheme` block in `skullet.css`; override the two colours to
-follow a different switch. Under `prefers-reduced-motion` bars hold still and every reveal
-is instant.
+Colours follow the page's `color-scheme`, so a light page on a dark desktop keeps light
+bars. Under `prefers-reduced-motion` bars hold still and every reveal is instant.
+
+`shimmer` gives every bar its own band, all in one phase; `group-shimmer` sweeps a single
+band across the whole skeleton, which reads better when the bars are close together. Both
+follow the same rule as upstream: the band is capped at 320px, bands are 2.5 band-widths
+apart on a 110° slant, and the loop is timed to a 1280px reference width so the pace is the
+same on any screen.
 
 ## Memory
 
