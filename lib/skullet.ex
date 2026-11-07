@@ -76,6 +76,12 @@ defmodule Skullet do
   attr(:reveal, :string, default: "smart", values: ~w(smart instant))
   attr(:theme, :map, default: %{}, doc: "custom properties to override on this skeleton")
   attr(:label, :string, default: "Loading", doc: "read to screen readers while loading")
+
+  attr(:remember, :any,
+    default: nil,
+    doc: "opts in to remembering the data this skeleton last showed, under this scope"
+  )
+
   slot(:error, doc: "rendered in place of the content when the async assign failed")
   slot(:inner_block, required: true, doc: "receives the sample, then the real value")
 
