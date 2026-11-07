@@ -40,7 +40,8 @@ defmodule Skullet do
   `--skullet-radius`, `--skullet-animation`, `--skullet-speed`, `--skullet-text-top`,
   `--skullet-text-bottom`, `--skullet-hold`, `--skullet-fade`, `--skullet-resize`), set per
   skeleton with the `theme` attribute or globally in CSS.
-  `reveal` is `"smart"` (waits 150 ms, then crossfades) or `"instant"`.
+  `reveal` is `"smart"` (waits, then crossfades), `"together"` (crossfades at once),
+  `"sequence"` (the bars leave one after another) or `"instant"`.
 
   Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as
   one block and `skullet-ignore` leaves it out of the skeleton entirely.
@@ -122,6 +123,42 @@ defmodule Skullet do
     </div>
     """
   end
+
+  attr(:width, :any, default: "60%", doc: "any CSS length, or a number of pixels")
+  attr(:height, :any, default: "1em", doc: "any CSS length, or a number of pixels")
+  attr(:radius, :any, default: nil, doc: "defaults to `--skullet-radius`")
+
+  @doc """
+  A placeholder block for what cannot be measured — a logo, a chart, a canvas.
+
+  Put it inside the skeleton's sample in place of the thing, sized like the thing:
+
+      <Skullet.skeleton :let={report} id="report" async={@report} sample={@sample}>
+        <Skullet.box width={240} height={120} />
+        <p>{report.title}</p>
+      </Skullet.skeleton>
+  """
+  def box(assigns) do
+    assigns = assign(assigns, style: box_style(assigns))
+
+    ~H"""
+    <span class="skullet-box" skullet-block style={@style}></span>
+    """
+  end
+
+  defp box_style(assigns) do
+    [
+      "display:inline-block",
+      "width:#{css_length(assigns.width)}",
+      "height:#{css_length(assigns.height)}",
+      if(assigns.radius, do: "border-radius:#{css_length(assigns.radius)}")
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(";")
+  end
+
+  defp css_length(value) when is_number(value), do: "#{value}px"
+  defp css_length(value), do: to_string(value)
 
   defp state_and_value(%{loading: true} = assigns), do: {:loading, sample(assigns)}
 

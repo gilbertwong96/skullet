@@ -349,6 +349,71 @@ test("a pane LiveView reused for something else is found again", async () => {
   })
 })
 
+test("a sequence reveal takes the bars out one after another", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await page.evaluate(() => {
+      document.getElementById("root").setAttribute("data-skullet-reveal", "sequence")
+    })
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    const staggered = await page.evaluate(() => {
+      const overlay = document.querySelector("#root > [data-skullet-overlay]")
+      const bars = [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
+      return bars.map(bar => getComputedStyle(bar).transitionDelay)
+    })
+
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p>", "loaded")
+    await page.waitForTimeout(60)
+
+    const delays = await page.evaluate(() => {
+      const overlay = document.querySelector("#root > [data-skullet-overlay]")
+      const bars = [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
+      return bars.map(bar => getComputedStyle(bar).transitionDelay)
+    })
+
+    assert.ok(staggered.length > 0)
+    assert.equal(new Set(delays).size, delays.length, `delays are not distinct: ${delays}`)
+
+    await page.waitForTimeout(1200)
+    assert.equal((await rootInfo(page)).bars, 0)
+    assert.equal((await rootInfo(page)).phase, null)
+  })
+})
+
+test("the debug overlay reports whether the reveal moved the page", async () => {
+  await withPage(async page => {
+    await page.goto("http://skullet.test/fixtures/reveal.html?skullet-debug")
+    await mount(page)
+    await page.waitForTimeout(250)
+
+    const outline = () =>
+      page.evaluate(() => ({
+        outline: document.getElementById("root").style.outline,
+        title: document.getElementById("root").title
+      }))
+
+    assert.match((await outline()).outline, /59, 130, 246/, "blue while loading")
+
+    // same height on both sides: nothing moved
+    await swap(page, "root", "<p>real</p>", "loaded")
+    await page.waitForTimeout(500)
+    const still = await outline()
+    assert.match(still.outline, /34, 197, 94/)
+    assert.match(still.title, /no movement/)
+
+    // a taller reveal reports the distance
+    await swap(page, "root", "<p>one</p><p>two</p><p>three</p>", "loading")
+    await page.waitForTimeout(400)
+    await swap(page, "root", "<p>a</p><p>b</p>", "loaded")
+    await page.waitForTimeout(500)
+    const moved = await outline()
+    assert.match(moved.outline, /239, 68, 68/)
+    assert.match(moved.title, /moved/)
+  })
+})
+
 test("a second loading cycle shows the skeleton again", async () => {
   await withPage(async page => {
     await open(page, "reveal")

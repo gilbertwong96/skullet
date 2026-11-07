@@ -1,4 +1,5 @@
 import { SkulletEngine } from "./engine.js";
+export { setDebug } from "./engine.js";
 /** The engine for one `.skullet` root: what the hook drives, and what a plain page can. */
 export declare function attach(root: Element): SkulletEngine;
 type HookContext = {
@@ -11,4 +12,3 @@ export declare const SkulletHook: {
     updated(this: HookContext): void;
     destroyed(this: HookContext): void;
 };
-export {};
