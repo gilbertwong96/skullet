@@ -1,6 +1,6 @@
 import { prefersReducedMotion } from "./reveal.js"
 
-export type Animation = "shimmer" | "pulse" | "none"
+export type Animation = "shimmer" | "group-shimmer" | "pulse" | "none"
 export type Motion = { animation: Animation; duration: number }
 
 export const SHIMMER_DURATIONS = { slow: 4000, fast: 2000 } as const
@@ -12,8 +12,16 @@ export const MAX_BAND = 320
 /** Bands follow each other this many band-widths apart, start to start. */
 export const SPACING = 2.5
 export const SLANT = "110deg"
+/** Where across the band the highlight is brightest: later is a harder leading edge. */
+const PEAK = 0.85
+/** Stops per ramp — enough for an eased curve to read as one, with no banding. */
+const STEPS = 12
+/** Every stop ramps on this scrim, so none of them shows as a hard line. */
+const ease = (t: number) => (1 - Math.cos(Math.PI * t)) / 2
 
-const ANIMATIONS: readonly Animation[] = ["shimmer", "pulse", "none"]
+export type Box = { x: number; y: number; width: number; height: number }
+
+const ANIMATIONS: readonly Animation[] = ["shimmer", "group-shimmer", "pulse", "none"]
 const SPEEDS = ["slow", "fast"] as const
 
 type Speed = (typeof SPEEDS)[number]
@@ -37,33 +45,75 @@ export function motionOf(element: Element): Motion {
  * position, so a bar that mounts late joins the sweep already running instead of
  * starting its own.
  */
-export function drawShimmer(bar: HTMLElement, width: number, motion: Motion): void {
-  if (motion.animation === "none" || prefersReducedMotion()) {
-    bar.style.animationName = "none"
-    bar.style.backgroundImage = ""
-    return
-  }
+export function drawShimmer(
+  bar: HTMLElement,
+  box: Box,
+  container: { width: number; height: number },
+  motion: Motion
+): void {
+  bar.style.animationName = "none"
+  bar.style.backgroundImage = ""
 
-  const span = Math.max(width, 1)
+  if (motion.animation === "none" || prefersReducedMotion()) return
+
+  const span = Math.max(container.width, box.width, 1)
   const duration =
     motion.animation === "pulse"
       ? motion.duration
       : Math.max((motion.duration * span) / REFERENCE_WIDTH, 1)
 
-  bar.style.animationName = motion.animation === "pulse" ? "skullet-pulse" : "skullet-shimmer"
+  const band = Math.min(MAX_BAND, span)
+  const period = band * SPACING
+  const image = gradient(band, period)
+
   bar.style.animationDuration = `${duration}ms`
   bar.style.animationTimingFunction = "linear"
   bar.style.animationIterationCount = "infinite"
   bar.style.animationDelay = `-${performance.now() % duration}ms`
 
-  if (motion.animation === "shimmer") {
-    const band = Math.min(MAX_BAND, span)
-    const period = band * SPACING
-    bar.style.setProperty("--skullet-band", `${period}px`)
-    bar.style.backgroundImage =
-      `repeating-linear-gradient(${SLANT}, transparent 0px, ` +
-      `var(--skullet-highlight) ${band / 2}px, transparent ${period}px)`
+  if (motion.animation === "pulse") {
+    bar.style.animationName = "skullet-pulse"
+    return
   }
+
+  bar.style.animationName =
+    motion.animation === "group-shimmer" ? "skullet-group-shimmer" : "skullet-shimmer"
+  bar.style.backgroundImage = image
+
+  if (motion.animation === "group-shimmer") {
+    // One band across the whole skeleton: the gradient is the container's size, and each
+    // bar looks through a window at its own place in it, so the sweep crosses them all.
+    const width = Math.max(container.width, 1)
+    const height = Math.max(container.height, 1)
+
+    bar.style.backgroundSize = `${width}px ${height}px`
+    bar.style.backgroundPosition = `${-box.x}px ${-box.y}px`
+    bar.style.setProperty("--skullet-from", `${-box.x}px`)
+    bar.style.setProperty("--skullet-to", `${-box.x + width + period}px`)
+    return
+  }
+
+  bar.style.setProperty("--skullet-band", `${period}px`)
+}
+
+/** A band every `period`, eased up to a peak and back, so the sweep reads as one motion. */
+function gradient(band: number, period: number): string {
+  const stop = (at: number, alpha: number) =>
+    `color-mix(in srgb, var(--skullet-highlight) ${(alpha * 100).toFixed(1)}%, transparent) ${(at * band).toFixed(2)}px`
+
+  const stops: string[] = []
+
+  for (let step = 0; step <= STEPS; step++) {
+    stops.push(stop((step / STEPS) * PEAK, ease(step / STEPS)))
+  }
+
+  for (let step = 1; step <= STEPS; step++) {
+    stops.push(stop(PEAK + (step / STEPS) * (1 - PEAK), ease(1 - step / STEPS)))
+  }
+
+  stops.push(`transparent ${period.toFixed(2)}px`)
+
+  return `repeating-linear-gradient(${SLANT}, ${stops.join(", ")})`
 }
 
 function oneOf<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
