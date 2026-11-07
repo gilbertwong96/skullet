@@ -40,13 +40,31 @@ closes that gap:
 
 ```heex
 <%!-- once per page, at the end of <body>, after the markup it measures --%>
-<Skullet.Boot.boot nonce={@nonce} />
+<Skullet.Boot.boot nonce={assigns[:csp_nonce]} />
 ```
 
 It inlines a ~9KB script that measures and draws every loading skeleton **synchronously,
 before the browser's first paint**, using the same geometry, font metrics and shimmer code
-as the engine; the engine then takes those bars over. It is a plain `<script>`, so under a
-Content Security Policy pass its `nonce`.
+as the engine; the engine then takes those bars over.
+
+It is a plain `<script>`, so a Content Security Policy needs its nonce. Phoenix does not
+generate one for you — whatever puts your policy in place has to make it, remember it, and
+pass it along:
+
+```elixir
+# a plug, for a policy like: script-src 'self' 'nonce-…'
+def put_csp_nonce(conn, _opts) do
+  nonce = Base.url_encode64(:crypto.strong_rand_bytes(16), padding: false)
+
+  conn
+  |> assign(:csp_nonce, nonce)
+  |> put_resp_header("content-security-policy", "script-src 'self' 'nonce-#{nonce}';")
+end
+```
+
+In a LiveView the layout is rendered from the socket's assigns, so copy the nonce across
+once — an `on_mount` that does `assign(socket, :csp_nonce, conn.assigns.csp_nonce)` is
+enough. Without a CSP, leave the attribute off.
 
 The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
 
@@ -202,8 +220,20 @@ mix phx.server`, then open <http://localhost:4000/demo>.
 
 ## Not implemented yet
 
-Per-component skeletons, the debug overlay, `SkeletonBox`, a Suspense equivalent, and the
-`together` / `sequence` / `sweep` reveals are not in this version.
+Per-component skeletons, the `sweep` reveal, a Suspense equivalent, and a provider-level
+`mode` are not in this version.
+
+## Plain pages
+
+The engine does not need LiveView. Importing `priv/static/skullet.js` on a page with the
+component's markup gives you `attach(root)`, which starts the engine on that element, and
+`setDebug(on)`:
+
+```js
+import { attach, setDebug } from "../../deps/skullet/priv/static/skullet.js"
+
+attach(document.querySelector(".skullet"))
+```
 
 ## Working on the engine
 
