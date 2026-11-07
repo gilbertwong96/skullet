@@ -104,6 +104,16 @@ defmodule SkulletTest do
     assert LazyHTML.attribute(overlay, "aria-hidden") == ["true"]
   end
 
+  test "the pre-paint script is inlined, with the nonce it is given" do
+    html = render_component(&Skullet.Boot.boot/1, %{nonce: "abc123"})
+    script = html |> LazyHTML.from_document() |> LazyHTML.query("script[data-skullet-boot]")
+    body = LazyHTML.text(script)
+
+    assert LazyHTML.attribute(script, "nonce") == ["abc123"]
+    assert body =~ "__skulletPre.boot()"
+    assert body =~ "data-skullet-bar"
+  end
+
   test "a box stands in for what cannot be measured" do
     html = render_component(&Skullet.box/1, width: 240, height: 120, radius: "8px")
     box = LazyHTML.from_document(html) |> LazyHTML.query(".skullet-box")

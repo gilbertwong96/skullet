@@ -1,6 +1,8 @@
 import { measure, type Rect } from "./measure.js"
 import { barBox, resetFontCache } from "./metrics.js"
 import { drawShimmer, motionOf } from "./shimmer.js"
+import { attachShadow } from "./shadow.js"
+import { createBar } from "./bar.js"
 import {
   durationsOf,
   easeHeight,
@@ -9,14 +11,6 @@ import {
   settle
 } from "./reveal.js"
 
-const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
-[data-skullet-bars]{position:absolute;inset:0;opacity:0}
-[data-skullet-bars][data-skullet-phase="bars"]{opacity:1}
-[data-skullet-bars]:not([data-skullet-phase="bars"]){transition:opacity var(--skullet-fade, 200ms) ease}
-[data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
-@keyframes skullet-shimmer{from{background-position-x:0}to{background-position-x:var(--skullet-band)}}
-@keyframes skullet-group-shimmer{from{background-position-x:var(--skullet-from)}to{background-position-x:var(--skullet-to)}}
-@keyframes skullet-pulse{0%,100%{opacity:1}50%{opacity:0.45}}`
 
 const DEBUG = (() => {
   try {
@@ -165,7 +159,9 @@ export class SkulletEngine {
     this.pass = "instant"
     this.easing = false
 
-    if (this.instant) {
+    const prePainted = (this.bars?.children.length ?? 0) > 0
+
+    if (this.instant || prePainted) {
       this.showBars()
     } else {
       this.phase = "holding"
@@ -333,15 +329,9 @@ export class SkulletEngine {
     overlay.setAttribute("aria-hidden", "true")
     if (!overlay.isConnected) this.root.append(overlay)
 
-    const shadow = overlay.shadowRoot ?? overlay.attachShadow({ mode: "open" })
-    let bars = shadow.querySelector<HTMLElement>("[data-skullet-bars]")
-
-    if (!bars) {
-      bars = document.createElement("div")
-      bars.setAttribute("data-skullet-bars", "")
-      shadow.append(bars)
-      applyShadowStyle(shadow)
-    }
+    const { bars } = attachShadow(overlay)
+    // The pre-paint script may have drawn and started its own hold: take it over cleanly.
+    settle(bars)
 
     this.overlay = overlay
     this.bars = bars
@@ -433,23 +423,3 @@ export class SkulletEngine {
   }
 }
 
-/** Constructable, so a strict `style-src` CSP — which blocks inline <style> — still paints. */
-function applyShadowStyle(shadow: ShadowRoot): void {
-  if (typeof CSSStyleSheet === "function" && "adoptedStyleSheets" in shadow) {
-    const sheet = new CSSStyleSheet()
-    sheet.replaceSync(SHADOW_CSS)
-    shadow.adoptedStyleSheets = [sheet]
-    return
-  }
-
-  const style = document.createElement("style")
-  style.textContent = SHADOW_CSS
-  shadow.append(style)
-}
-
-function createBar(rect: Rect): HTMLElement {
-  const bar = document.createElement("span")
-  bar.setAttribute("data-skullet-bar", "")
-  bar.style.cssText = `width:${rect.width}px;height:${rect.height}px;transform:translate(${rect.x}px,${rect.y}px)`
-  return bar
-}

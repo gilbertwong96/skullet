@@ -30,7 +30,8 @@ defmodule Skullet do
       @import "../../deps/skullet/priv/static/skullet.css";
 
   The CSS is not optional: it keeps the sample invisible before the engine runs, and shows
-  it instead of a blank box if the engine never does.
+  it instead of a blank box if the engine never does. For bars on the very first paint —
+  before the bundle has loaded — render `Skullet.Boot.boot/1` once in the layout.
 
   A background refetch keeps the content on screen: `assign_async/3` leaves the previous
   result in place while the new one loads, so pass `reset: true` (or assign a fresh

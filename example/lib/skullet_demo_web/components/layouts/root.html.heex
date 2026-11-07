@@ -40,6 +40,9 @@
   </head>
   <body>
     {@inner_content}
+    <%!-- Draws the skeleton before the first paint, so the page never shows an empty box. --%>
+    <Skullet.Boot.boot />
+
     <!-- Outside the LiveView: its patches never clear this. -->
     <div
       data-skullet-build

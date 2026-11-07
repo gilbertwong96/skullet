@@ -38,5 +38,9 @@ caught, and it is the quickest way to tell "the engine is wrong" from "the page 
 - The state line reads `assign: … · pinned: …`, so you can see which of the two decides
   the visible state: `pinned` (the `loading` attribute) wins over the async assign.
 
+The layout renders `<Skullet.Boot.boot />`, so the skeleton is painted before the engine's
+bundle even loads — throttle the network or block `app.js` in devtools and it is still
+there.
+
 `lib/skullet_demo_web/live/demo_live.ex` is the whole of it: a `sample` map, an
 `assign_async/3` with 600 ms of latency, and the component call.

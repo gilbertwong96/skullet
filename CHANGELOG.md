@@ -14,3 +14,8 @@ First release.
 - Measuring hints: `skullet-block` and `skullet-ignore`.
 - Optional server-side memory: `remember={scope}` draws the next skeleton from the data
   the last one showed, in ETS, expiring after `:memory_ttl_ms`.
+- `<Skullet.Boot.boot />`: draws the skeleton before the browser's first paint, sharing the
+  engine's geometry; optional CSP nonce.
+- Reveals: `smart`, `together`, `sequence`, `instant`. Timings are custom properties
+  (`--skullet-hold`, `--skullet-fade`, `--skullet-resize`).
+- `<Skullet.box>` for what cannot be measured; `?skullet-debug` overlay; `skullet-xray`.

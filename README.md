@@ -32,6 +32,22 @@ let liveSocket = new LiveSocket("/live", Socket, { hooks: { Skullet: SkulletHook
 With a `path:` or `git:` dependency there is no `deps/skullet` directory — point the two
 imports at that checkout instead.
 
+### Before the first paint
+
+The sample is laid out from the server's HTML, but the bars are drawn by JavaScript — so
+until the bundle loads and the LiveView mounts, the page shows an empty box. One component
+closes that gap:
+
+```heex
+<%!-- once per page, at the end of <body>, after the markup it measures --%>
+<Skullet.Boot.boot nonce={@nonce} />
+```
+
+It inlines a ~9KB script that measures and draws every loading skeleton **synchronously,
+before the browser's first paint**, using the same geometry, font metrics and shimmer code
+as the engine; the engine then takes those bars over. It is a plain `<script>`, so under a
+Content Security Policy pass its `nonce`.
+
 The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
 
 ## With an async assign

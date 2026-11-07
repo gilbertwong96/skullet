@@ -1,5 +1,12 @@
 import { SkulletEngine } from "./engine.js";
 export { setDebug } from "./engine.js";
+declare global {
+    interface Window {
+        __skulletEngine?: {
+            attach: typeof attach;
+        };
+    }
+}
 /** The engine for one `.skullet` root: what the hook drives, and what a plain page can. */
 export declare function attach(root: Element): SkulletEngine;
 type HookContext = {
