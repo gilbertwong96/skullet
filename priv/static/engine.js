@@ -318,7 +318,10 @@ export class SkulletEngine {
         for (const image of content.querySelectorAll("img")) {
             if (!image.complete)
                 image.addEventListener("load", () => this.schedule(), { once: true });
-            image.decode?.().then(() => this.schedule()).catch(() => { });
+            image
+                .decode?.()
+                .then(() => this.schedule())
+                .catch(() => { });
         }
     }
     clearHold() {

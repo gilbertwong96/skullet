@@ -60,7 +60,9 @@ function paint(root: HTMLElement): void {
 export function boot(): void {
   document.documentElement.classList.add("skullet-js")
 
-  for (const root of document.querySelectorAll<HTMLElement>(".skullet[data-skullet-state='loading']")) {
+  for (const root of document.querySelectorAll<HTMLElement>(
+    ".skullet[data-skullet-state='loading']"
+  )) {
     paint(root)
   }
 }

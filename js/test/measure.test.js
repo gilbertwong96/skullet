@@ -6,12 +6,12 @@ after(closeBrowser)
 
 const ORIGIN = "#root > [data-skullet-overlay]"
 
-const bars = page =>
-  page.evaluate(originSelector => {
+const bars = (page) =>
+  page.evaluate((originSelector) => {
     const overlay = document.querySelector(originSelector)
     if (!overlay) return []
     const origin = overlay.getBoundingClientRect()
-    return [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map(bar => {
+    return [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map((bar) => {
       const rect = bar.getBoundingClientRect()
       return {
         x: rect.left - origin.left,
@@ -39,7 +39,7 @@ const box = (page, selector, originSelector = ORIGIN) =>
 
 const within = (list, area, slack = 1) =>
   list.filter(
-    bar =>
+    (bar) =>
       bar.y >= area.y - slack &&
       bar.y + bar.height <= area.y + area.height + slack &&
       bar.x >= area.x - slack &&
@@ -47,7 +47,7 @@ const within = (list, area, slack = 1) =>
   )
 
 /** The engine draws on the next frame; nothing is asserted before it has. */
-const drawn = page =>
+const drawn = (page) =>
   page.waitForFunction(() => {
     const overlay = document.querySelector("#root > [data-skullet-overlay]")
     return Boolean(overlay?.shadowRoot?.querySelector("[data-skullet-bar]"))
@@ -64,7 +64,7 @@ const overlaps = (a, b) =>
   Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y) > 0
 
 test("one bar per line of text", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const all = await bars(page)
@@ -74,15 +74,16 @@ test("one bar per line of text", async () => {
     const three = await box(page, "#three")
     const lines = within(all, three)
     assert.equal(lines.length, 3)
+    const ys = lines.map((line) => line.y)
     assert.deepEqual(
-      lines.map(line => line.y),
-      [...lines.map(line => line.y)].sort((a, b) => a - b)
+      ys,
+      ys.toSorted((a, b) => a - b)
     )
   })
 })
 
 test("text lines are trimmed to the font, inside the line box", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const three = await box(page, "#three")
@@ -100,7 +101,7 @@ test("text lines are trimmed to the font, inside the line box", async () => {
 })
 
 test("inline markup stays one bar per line", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     assert.equal(within(await bars(page), await box(page, "#inline")).length, 1)
@@ -108,11 +109,11 @@ test("inline markup stays one bar per line", async () => {
 })
 
 test("media is one block at its box", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const image = await box(page, "#img")
-    const match = (await bars(page)).find(bar => near(bar, image))
+    const match = (await bars(page)).find((bar) => near(bar, image))
 
     assert.ok(match, `no bar at the image's box ${JSON.stringify(image)}`)
     assert.ok(Math.abs(match.width - 80) < 0.6)
@@ -121,19 +122,19 @@ test("media is one block at its box", async () => {
 })
 
 test("a painted box is one block at its box", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const chip = await box(page, "#chip")
     assert.ok(
-      (await bars(page)).some(bar => near(bar, chip)),
+      (await bars(page)).some((bar) => near(bar, chip)),
       `no bar at the chip's box ${JSON.stringify(chip)}`
     )
   })
 })
 
 test("visually hidden text draws nothing", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const hidden = await box(page, "#sr")
@@ -145,7 +146,7 @@ test("visually hidden text draws nothing", async () => {
 })
 
 test("whitespace-only text draws nothing", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const empty = await box(page, "#empty")
@@ -157,7 +158,7 @@ test("whitespace-only text draws nothing", async () => {
 })
 
 test("a nested skeleton draws as one block and is not measured through", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
     const inner = await box(page, "#inner")
@@ -169,9 +170,9 @@ test("a nested skeleton draws as one block and is not measured through", async (
 })
 
 test("nothing to measure still initialises", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     const errors = []
-    page.on("pageerror", error => errors.push(error.message))
+    page.on("pageerror", (error) => errors.push(error.message))
     await open(page, "measure")
     await drawn(page)
 
@@ -186,7 +187,7 @@ test("nothing to measure still initialises", async () => {
 })
 
 test("bars fall back when the font yields no metrics", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     // A font the canvas refuses reads back as zeros; a bar built from that is 1px tall.
     await page.addInitScript(() => {
       CanvasRenderingContext2D.prototype.measureText = function () {
@@ -218,12 +219,12 @@ test("bars fall back when the font yields no metrics", async () => {
 })
 
 test("the server's overlay is reused, not replaced", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
     const overlays = await page.evaluate(() =>
-      [...document.querySelectorAll("#root > [data-skullet-overlay]")].map(element => ({
+      [...document.querySelectorAll("#root > [data-skullet-overlay]")].map((element) => ({
         server: element.hasAttribute("data-test-overlay"),
         bars: element.shadowRoot?.querySelectorAll("[data-skullet-bar]").length ?? 0
       }))
@@ -236,7 +237,7 @@ test("the server's overlay is reused, not replaced", async () => {
 })
 
 test("the overlay's styles are a constructable sheet, not an inline element", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
@@ -255,7 +256,7 @@ test("the overlay's styles are a constructable sheet, not an inline element", as
 })
 
 test("bars fall back without canvas metrics", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await page.addInitScript(() => {
       HTMLCanvasElement.prototype.getContext = () => null
     })
@@ -278,7 +279,7 @@ test("bars fall back without canvas metrics", async () => {
 })
 
 test("a 500-element subtree measures inside a frame", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
@@ -286,7 +287,8 @@ test("a 500-element subtree measures inside a frame", async () => {
       const content = document.querySelector("#root > [data-skullet-content]")
       content.innerHTML = Array.from(
         { length: 100 },
-        (_, index) => `<p>row ${index} <b>bold</b> <i>italic</i> <span>text</span> <em>more</em></p>`
+        (_, index) =>
+          `<p>row ${index} <b>bold</b> <i>italic</i> <span>text</span> <em>more</em></p>`
       ).join("")
 
       const start = performance.now()
@@ -300,7 +302,7 @@ test("a 500-element subtree measures inside a frame", async () => {
 })
 
 test("skullet-ignore leaves an element out", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
@@ -317,7 +319,7 @@ test("skullet-ignore leaves an element out", async () => {
 })
 
 test("skullet-block draws an element as one block", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
@@ -330,7 +332,7 @@ test("skullet-block draws an element as one block", async () => {
 })
 
 test("the text knobs change how much of a line is drawn", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
@@ -340,9 +342,9 @@ test("the text knobs change how much of a line is drawn", async () => {
         const overlay = root.querySelector("[data-skullet-overlay]")
         const box = document.getElementById("three").getBoundingClientRect()
         return [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
-          .map(bar => bar.getBoundingClientRect())
-          .filter(rect => rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1)
-          .map(rect => Math.round(rect.height))
+          .map((bar) => bar.getBoundingClientRect())
+          .filter((rect) => rect.top >= box.top - 1 && rect.bottom <= box.bottom + 1)
+          .map((rect) => Math.round(rect.height))
       })
 
     const before = await lineHeights()
@@ -352,20 +354,23 @@ test("the text knobs change how much of a line is drawn", async () => {
       const root = document.getElementById("root")
       root.style.setProperty("--skullet-text-top", "x-height")
       root.style.setProperty("--skullet-text-bottom", "baseline")
-      document.getElementById("inline").append(" ")   // the engine re-measures the pane
+      document.getElementById("inline").append(" ") // the engine re-measures the pane
     })
     await page.waitForTimeout(250)
 
     const after = await lineHeights()
     assert.equal(after.length, 3)
     after.forEach((height, index) =>
-      assert.ok(height < before[index], `bar ${index}: ${height}px is not shorter than ${before[index]}px`)
+      assert.ok(
+        height < before[index],
+        `bar ${index}: ${height}px is not shorter than ${before[index]}px`
+      )
     )
   })
 })
 
 test("a font that lands late re-measures instead of reusing stale metrics", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "measure")
     await drawn(page)
 
@@ -373,7 +378,7 @@ test("a font that lands late re-measures instead of reusing stale metrics", asyn
       page.evaluate(() => {
         const overlay = document.querySelector("#root > [data-skullet-overlay]")
         return [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map(
-          bar => Math.round(bar.getBoundingClientRect().height * 10) / 10
+          (bar) => Math.round(bar.getBoundingClientRect().height * 10) / 10
         )
       })
 
@@ -398,4 +403,3 @@ test("a font that lands late re-measures instead of reusing stale metrics", asyn
     assert.notDeepEqual(after, before, "bars kept the metrics of the font that loaded first")
   })
 })
-

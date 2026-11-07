@@ -31,5 +31,6 @@ jobs:
           node-version: "22"
       - run: pnpm --dir js install --frozen-lockfile
       - run: pnpm --dir js exec playwright install --with-deps chromium
+      - run: pnpm --dir js run check
       - run: pnpm --dir js test
       - run: pnpm --dir js verify

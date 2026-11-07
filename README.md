@@ -242,6 +242,10 @@ it needs pnpm and Node:
 
 ```bash
 pnpm --dir js install
-pnpm --dir js build   # js/src/*.ts → priv/static/*.js, committed
-pnpm --dir js test    # builds, then drives Playwright against js/fixtures
+pnpm --dir js run check   # tsc (type check), oxlint, oxfmt --check
+pnpm --dir js build       # js/src/*.ts → priv/static/*.js, committed
+pnpm --dir js test        # builds, then drives Playwright against js/fixtures
 ```
+
+`oxfmt` reads `js/.oxfmtrc.json`; run the scripts through `pnpm --dir js` (or from inside
+`js/`) so it finds the config.

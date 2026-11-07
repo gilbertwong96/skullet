@@ -3,14 +3,7 @@ import { barBox, resetFontCache } from "./metrics.js"
 import { drawShimmer, motionOf } from "./shimmer.js"
 import { attachShadow } from "./shadow.js"
 import { createBar } from "./bar.js"
-import {
-  durationsOf,
-  easeHeight,
-  fadeIn,
-  prefersReducedMotion,
-  settle
-} from "./reveal.js"
-
+import { durationsOf, easeHeight, fadeIn, prefersReducedMotion, settle } from "./reveal.js"
 
 const DEBUG = (() => {
   try {
@@ -60,7 +53,6 @@ export class SkulletEngine {
   private safetyTimer = 0
   private easing = false
 
-
   constructor(root: Element) {
     this.root = root as HTMLElement
     this.content = root.querySelector<HTMLElement>("[data-skullet-content]")
@@ -99,10 +91,13 @@ export class SkulletEngine {
     this.root.style.overflow = "hidden"
     if (this.content) fadeIn(this.content, durationsOf(this.root).fade)
 
-    this.safetyTimer = window.setTimeout(() => {
-      this.safetyTimer = 0
-      this.release()
-    }, durationsOf(this.root).fade + 200)
+    this.safetyTimer = window.setTimeout(
+      () => {
+        this.safetyTimer = 0
+        this.release()
+      },
+      durationsOf(this.root).fade + 200
+    )
   }
 
   /** Runs after the patch: reveal what arrived, or start over. */
@@ -210,7 +205,8 @@ export class SkulletEngine {
     const durations = durationsOf(this.root)
     this.easing = true
 
-    if (this.root.getAttribute("data-skullet-reveal") === "sequence") this.fadeInSequence(durations.fade)
+    if (this.root.getAttribute("data-skullet-reveal") === "sequence")
+      this.fadeInSequence(durations.fade)
     else this.hideOverlay(true)
 
     let settled = false
@@ -361,7 +357,10 @@ export class SkulletEngine {
 
     for (const image of content.querySelectorAll("img")) {
       if (!image.complete) image.addEventListener("load", () => this.schedule(), { once: true })
-      image.decode?.().then(() => this.schedule()).catch(() => {})
+      image
+        .decode?.()
+        .then(() => this.schedule())
+        .catch(() => {})
     }
   }
 
@@ -422,4 +421,3 @@ export class SkulletEngine {
     bars.replaceChildren(fragment)
   }
 }
-

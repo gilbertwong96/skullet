@@ -5,7 +5,7 @@ import { withPage, open, closeBrowser } from "./harness.js"
 after(closeBrowser)
 
 const bars = (page, id = "root") =>
-  page.evaluate(id => {
+  page.evaluate((id) => {
     const overlay = document.querySelector(`#${id} > [data-skullet-overlay]`)
     const container = overlay?.shadowRoot?.querySelector("[data-skullet-bars]")
     return {
@@ -17,7 +17,7 @@ const bars = (page, id = "root") =>
   }, id)
 
 test("the bars are painted before any engine runs", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "pre")
 
     const painted = await bars(page)
@@ -31,7 +31,7 @@ test("the bars are painted before any engine runs", async () => {
 })
 
 test("the hold is done in CSS, so fast data never flashes", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "pre")
 
     assert.equal((await bars(page)).opacity, 0)
@@ -42,7 +42,7 @@ test("the hold is done in CSS, so fast data never flashes", async () => {
 })
 
 test("a zero hold paints at once", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "pre")
 
     const instant = await bars(page, "instant")
@@ -52,7 +52,7 @@ test("a zero hold paints at once", async () => {
 })
 
 test("the engine takes the pre-painted skeleton over", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "pre")
 
     await page.waitForFunction(() => Boolean(window.__skulletEngine))

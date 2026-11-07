@@ -4,12 +4,12 @@ import { withPage, open, closeBrowser } from "./harness.js"
 
 after(closeBrowser)
 
-const mount = (page, id = "root") => page.evaluate(id => window.harness.mount(id), id)
+const mount = (page, id = "root") => page.evaluate((id) => window.harness.mount(id), id)
 const swap = (page, id, html, state) =>
   page.evaluate(([id, html, state]) => window.harness.swap(id, html, state), [id, html, state])
 
 const rootInfo = (page, id = "root") =>
-  page.evaluate(id => {
+  page.evaluate((id) => {
     const root = document.getElementById(id)
     const overlay = root.querySelector("[data-skullet-overlay]")
     const bars = overlay?.shadowRoot?.querySelector("[data-skullet-bars]")
@@ -17,7 +17,7 @@ const rootInfo = (page, id = "root") =>
       phase: bars?.getAttribute("data-skullet-phase") ?? null,
       hasOverlay: Boolean(overlay),
       inlineHeight: root.style.height,
-      animations: root.getAnimations().map(animation => animation.effect.getTiming().duration),
+      animations: root.getAnimations().map((animation) => animation.effect.getTiming().duration),
       height: root.getBoundingClientRect().height,
       contentHeight: root.querySelector("[data-skullet-content]").getBoundingClientRect().height,
       bars: bars?.querySelectorAll("[data-skullet-bar]").length ?? 0,
@@ -27,11 +27,11 @@ const rootInfo = (page, id = "root") =>
   }, id)
 
 const paneInfo = (page, id = "root") =>
-  page.evaluate(id => {
+  page.evaluate((id) => {
     const pane = document.querySelector(`#${id} > [data-skullet-content]`)
     const style = getComputedStyle(pane)
     return {
-      animations: pane.getAnimations().map(animation => animation.effect.getTiming().duration),
+      animations: pane.getAnimations().map((animation) => animation.effect.getTiming().duration),
       opacity: style.opacity,
       visibility: style.visibility,
       animationName: style.animationName,
@@ -40,7 +40,7 @@ const paneInfo = (page, id = "root") =>
   }, id)
 
 test("data inside the hold never shows a skeleton", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await page.clock.install()
     await open(page, "reveal")
     await mount(page)
@@ -58,7 +58,7 @@ test("data inside the hold never shows a skeleton", async () => {
 })
 
 test("bars wait out the hold", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
 
@@ -66,7 +66,7 @@ test("bars wait out the hold", async () => {
     assert.equal(holding.phase, "holding")
     assert.equal(holding.overlayOpacity, "0")
 
-    await page.waitForTimeout(500)   // the hold, then the fade in
+    await page.waitForTimeout(500) // the hold, then the fade in
 
     const shown = await rootInfo(page)
     assert.equal(shown.phase, "bars")
@@ -75,7 +75,7 @@ test("bars wait out the hold", async () => {
 })
 
 test("a shown skeleton crossfades", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(300)
@@ -91,7 +91,7 @@ test("a shown skeleton crossfades", async () => {
 })
 
 test("a taller reveal eases, then settles", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -114,7 +114,7 @@ test("a taller reveal eases, then settles", async () => {
 })
 
 test("a shorter reveal eases down", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page, "tall")
     await page.waitForTimeout(250)
@@ -134,9 +134,9 @@ test("a shorter reveal eases down", async () => {
 })
 
 test("nothing to measure still reveals", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     const errors = []
-    page.on("pageerror", error => errors.push(error.message))
+    page.on("pageerror", (error) => errors.push(error.message))
 
     await open(page, "reveal")
     await mount(page, "flat")
@@ -152,7 +152,7 @@ test("nothing to measure still reveals", async () => {
 })
 
 test("instant skips the hold and the fade", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page, "instant")
 
@@ -172,7 +172,7 @@ test("instant skips the hold and the fade", async () => {
 
 test("reduced motion reveals instantly", async () => {
   await withPage(
-    async page => {
+    async (page) => {
       await open(page, "reveal")
       await mount(page)
       await page.waitForTimeout(50)
@@ -191,7 +191,7 @@ test("reduced motion reveals instantly", async () => {
 })
 
 test("destroy leaves nothing behind", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -211,7 +211,7 @@ test("destroy leaves nothing behind", async () => {
 })
 
 test("a later patch leaves a running reveal alone", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -231,7 +231,7 @@ test("a later patch leaves a running reveal alone", async () => {
 })
 
 test("a patch that strips unknown attributes leaves the skeleton intact", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -256,7 +256,7 @@ test("a patch that strips unknown attributes leaves the skeleton intact", async 
         root.querySelector("[data-skullet-content]"),
         root.querySelector("[data-skullet-overlay]")
       ]) {
-        for (const { name } of [...element.attributes]) {
+        for (const { name } of element.attributes) {
           if (!keep.has(name)) element.removeAttribute(name)
         }
       }
@@ -269,7 +269,7 @@ test("a patch that strips unknown attributes leaves the skeleton intact", async 
 })
 
 test("an overlay lost to a patch is rebuilt, not drawn into", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -288,7 +288,7 @@ test("an overlay lost to a patch is rebuilt, not drawn into", async () => {
 })
 
 test("the timings are custom properties", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await page.evaluate(() => {
       const root = document.getElementById("root")
@@ -316,7 +316,7 @@ test("the timings are custom properties", async () => {
 })
 
 test("a pane LiveView reused for something else is found again", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -350,7 +350,7 @@ test("a pane LiveView reused for something else is found again", async () => {
 })
 
 test("a sequence reveal takes the bars out one after another", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await page.evaluate(() => {
       document.getElementById("root").setAttribute("data-skullet-reveal", "sequence")
@@ -361,7 +361,7 @@ test("a sequence reveal takes the bars out one after another", async () => {
     const staggered = await page.evaluate(() => {
       const overlay = document.querySelector("#root > [data-skullet-overlay]")
       const bars = [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
-      return bars.map(bar => getComputedStyle(bar).transitionDelay)
+      return bars.map((bar) => getComputedStyle(bar).transitionDelay)
     })
 
     await swap(page, "root", "<p>a</p><p>b</p><p>c</p>", "loaded")
@@ -370,7 +370,7 @@ test("a sequence reveal takes the bars out one after another", async () => {
     const delays = await page.evaluate(() => {
       const overlay = document.querySelector("#root > [data-skullet-overlay]")
       const bars = [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
-      return bars.map(bar => getComputedStyle(bar).transitionDelay)
+      return bars.map((bar) => getComputedStyle(bar).transitionDelay)
     })
 
     assert.ok(staggered.length > 0)
@@ -383,7 +383,7 @@ test("a sequence reveal takes the bars out one after another", async () => {
 })
 
 test("the debug overlay reports whether the reveal moved the page", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await page.goto("http://skullet.test/fixtures/reveal.html?skullet-debug")
     await mount(page)
     await page.waitForTimeout(250)
@@ -415,7 +415,7 @@ test("the debug overlay reports whether the reveal moved the page", async () => 
 })
 
 test("a second loading cycle shows the skeleton again", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
     await page.waitForTimeout(250)
@@ -430,7 +430,7 @@ test("a second loading cycle shows the skeleton again", async () => {
     assert.equal(holding.phase, "holding")
     assert.equal((await paneInfo(page)).visibility, "hidden")
 
-    await page.waitForTimeout(500)   // the hold, then the fade in
+    await page.waitForTimeout(500) // the hold, then the fade in
     const shown = await rootInfo(page)
     assert.equal(shown.phase, "bars")
     assert.ok(shown.bars > 0)
@@ -446,7 +446,7 @@ test("a second loading cycle shows the skeleton again", async () => {
 })
 
 test("the no-JS fallback is cancelled once bars are up", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "reveal")
     await mount(page)
 
