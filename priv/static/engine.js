@@ -1,11 +1,11 @@
 import { measure } from "./measure.js";
 import { barBox, resetFontCache } from "./metrics.js";
 import { drawShimmer, motionOf } from "./shimmer.js";
-import { FADE_MS, HOLD_MS, RESIZE_MS, easeHeight, fadeIn, prefersReducedMotion, settle } from "./reveal.js";
+import { durationsOf, easeHeight, fadeIn, prefersReducedMotion, settle } from "./reveal.js";
 const SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
 [data-skullet-bars]{position:absolute;inset:0;opacity:0}
 [data-skullet-bars][data-skullet-phase="bars"]{opacity:1}
-[data-skullet-bars]:not([data-skullet-phase="bars"]){transition:opacity ${FADE_MS}ms ease}
+[data-skullet-bars]:not([data-skullet-phase="bars"]){transition:opacity var(--skullet-fade, 200ms) ease}
 [data-skullet-bar]{position:absolute;left:0;top:0;background:var(--skullet-base);border-radius:var(--skullet-radius)}
 @keyframes skullet-shimmer{from{background-position-x:0}to{background-position-x:var(--skullet-band)}}
 @keyframes skullet-group-shimmer{from{background-position-x:var(--skullet-from)}to{background-position-x:var(--skullet-to)}}
@@ -63,11 +63,11 @@ export class SkulletEngine {
         this.root.style.height = `${this.pinned}px`;
         this.root.style.overflow = "hidden";
         if (this.content)
-            fadeIn(this.content, FADE_MS);
+            fadeIn(this.content, durationsOf(this.root).fade);
         this.safetyTimer = window.setTimeout(() => {
             this.safetyTimer = 0;
             this.release();
-        }, FADE_MS + 200);
+        }, durationsOf(this.root).fade + 200);
     }
     /** Runs after the patch: reveal what arrived, or start over. */
     update() {
@@ -132,7 +132,7 @@ export class SkulletEngine {
                 this.holdTimer = 0;
                 if (this.phase === "holding")
                     this.showBars();
-            }, HOLD_MS);
+            }, durationsOf(this.root).hold);
         }
         this.schedule();
     }
@@ -162,6 +162,7 @@ export class SkulletEngine {
             return;
         }
         const target = this.content ? this.content.getBoundingClientRect().height : this.pinned;
+        const durations = durationsOf(this.root);
         this.easing = true;
         this.hideOverlay(true);
         let settled = false;
@@ -173,11 +174,11 @@ export class SkulletEngine {
             this.clearSafety();
             this.release();
         };
-        const ease = easeHeight(this.root, this.pinned, target, RESIZE_MS);
+        const ease = easeHeight(this.root, this.pinned, target, durations.resize);
         if (ease)
             ease.finished.then(finish, finish);
         else
-            window.setTimeout(finish, FADE_MS);
+            window.setTimeout(finish, durations.fade);
     }
     stop() {
         this.clearHold();
@@ -202,7 +203,7 @@ export class SkulletEngine {
         window.setTimeout(() => {
             if (this.bars === bars && this.phase === null)
                 bars.replaceChildren();
-        }, FADE_MS);
+        }, durationsOf(this.root).fade);
     }
     release() {
         settle(this.root);

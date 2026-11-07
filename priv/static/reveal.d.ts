@@ -1,7 +1,15 @@
-/** A skeleton waits this long before showing, so fast data never shows one. */
-export declare const HOLD_MS = 150;
-export declare const FADE_MS = 200;
-export declare const RESIZE_MS = 280;
+/** Defaults for the three timings; every one is a custom property too. */
+export declare const DEFAULT_DURATIONS: {
+    readonly hold: 150;
+    readonly fade: 200;
+    readonly resize: 280;
+};
+export type Durations = {
+    hold: number;
+    fade: number;
+    resize: number;
+};
+export declare function durationsOf(element: Element): Durations;
 export declare function prefersReducedMotion(): boolean;
 export declare function fadeIn(element: HTMLElement, duration: number): Animation;
 /** The reveal easing to its new height, when the sample guessed the content wrong. */
