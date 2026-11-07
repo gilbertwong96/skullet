@@ -241,7 +241,7 @@ Apps consuming the package need no Node — the compiled engine ships in the pac
 it needs pnpm and Node:
 
 ```bash
-pnpm --dir js install
+pnpm --dir js install --allow-build=esbuild   # esbuild's postinstall is declined by default
 pnpm --dir js run check   # tsc (type check), oxlint, oxfmt --check
 pnpm --dir js build       # js/src/*.ts → priv/static/*.js, committed
 pnpm --dir js test        # builds, then drives Playwright against js/fixtures
