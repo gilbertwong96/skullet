@@ -5,7 +5,7 @@ defmodule Skullet.MixProject do
     [
       app: :skullet,
       version: "0.1.0",
-      elixir: "~> 1.14",
+      elixir: "~> 1.18",
       name: "Skullet",
       description: "Measured skeleton loading screens for Phoenix LiveView",
       source_url: "https://github.com/gilbertwong96/skullet",
