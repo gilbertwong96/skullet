@@ -315,6 +315,40 @@ test("the timings are custom properties", async () => {
   })
 })
 
+test("a pane LiveView reused for something else is found again", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(250)
+    assert.ok((await rootInfo(page)).bars > 0)
+
+    // What LiveView did in a real app: the node the engine held as the pane became the
+    // overlay, and a fresh pane was inserted next to it.
+    await page.evaluate(() => {
+      const root = document.getElementById("root")
+      const pane = root.querySelector("[data-skullet-content]")
+      const overlay = root.querySelector("[data-skullet-overlay]")
+
+      pane.removeAttribute("data-skullet-content")
+      pane.setAttribute("data-skullet-overlay", "")
+
+      const fresh = document.createElement("div")
+      fresh.className = "skullet-content"
+      fresh.setAttribute("data-skullet-content", "")
+      fresh.innerHTML = "<p>sample</p><p>second line</p>"
+      overlay.replaceWith(fresh)
+    })
+
+    await swap(page, "root", "<p>sample</p><p>second line</p>", "loading")
+    await page.waitForTimeout(400)
+
+    const after = await rootInfo(page)
+    assert.equal(after.hasOverlay, true)
+    assert.equal(after.phase, "bars")
+    assert.ok(after.bars > 0, "the engine drew into the node it used to call the pane")
+  })
+})
+
 test("a second loading cycle shows the skeleton again", async () => {
   await withPage(async page => {
     await open(page, "reveal")
