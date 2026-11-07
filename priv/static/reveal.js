@@ -1,7 +1,25 @@
-/** A skeleton waits this long before showing, so fast data never shows one. */
-export const HOLD_MS = 150;
-export const FADE_MS = 200;
-export const RESIZE_MS = 280;
+/** Defaults for the three timings; every one is a custom property too. */
+export const DEFAULT_DURATIONS = { hold: 150, fade: 200, resize: 280 };
+const LONGEST_MS = 5000;
+export function durationsOf(element) {
+    const style = getComputedStyle(element);
+    return {
+        hold: duration(style, "--skullet-hold", DEFAULT_DURATIONS.hold),
+        fade: duration(style, "--skullet-fade", DEFAULT_DURATIONS.fade),
+        resize: duration(style, "--skullet-resize", DEFAULT_DURATIONS.resize)
+    };
+}
+function duration(style, name, fallback) {
+    const raw = style.getPropertyValue(name).trim();
+    const parsed = /^-?\d*\.?\d+ms$/.test(raw)
+        ? Number.parseFloat(raw)
+        : /^-?\d*\.?\d+s$/.test(raw)
+            ? Number.parseFloat(raw) * 1000
+            : fallback;
+    if (!Number.isFinite(parsed))
+        return fallback;
+    return Math.min(Math.max(parsed, 0), LONGEST_MS);
+}
 export function prefersReducedMotion() {
     return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }

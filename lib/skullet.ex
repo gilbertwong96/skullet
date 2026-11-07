@@ -38,7 +38,8 @@ defmodule Skullet do
 
   Theme through custom properties (`--skullet-base`, `--skullet-highlight`,
   `--skullet-radius`, `--skullet-animation`, `--skullet-speed`, `--skullet-text-top`,
-  `--skullet-text-bottom`), set per skeleton with the `theme` attribute or globally in CSS.
+  `--skullet-text-bottom`, `--skullet-hold`, `--skullet-fade`, `--skullet-resize`), set per
+  skeleton with the `theme` attribute or globally in CSS.
   `reveal` is `"smart"` (waits 150 ms, then crossfades) or `"instant"`.
 
   Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as

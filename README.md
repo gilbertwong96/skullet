@@ -93,6 +93,9 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 | `--skullet-base` | `rgb(128 128 128 / 0.2)` | the bars |
 | `--skullet-highlight` | `rgb(255 255 255 / 0.12)` | the shimmer's band |
 | `--skullet-radius` | `0.25em` | how round each bar is |
+| `--skullet-hold` | `150ms` | how long a skeleton waits before showing, so fast data never shows one |
+| `--skullet-fade` | `200ms` | the crossfade at the reveal |
+| `--skullet-resize` | `280ms` | the height ease when the real content is a different size |
 | `--skullet-animation` | `shimmer` | `shimmer`, `group-shimmer`, `pulse` or `none` |
 | `--skullet-speed` | `slow` | `slow` or `fast` |
 | `--skullet-text-top` | `ascender` | `ascender`, `cap-height` or `x-height` — where each line's bar starts |

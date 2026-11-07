@@ -2,6 +2,9 @@
   --skullet-base: rgb(128 128 128 / 0.2);
   --skullet-highlight: rgb(255 255 255 / 0.12);
   --skullet-radius: 0.25em;
+  --skullet-hold: 150ms;
+  --skullet-fade: 200ms;
+  --skullet-resize: 280ms;
   --skullet-animation: shimmer;
   --skullet-speed: slow;
   /* How much of each line is drawn: from the font's ascender/cap-height/x-height

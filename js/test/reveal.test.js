@@ -287,6 +287,34 @@ test("an overlay lost to a patch is rebuilt, not drawn into", async () => {
   })
 })
 
+test("the timings are custom properties", async () => {
+  await withPage(async page => {
+    await open(page, "reveal")
+    await page.evaluate(() => {
+      const root = document.getElementById("root")
+      root.style.setProperty("--skullet-hold", "0ms")
+      root.style.setProperty("--skullet-fade", "0ms")
+      root.style.setProperty("--skullet-resize", "40ms")
+    })
+    await mount(page)
+
+    // A zero hold shows the bars at once instead of after 150ms.
+    await page.waitForTimeout(40)
+    const held = await rootInfo(page)
+    assert.equal(held.phase, "bars")
+    assert.ok(held.bars > 0)
+
+    await page.waitForTimeout(150)
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p>", "loaded")
+
+    assert.deepEqual((await rootInfo(page)).animations, [40])
+
+    await page.waitForTimeout(200)
+    assert.equal((await rootInfo(page)).bars, 0)
+    assert.equal((await paneInfo(page)).animations.length, 0)
+  })
+})
+
 test("a second loading cycle shows the skeleton again", async () => {
   await withPage(async page => {
     await open(page, "reveal")
