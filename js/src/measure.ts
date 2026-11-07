@@ -78,8 +78,8 @@ export function measure(
         if (box.width > 2 || box.height > 2) {
           range.selectNodeContents(node)
           const rects = [...range.getClientRects()]
-            .filter(rect => rect.width > 0 && rect.height > 0)
-            .map(rect => relative(rect, origin))
+            .filter((rect) => rect.width > 0 && rect.height > 0)
+            .map((rect) => relative(rect, origin))
           if (rects.length > 0) candidates.push(...toLines(rects, parent, styles))
         }
       }
@@ -117,7 +117,10 @@ export function mergeLines<T extends TextLine>(candidates: T[]): T[] {
   for (const candidate of [...candidates].sort((a, b) => a.y - b.y || a.x - b.x)) {
     const last = lines[lines.length - 1]
 
-    if (last && sharesLine(last, candidate, Math.min(last.fontSize, candidate.fontSize) * LINE_GAP)) {
+    if (
+      last &&
+      sharesLine(last, candidate, Math.min(last.fontSize, candidate.fontSize) * LINE_GAP)
+    ) {
       const left = Math.min(last.x, candidate.x)
       const right = Math.max(last.x + last.width, candidate.x + candidate.width)
       const top = Math.min(last.y, candidate.y)
@@ -158,7 +161,7 @@ function toLines(
     TEXT_BOTTOM
   )
 
-  return rects.map(rect => ({
+  return rects.map((rect) => ({
     x: rect.left,
     y: rect.top,
     width: rect.width,
@@ -200,7 +203,7 @@ function isPainted(element: Element, styles: Map<Element, CSSStyleDeclaration>):
     (style.backgroundImage !== "" && style.backgroundImage !== "none") ||
     (style.boxShadow !== "" && style.boxShadow !== "none") ||
     BORDER_SIDES.every(
-      side =>
+      (side) =>
         style.getPropertyValue(`border-${side.toLowerCase()}-style`) !== "none" &&
         style.getPropertyValue(`border-${side.toLowerCase()}-width`) !== "0px"
     )

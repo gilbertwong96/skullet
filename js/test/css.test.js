@@ -5,26 +5,26 @@ import { withPage, open, closeBrowser } from "./harness.js"
 after(closeBrowser)
 
 const visibility = (page, id) =>
-  page.$eval(`#${id} > [data-skullet-content]`, el => getComputedStyle(el).visibility)
+  page.$eval(`#${id} > [data-skullet-content]`, (el) => getComputedStyle(el).visibility)
 
 test("the content pane is hidden while loading", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "css")
     assert.equal(await visibility(page, "loading"), "hidden")
   })
 })
 
 test("the content pane is visible once loaded", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "css")
     assert.equal(await visibility(page, "loaded"), "visible")
   })
 })
 
 test("the status span is visually hidden but present", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "css")
-    const box = await page.$eval("#loading > .skullet-status", el => {
+    const box = await page.$eval("#loading > .skullet-status", (el) => {
       const rect = el.getBoundingClientRect()
       return { width: rect.width, height: rect.height, text: el.textContent.trim() }
     })
@@ -35,7 +35,7 @@ test("the status span is visually hidden but present", async () => {
 })
 
 test("theme defaults are on :root", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "css")
     const vars = await page.evaluate(() => {
       const style = getComputedStyle(document.documentElement)
@@ -45,7 +45,7 @@ test("theme defaults are on :root", async () => {
         "--skullet-radius",
         "--skullet-animation",
         "--skullet-speed"
-      ].map(name => [name, style.getPropertyValue(name).trim()])
+      ].map((name) => [name, style.getPropertyValue(name).trim()])
     })
 
     for (const [name, value] of vars) assert.ok(value, `${name} is empty`)
@@ -54,7 +54,7 @@ test("theme defaults are on :root", async () => {
 
 /* Custom properties keep `light-dark()` unresolved until they are used, so the colours
    are read off a probe that actually paints with them. */
-const readTheme = page =>
+const readTheme = (page) =>
   page.evaluate(() => {
     let probe = document.getElementById("theme-probe")
 
@@ -71,7 +71,7 @@ const readTheme = page =>
   })
 
 test("a dark page gets different bars than a light one", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "css")
     const light = await readTheme(page)
 
@@ -79,7 +79,6 @@ test("a dark page gets different bars than a light one", async () => {
       document.documentElement.style.colorScheme = "dark"
     })
     const dark = await readTheme(page)
-
 
     assert.notEqual(dark[0], light[0])
     assert.notEqual(dark[1], light[1])
@@ -90,7 +89,7 @@ test("a light page keeps light bars on a dark desktop", async () => {
   // The bug this pins: bars used to follow prefers-color-scheme, so a light page on a
   // dark desktop painted near-white bars into a near-white card and they vanished.
   await withPage(
-    async page => {
+    async (page) => {
       await open(page, "css")
       const [base] = await readTheme(page)
 
@@ -102,7 +101,7 @@ test("a light page keeps light bars on a dark desktop", async () => {
 
 test("with JS disabled the sample appears within 6s", async () => {
   await withPage(
-    async page => {
+    async (page) => {
       await open(page, "css")
       await page.waitForTimeout(1000)
       assert.equal(await visibility(page, "loading"), "hidden")

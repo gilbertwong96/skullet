@@ -24,8 +24,6 @@ export type Box = { x: number; y: number; width: number; height: number }
 const ANIMATIONS: readonly Animation[] = ["shimmer", "group-shimmer", "pulse", "none"]
 const SPEEDS = ["slow", "fast"] as const
 
-type Speed = (typeof SPEEDS)[number]
-
 /** The animation an element inherits: `--skullet-animation` and `--skullet-speed`. */
 export function motionOf(element: Element): Motion {
   const style = getComputedStyle(element)

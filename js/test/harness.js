@@ -24,7 +24,7 @@ export async function withPage(callback, opts = {}) {
   const context = await browser.newContext(opts)
   const page = await context.newPage()
 
-  await page.route("http://skullet.test/**", async route => {
+  await page.route("http://skullet.test/**", async (route) => {
     const { pathname } = new URL(route.request().url())
     const base = pathname.startsWith("/fixtures/") ? fixtures : assets
     const path = join(base, pathname.replace(/^\/fixtures\/|^\//, ""))

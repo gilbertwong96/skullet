@@ -5,21 +5,18 @@ import { withPage, open, closeBrowser } from "./harness.js"
 after(closeBrowser)
 
 const mounted = (page, id) =>
-  page.waitForFunction(
-    id => {
-      const overlay = document.querySelector(`#${id} > [data-skullet-overlay]`)
-      return Boolean(overlay?.shadowRoot?.querySelector("[data-skullet-bar]"))
-    },
-    id
-  )
+  page.waitForFunction((id) => {
+    const overlay = document.querySelector(`#${id} > [data-skullet-overlay]`)
+    return Boolean(overlay?.shadowRoot?.querySelector("[data-skullet-bar]"))
+  }, id)
 
 const mount = async (page, id) => {
-  await page.evaluate(id => window.mount(id), id)
+  await page.evaluate((id) => window.mount(id), id)
   await mounted(page, id)
 }
 
 const barStyle = (page, id) =>
-  page.evaluate(id => {
+  page.evaluate((id) => {
     const overlay = document.querySelector(`#${id} > [data-skullet-overlay]`)
     const bar = overlay?.shadowRoot?.querySelector("[data-skullet-bar]")
     if (!bar) return null
@@ -34,13 +31,13 @@ const barStyle = (page, id) =>
   }, id)
 
 /** Computed animation times come back in seconds or milliseconds, whichever the engine picked. */
-const ms = value => {
+const ms = (value) => {
   const amount = Number.parseFloat(value)
-  return /ms$/.test(value.trim()) ? amount : amount * 1000
+  return value.trim().endsWith("ms") ? amount : amount * 1000
 }
 
 test("bars shimmer by default", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await mount(page, "a")
     const style = await barStyle(page, "a")
@@ -51,7 +48,7 @@ test("bars shimmer by default", async () => {
 })
 
 test("the pace follows the width", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await mount(page, "a")
     await mount(page, "wide")
@@ -62,7 +59,7 @@ test("the pace follows the width", async () => {
 })
 
 test("fast halves it", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await mount(page, "fast")
 
@@ -71,7 +68,7 @@ test("fast halves it", async () => {
 })
 
 test("two roots share one sweep", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await mount(page, "a")
     await page.waitForTimeout(300)
@@ -79,16 +76,19 @@ test("two roots share one sweep", async () => {
 
     // Each bar's position in its own sweep, read at one instant: the delay is the
     // negative of the clock, so a late mount joins the sweep instead of starting one.
-    const positions = await page.evaluate(ids =>
-      ids.map(id => {
-        const overlay = document.querySelector(`#${id} > [data-skullet-overlay]`)
-        const bar = overlay?.shadowRoot?.querySelector("[data-skullet-bar]")
-        const animation = bar?.getAnimations()[0]
-        return {
-          delay: getComputedStyle(bar).animationDelay,
-          currentTime: Number(animation?.currentTime ?? Number.NaN)
-        }
-      }), ["a", "b"])
+    const positions = await page.evaluate(
+      (ids) =>
+        ids.map((id) => {
+          const overlay = document.querySelector(`#${id} > [data-skullet-overlay]`)
+          const bar = overlay?.shadowRoot?.querySelector("[data-skullet-bar]")
+          const animation = bar?.getAnimations()[0]
+          return {
+            delay: getComputedStyle(bar).animationDelay,
+            currentTime: Number(animation?.currentTime ?? Number.NaN)
+          }
+        }),
+      ["a", "b"]
+    )
 
     const [a, b] = positions.map(({ delay, currentTime }) => currentTime - ms(delay))
 
@@ -101,7 +101,7 @@ test("two roots share one sweep", async () => {
 })
 
 test("the shimmer's band is eased, not a two-stop ramp", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await mount(page, "a")
     // The computed value resolves color-mix into colours; the inline style is the ramp.
@@ -119,7 +119,7 @@ test("the shimmer's band is eased, not a two-stop ramp", async () => {
 })
 
 test("group-shimmer sweeps one band across the whole skeleton", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await page.evaluate(() => {
       document.getElementById("a").style.setProperty("--skullet-animation", "group-shimmer")
@@ -134,7 +134,7 @@ test("group-shimmer sweeps one band across the whole skeleton", async () => {
 
       return {
         host: [Math.round(host.width), Math.round(host.height)],
-        bars: [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map(bar => {
+        bars: [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map((bar) => {
           const rect = bar.getBoundingClientRect()
           const style = getComputedStyle(bar)
           return {
@@ -163,7 +163,7 @@ test("group-shimmer sweeps one band across the whole skeleton", async () => {
 })
 
 test("pulse and none are honoured", async () => {
-  await withPage(async page => {
+  await withPage(async (page) => {
     await open(page, "shimmer")
     await mount(page, "pulse")
     await mount(page, "none")
@@ -180,7 +180,7 @@ test("pulse and none are honoured", async () => {
 
 test("reduced motion stops every animation", async () => {
   await withPage(
-    async page => {
+    async (page) => {
       await open(page, "shimmer")
       await mount(page, "a")
 
