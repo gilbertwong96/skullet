@@ -32,7 +32,9 @@ let liveSocket = new LiveSocket("/live", Socket, { hooks: { Skullet: SkulletHook
 With a `path:` or `git:` dependency there is no `deps/skullet` directory — point the two
 imports at that checkout instead.
 
-### Before the first paint
+The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
+
+## Before the first paint
 
 The sample is laid out from the server's HTML, but the bars are drawn by JavaScript — so
 until the bundle loads and the LiveView mounts, the page shows an empty box. One component
@@ -65,8 +67,6 @@ end
 In a LiveView the layout is rendered from the socket's assigns, so copy the nonce across
 once — an `on_mount` that does `assign(socket, :csp_nonce, conn.assigns.csp_nonce)` is
 enough. Without a CSP, leave the attribute off.
-
-The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
 
 ## With an async assign
 
