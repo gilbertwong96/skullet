@@ -194,9 +194,7 @@ defmodule Skullet do
   defp theme_style(theme) when map_size(theme) == 0, do: nil
 
   defp theme_style(theme) do
-    theme
-    |> Enum.map(fn {key, value} -> "#{theme_var!(key)}: #{value}" end)
-    |> Enum.join("; ")
+    Enum.map_join(theme, "; ", fn {key, value} -> "#{theme_var!(key)}: #{value}" end)
   end
 
   defp theme_var!(key) do

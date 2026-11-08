@@ -237,6 +237,11 @@ attach(document.querySelector(".skullet"))
 
 ## Working on the engine
 
+Before finishing a change, `mix ci` runs the whole quality gate — `compile
+--warnings-as-errors`, `format --check-formatted`, `test`, `credo --strict`, `dialyzer`,
+`ex_dna --max-clones 0` and `reach.check --arch --smells` — set up by
+[VibeKit](https://github.com/elixir-vibe/vibe_kit).
+
 Apps consuming the package need no Node — the compiled engine ships in the package. Changing
 it needs pnpm and Node:
 

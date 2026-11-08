@@ -1,4 +1,6 @@
 defmodule Skullet.Sample do
+  @moduledoc false
+
   def sample_user do
     %{name: "Sample Name", bio: "A sample bio long enough to wrap.", avatar: "/sample.png"}
   end
