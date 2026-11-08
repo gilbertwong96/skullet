@@ -92,7 +92,13 @@ defmodule Skullet do
     doc: "opts in to remembering the data this skeleton last showed, under this scope"
   )
 
-  slot(:error, doc: "rendered in place of the content when the async assign failed")
+  slot(:error,
+    doc: """
+    rendered in place of the content when the async assign failed. It is your markup —
+    the library styles none of it — so an alert, an empty state, or your own card frame
+    all work here.
+    """
+  )
 
   slot(:skeleton,
     doc: """
@@ -126,7 +132,12 @@ defmodule Skullet do
       aria-busy={to_string(@state == :loading)}
       {@style_attrs}
     >
-      <span class="skullet-status" role="status" aria-live="polite">{@label}</span>
+      <span
+        :if={@state == :loading}
+        class="skullet-status"
+        role="status"
+        aria-live="polite"
+      >{@label}</span>
       <%!-- Rendered here, not created by the engine: LiveView prunes children it does
       not know about, and would take the bars with them on the first patch. --%>
       <div data-skullet-overlay aria-hidden="true"></div>

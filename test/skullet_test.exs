@@ -86,6 +86,8 @@ defmodule SkulletTest do
     assert attr(html, "aria-busy") == "false"
     assert text(query(html, "#error")) == "Could not load."
     assert empty?(html, "[data-skullet-content]")
+    # nothing is loading any more: the label must not be left behind for screen readers
+    assert empty?(html, ".skullet-status")
   end
 
   test "the loading attribute wins over data" do

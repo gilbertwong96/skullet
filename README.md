@@ -118,7 +118,7 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 Slots: `inner_block` (required, receives the sample then the real value), `skeleton` (your
 own markup to measure instead of the sample — see [per-component
 skeletons](#per-component-skeletons)) and `error` (rendered in place of the content when
-the async assign failed).
+the async assign failed — see [errors](#errors)).
 
 ## Theme
 
@@ -279,6 +279,35 @@ default). Clear a person's memory when they sign out:
 
 ```elixir
 Skullet.Memory.forget(current_user.id)
+```
+
+## Errors
+
+The `error` slot is your markup, and the library styles none of it: an alert, an empty
+state, a retry form, or the same card frame around all three. It replaces the content pane
+when the assign failed, and the loading label goes with it.
+
+```heex
+<Skullet.skeleton :let={user} id="profile" async={@user} sample={@sample_user}>
+  <Profile.card user={user} />
+  <:error>
+    <div class="rounded-lg border border-error/40 bg-error/10 p-4">
+      <p class="text-sm">Could not load the profile.</p>
+      <button phx-click="retry" class="btn btn-xs mt-2">Try again</button>
+    </div>
+  </:error>
+</Skullet.skeleton>
+```
+
+Want the error inside your card — same border, same padding — rather than in place of it?
+Render that frame in the slot:
+
+```heex
+<:error>
+  <Profile.card user={@sample_user} class="opacity-60">
+    <:footer><p class="text-sm">Could not load.</p></:footer>
+  </Profile.card>
+</:error>
 ```
 
 ## Hints
