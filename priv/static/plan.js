@@ -41,7 +41,7 @@ export function unitOf(piece, root) {
  * Times each piece of the content by `order`, in viewport coordinates, with `late` shared
  * by the reveals that landed together.
  */
-export function timePieces(content, reveal, order, late) {
+export function timePieces(content, reveal, order, settings, late) {
     const fontSize = (element) => Number.parseFloat(getComputedStyle(element).fontSize) || 16;
     const units = new Map();
     const piecesIn = pieces(content).map((element) => {
@@ -62,7 +62,7 @@ export function timePieces(content, reveal, order, late) {
             reveal,
             late
         };
-        return { element, piece, order: order(piece) ?? 0 };
+        return { element, piece, order: order(piece, settings) ?? 0 };
     });
 }
 /** The bar's piece: the unit that contains it, if any. */
@@ -78,13 +78,26 @@ export const together = { order: "together" };
 export const sequence = { order: byPosition };
 export const sweep = { sweep: true };
 /** `sequence`: each piece timed by its place in the reveal, top to bottom, then a little left to right. */
-export function byPosition({ rect, reveal }) {
+export function byPosition({ rect, reveal }, { cascade }) {
     const down = (rect.top - reveal.top) / Math.max(reveal.height, 1);
     const across = (rect.left - reveal.left) / Math.max(reveal.width, 1);
-    return clamp(down * 0.8 + across * 0.2, 1) * DEFAULT_DURATIONS.sequence;
+    return clamp(down * 0.8 + across * 0.2, 1) * cascade;
 }
-/** `together` for a small reveal, else a cascade down the page. */
-export const byContent = (context) => context.height < SMALL_HEIGHT || context.pieces <= SMALL_PIECES ? together : { order: byPosition };
+const onScreen = (rect) => rect.bottom > 0 && rect.top < innerHeight;
+/**
+ * `smart`'s order: rows arrive whole, in page order, on screen only, main text first.
+ * Timed against the screen rather than the reveal, so reveals landing together read as one page.
+ */
+export const byRow = ({ rect, unit, secondary, late }, { cascade, secondaryDelay }) => {
+    if (!unit)
+        return onScreen(rect) ? 0 : null;
+    if (!onScreen(unit))
+        return null;
+    const at = clamp(unit.top / Math.max(innerHeight, 1), 1) * cascade;
+    return Math.max(at - late, 0) + (secondary ? secondaryDelay : 0);
+};
+/** `together` for a small reveal, else rows cascading down the page. */
+export const byContent = (context) => context.height < SMALL_HEIGHT || context.pieces <= SMALL_PIECES ? together : { order: byRow };
 /** The cases `smart` settles before looking at the content: instant, or a quick crossfade. */
 export const quickly = (context) => context.input || context.waited < SKELETON_DELAY
     ? instant
@@ -104,20 +117,21 @@ export function revealSpec(mode) {
     return NAMED[mode ?? "smart"] ?? together;
 }
 /** Turns a spec into the plan to run, now that the content is here. */
-export function planReveal(spec, context, fallback) {
+export function planReveal(spec, context, defaults) {
     let resolved = spec;
     while (resolved.choose) {
         const { choose, ...rest } = resolved;
         resolved = { ...rest, ...choose(context) };
     }
-    const duration = clamp(resolved.duration ?? fallback, MAX_DURATION);
-    const delay = clamp(Math.max(resolved.delay ?? 0, 0), MAX_DELAY);
+    const duration = clamp(resolved.duration ?? defaults.duration, MAX_DURATION);
+    const delay = clamp(Math.max(resolved.delay ?? defaults.delay, 0), MAX_DELAY);
+    const enter = resolved.enter ?? defaults.enter;
     if (!duration)
         return { kind: "instant" };
     if (resolved.sweep)
         return { kind: "sweep", delay, duration };
     if (typeof resolved.order === "function") {
-        return { kind: "sequence", order: resolved.order, delay, duration, enter: resolved.enter };
+        return { kind: "sequence", order: resolved.order, delay, duration, enter };
     }
-    return { kind: "together", delay, duration, enter: resolved.enter };
+    return { kind: "together", delay, duration, enter };
 }

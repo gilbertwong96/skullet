@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+    <style>
+      .skullet {
+        width: 480px;
+        font: 16px/24px system-ui, sans-serif;
+      }
+      .row {
+        padding: 4px 0;
+      }
+      .row small {
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="skullet" phx-hook="Skullet" data-skullet-state="loading" style="--skullet-secondary-delay: 90ms">
+      <span class="skullet-status">Loading</span>
+      <div data-skullet-overlay aria-hidden="true"></div>
+      <div class="skullet-content" data-skullet-content>
+        <div class="row"><h3>one</h3><small>a</small></div>
+        <div class="row"><h3>two</h3><small>b</small></div>
+        <div class="row"><h3>three</h3><small>c</small></div>
+        <div class="row"><h3>four</h3><small>d</small></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { attach } from "/skullet.js"
+
+      const engines = new Map()
+
+      window.harness = {
+        mount(id) {
+          engines.set(id, attach(document.getElementById(id)))
+        },
+        swap(id, html, state) {
+          const root = document.getElementById(id)
+          const engine = engines.get(id)
+          engine.beforeUpdate()
+          if (html !== null) root.querySelector("[data-skullet-content]").innerHTML = html
+          root.setAttribute("data-skullet-state", state)
+          engine.update()
+        }
+      }
+    </script>
+  </body>
+</html>

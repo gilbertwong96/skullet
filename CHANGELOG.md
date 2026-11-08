@@ -22,6 +22,8 @@ First release.
 - `skeleton` slot for per-component skeletons (and the Suspense shape: async + measured
   fallback + error branch).
 - `<Skullet.provider>` for `mode`, `theme`, `animation` and `speed` in one place.
+- Custom properties for the reveal itself: `--skullet-cascade`, `--skullet-delay`,
+  `--skullet-secondary-delay`, `--skullet-enter-filter`, `--skullet-enter-scale`.
 - `sweep` reveal, and `smart` now decides between instant, a quick refetch crossfade, one
   crossfade and a page cascade, from how long the skeleton was up, recent input, refetches
   and the size of what arrives.

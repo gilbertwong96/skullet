@@ -446,6 +446,74 @@ test("a large reveal cascades its pieces instead of fading as one", async () => 
   })
 })
 
+test("smart cascades rows and lets small text follow its heading", async () => {
+  await withPage(async (page) => {
+    await open(page, "reveal-rows")
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    // the sample is replaced by the same rows, so the reveal cascades them
+    await page.evaluate(() => window.harness.swap("root", null, "loaded"))
+
+    const rows = await page.evaluate(() => {
+      const pane = document.querySelector("#root > [data-skullet-content]")
+      const delay = (element) => {
+        const [animation] = element.getAnimations()
+        return animation ? Number(animation.effect.getComputedTiming().delay) : null
+      }
+
+      return [...pane.querySelectorAll(".row")].map((row) => ({
+        heading: delay(row.querySelector("h3")),
+        small: delay(row.querySelector("small"))
+      }))
+    })
+
+    assert.ok(
+      rows.every((row) => row.heading !== null),
+      "headings did not animate"
+    )
+    assert.ok(
+      rows.every((row) => row.small - row.heading === 90),
+      `small text should trail its heading by --skullet-secondary-delay: ${JSON.stringify(rows)}`
+    )
+  })
+})
+
+test("the enter knobs give every piece a starting filter and scale", async () => {
+  await withPage(async (page) => {
+    await open(page, "reveal")
+    await page.evaluate(() => {
+      const root = document.getElementById("root")
+      root.style.setProperty("--skullet-enter-filter", "blur(6px)")
+      root.style.setProperty("--skullet-enter-scale", "0.98")
+      root.style.setProperty("--skullet-delay", "50ms")
+      root.setAttribute("data-skullet-reveal", "sequence")
+    })
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    await swap(page, "root", "<p>a</p><p>b</p>", "loaded")
+
+    const first = await page.evaluate(() => {
+      const pane = document.querySelector("#root > [data-skullet-content]")
+      const [paragraph] = pane.querySelectorAll("p")
+      const [animation] = paragraph.getAnimations()
+      const [keyframe] = animation.effect.getKeyframes()
+      const timing = animation.effect.getComputedTiming()
+
+      return {
+        filter: keyframe.filter,
+        transform: keyframe.transform,
+        delay: Number(timing.delay)
+      }
+    })
+
+    assert.equal(first.filter, "blur(6px)")
+    assert.match(first.transform, /scale\(0\.98\)/)
+    assert.ok(first.delay >= 50, `the reveal delay was not applied: ${first.delay}`)
+  })
+})
+
 test("a sequence reveal times each piece by its place in the page", async () => {
   await withPage(async (page) => {
     await open(page, "reveal")

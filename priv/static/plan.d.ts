@@ -26,9 +26,15 @@ export type RevealContext = {
  * How content replaces its skeleton. The built-in modes are these objects, and what
  * `choose` returns wins over the fields beside it.
  */
+/** What an order needs to know from the theme: the cascade's length, and how late small text follows. */
+export type RevealSettings = {
+    cascade: number;
+    secondaryDelay: number;
+};
+export type Order = (piece: Piece, settings: RevealSettings) => number | null;
 export type RevealSpec = {
     /** When each piece appears, in ms; null to appear at once. `"together"` for all at once. */
-    order?: "together" | ((piece: Piece) => number | null);
+    order?: "together" | Order;
     /** Where each piece starts from, on top of the fade: `{ filter: "blur(6px)" }`. */
     enter?: Keyframe;
     /** A front crossing the whole reveal: the built-in sweep. */
@@ -51,7 +57,7 @@ export type Plan = {
     enter?: Keyframe;
 } | {
     kind: "sequence";
-    order: (piece: Piece) => number | null;
+    order: Order;
     delay: number;
     duration: number;
     enter?: Keyframe;
@@ -78,7 +84,7 @@ export type ContentPiece = {
  * Times each piece of the content by `order`, in viewport coordinates, with `late` shared
  * by the reveals that landed together.
  */
-export declare function timePieces(content: Element, reveal: DOMRect, order: (piece: Piece) => number | null, late: number): ContentPiece[];
+export declare function timePieces(content: Element, reveal: DOMRect, order: Order, settings: RevealSettings, late: number): ContentPiece[];
 /** The bar's piece: the unit that contains it, if any. */
 export declare function barPiece(rect: DOMRect, reveal: DOMRect, units: DOMRect[], late: number): Piece;
 export declare const instant: RevealSpec;
@@ -86,8 +92,13 @@ export declare const together: RevealSpec;
 export declare const sequence: RevealSpec;
 export declare const sweep: RevealSpec;
 /** `sequence`: each piece timed by its place in the reveal, top to bottom, then a little left to right. */
-export declare function byPosition({ rect, reveal }: Piece): number;
-/** `together` for a small reveal, else a cascade down the page. */
+export declare function byPosition({ rect, reveal }: Piece, { cascade }: RevealSettings): number;
+/**
+ * `smart`'s order: rows arrive whole, in page order, on screen only, main text first.
+ * Timed against the screen rather than the reveal, so reveals landing together read as one page.
+ */
+export declare const byRow: ({ rect, unit, secondary, late }: Piece, { cascade, secondaryDelay }: RevealSettings) => number | null;
+/** `together` for a small reveal, else rows cascading down the page. */
 export declare const byContent: (context: RevealContext) => RevealSpec;
 /** The cases `smart` settles before looking at the content: instant, or a quick crossfade. */
 export declare const quickly: (context: RevealContext) => RevealSpec | null;
@@ -95,5 +106,10 @@ export declare const quickly: (context: RevealContext) => RevealSpec | null;
 export declare const smart: RevealSpec;
 /** A built-in by name, or a spec as it is. */
 export declare function revealSpec(mode: RevealMode | string | null | undefined): RevealSpec;
+export type RevealDefaults = {
+    duration: number;
+    delay: number;
+    enter?: Keyframe;
+};
 /** Turns a spec into the plan to run, now that the content is here. */
-export declare function planReveal(spec: RevealSpec, context: RevealContext, fallback: number): Plan;
+export declare function planReveal(spec: RevealSpec, context: RevealContext, defaults: RevealDefaults): Plan;

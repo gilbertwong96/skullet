@@ -35,9 +35,15 @@ export function prefersReducedMotion(): boolean {
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
 }
 
-export function fadeIn(element: HTMLElement, duration: number): Animation {
-  return element.animate([{ opacity: 0 }, { opacity: 1 }], {
+export function fadeIn(
+  element: HTMLElement,
+  duration: number,
+  delay = 0,
+  enter: Keyframe = {}
+): Animation {
+  return element.animate([{ opacity: 0, ...enter }, { opacity: 1 }], {
     duration,
+    delay,
     easing: "ease",
     fill: "forwards"
   })

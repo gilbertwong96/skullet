@@ -26,9 +26,10 @@ export const IMAGE_TIMEOUT_MS = 10_000;
 export function prefersReducedMotion() {
     return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
-export function fadeIn(element, duration) {
-    return element.animate([{ opacity: 0 }, { opacity: 1 }], {
+export function fadeIn(element, duration, delay = 0, enter = {}) {
+    return element.animate([{ opacity: 0, ...enter }, { opacity: 1 }], {
         duration,
+        delay,
         easing: "ease",
         fill: "forwards"
     });

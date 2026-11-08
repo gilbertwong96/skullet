@@ -132,7 +132,11 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 | `--skullet-hold` | `150ms` | how long a skeleton waits before showing, so fast data never shows one |
 | `--skullet-fade` | `200ms` | the crossfade at the reveal |
 | `--skullet-resize` | `280ms` | the height ease when the real content is a different size |
-| `--skullet-cascade` | `320ms` | how long a `sequence` takes from its first piece to its last |
+| `--skullet-cascade` | `320ms` | how long a `sequence` — or `smart`'s cascade — takes from first piece to last |
+| `--skullet-delay` | `0ms` | a pause before the reveal starts |
+| `--skullet-secondary-delay` | `60ms` | how long small text trails the heading it sits under |
+| `--skullet-enter-filter` | `none` | where pieces come from: e.g. `blur(6px)` |
+| `--skullet-enter-scale` | `1` | where pieces come from: e.g. `0.98` |
 | `--skullet-animation` | `shimmer` | `shimmer`, `group-shimmer`, `pulse` or `none` |
 | `--skullet-speed` | `slow` | `slow` or `fast` |
 | `--skullet-text-top` | `ascender` | `ascender`, `cap-height` or `x-height` — where each line's bar starts |
@@ -264,8 +268,13 @@ used and what arrived:
   already known;
 - **one crossfade** over `--skullet-fade` (200 ms) for a small reveal — under 72px tall, or
   three pieces or fewer;
-- **a cascade** down the page for anything bigger: each piece arrives in its own place,
-  spread over `--skullet-cascade` (320 ms), with reveals landing together sharing one order.
+- **a cascade** down the page for anything bigger: rows arrive whole, in page order, on
+  screen only, main text first and small text `--skullet-secondary-delay` behind its
+  heading, spread over `--skullet-cascade` (320 ms), with reveals landing together sharing
+  one order.
+
+Every piece can start from a filter or a scale (`--skullet-enter-filter`,
+`--skullet-enter-scale`), and `--skullet-delay` holds the whole reveal back a beat.
 
 Either way it eases to the content's real height over `--skullet-resize` (280 ms) if the
 sample guessed it wrong.

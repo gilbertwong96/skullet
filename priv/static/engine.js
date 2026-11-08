@@ -14,6 +14,40 @@ const DEBUG = (() => {
     }
 })();
 const DEBUG_LOADING = "2px solid #3b82f6";
+/** `--skullet-delay` before a reveal starts, `--skullet-enter-*` for where pieces come from. */
+function settingsOf(root) {
+    const durations = durationsOf(root);
+    const style = getComputedStyle(root);
+    const raw = style.getPropertyValue("--skullet-delay").trim();
+    const parsed = /^-?\d*\.?\d+ms$/.test(raw)
+        ? Number.parseFloat(raw)
+        : /^-?\d*\.?\d+s$/.test(raw)
+            ? Number.parseFloat(raw) * 1000
+            : 0;
+    return { fade: durations.fade, delay: Math.min(Math.max(parsed, 0), 1000) };
+}
+/** The `enter` keyframe a skeleton inherits: a filter and a scale, both optional. */
+function enterOf(root) {
+    const style = getComputedStyle(root);
+    const filter = style.getPropertyValue("--skullet-enter-filter").trim();
+    const scale = style.getPropertyValue("--skullet-enter-scale").trim();
+    const enter = {};
+    if (filter && filter !== "none")
+        enter.filter = filter;
+    if (scale && scale !== "1")
+        enter.transform = `scale(${scale})`;
+    return Object.keys(enter).length > 0 ? enter : undefined;
+}
+function orderSettings(root) {
+    const durations = durationsOf(root);
+    const raw = getComputedStyle(root).getPropertyValue("--skullet-secondary-delay").trim();
+    const parsed = /^-?\d*\.?\d+ms$/.test(raw)
+        ? Number.parseFloat(raw)
+        : /^-?\d*\.?\d+s$/.test(raw)
+            ? Number.parseFloat(raw) * 1000
+            : 60;
+    return { cascade: durations.sequence, secondaryDelay: Math.max(parsed, 0) };
+}
 const ACTIVE_WINDOW = 400;
 let lastInput = Number.NEGATIVE_INFINITY;
 let listening = false;
@@ -293,23 +327,28 @@ export class SkulletEngine {
             refetch: this.refetched,
             height: content ? content.getBoundingClientRect().height : reveal.height,
             pieces: content ? content.children.length : 0
-        }, durationsOf(this.root).fade);
+        }, {
+            duration: settingsOf(this.root).fade,
+            delay: settingsOf(this.root).delay,
+            enter: enterOf(this.root)
+        });
     }
     runPlan(plan) {
-        const duration = "duration" in plan ? plan.duration : durationsOf(this.root).fade;
         if (plan.kind === "instant") {
             this.hideOverlay(false);
+            return;
         }
-        else if (plan.kind === "sweep") {
-            this.sweepOut(duration);
+        const { delay, duration } = plan;
+        if (plan.kind === "sweep") {
+            this.sweepOut(duration, delay);
         }
         else if (plan.kind === "sequence") {
             this.runSequence(plan, duration);
         }
         else {
             if (this.content)
-                fadeIn(this.content, duration);
-            this.hideOverlay(true, duration);
+                fadeIn(this.content, duration, delay, plan.enter);
+            this.hideOverlay(true, duration, delay);
         }
     }
     /** `sequence`: pieces arrive in `order`, the bars they replace leave on the same beat. */
@@ -322,7 +361,7 @@ export class SkulletEngine {
         // skeleton's height at this point, which would squash every piece to the same delay.
         const box = content.getBoundingClientRect();
         const reveal = new DOMRect(box.left, box.top, box.width, box.height);
-        const pieces = timePieces(content, reveal, plan.order, this.late);
+        const pieces = timePieces(content, reveal, plan.order, orderSettings(this.root), this.late);
         const units = [...new Set(pieces.map((piece) => piece.piece.unit).filter(Boolean))];
         for (const { element, order } of pieces) {
             const delay = Math.min(order, MAX_DELAY) + plan.delay;
@@ -338,7 +377,7 @@ export class SkulletEngine {
         bars.style.transition = "none";
         let last = 0;
         for (const bar of [...bars.children]) {
-            const order = plan.order(barPiece(bar.getBoundingClientRect(), reveal, units, this.late)) ?? 0;
+            const order = plan.order(barPiece(bar.getBoundingClientRect(), reveal, units, this.late), orderSettings(this.root)) ?? 0;
             const delay = Math.min(order, MAX_DELAY) + plan.delay;
             last = Math.max(last, delay + duration);
             const animation = bar.animate([{ opacity: 1 }, { opacity: 0 }], {
@@ -358,7 +397,7 @@ export class SkulletEngine {
         }, last + 100);
     }
     /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
-    sweepOut(duration) {
+    sweepOut(duration, delay = 0) {
         const overlay = this.overlay;
         const bars = this.bars;
         if (!overlay || !bars)
@@ -379,9 +418,9 @@ export class SkulletEngine {
             cleared = true;
             clear();
         };
-        const animation = overlay.animate([{ clipPath: "inset(0% 0 0 0)" }, { clipPath: "inset(100% 0 0 0)" }], { duration, easing: "ease-in", fill: "forwards" });
+        const animation = overlay.animate([{ clipPath: "inset(0% 0 0 0)" }, { clipPath: "inset(100% 0 0 0)" }], { duration, delay, easing: "ease-in", fill: "forwards" });
         animation.finished.then(finish, finish);
-        window.setTimeout(finish, duration + 200);
+        window.setTimeout(finish, delay + duration + 200);
     }
     /** Debug: did the reveal move the page? Red with the distance, green when it didn't. */
     markMovement(revealed) {
@@ -391,7 +430,7 @@ export class SkulletEngine {
         this.root.style.outline = moved < 1 ? DEBUG_STILL : DEBUG_MOVED;
         this.root.title = moved < 1 ? "skullet: no movement" : `skullet: moved ${moved.toFixed(1)}px`;
     }
-    hideOverlay(animate, duration) {
+    hideOverlay(animate, duration, delay = 0) {
         this.setPhase(null);
         const bars = this.bars;
         if (!bars)
@@ -403,12 +442,15 @@ export class SkulletEngine {
         const fade = duration ?? durationsOf(this.root).fade;
         if (duration !== undefined)
             bars.style.transitionDuration = `${duration}ms`;
+        if (delay > 0)
+            bars.style.transitionDelay = `${delay}ms`;
         window.setTimeout(() => {
             if (this.bars !== bars || this.phase !== null)
                 return;
             bars.replaceChildren();
             bars.style.removeProperty("transition-duration");
-        }, fade);
+            bars.style.removeProperty("transition-delay");
+        }, fade + delay);
     }
     release() {
         settle(this.root);
