@@ -1,7 +1,8 @@
-# Skullet example
+# Skullet demo
 
-A Phoenix LiveView app showing `<Skullet.skeleton>` on a real async assign, with a button
-that pins the loading state so you can look at the skeleton for as long as you like.
+A Phoenix LiveView app showing `<Skullet.skeleton>` on real `assign_async` calls: the demo
+page at `/demo` walks through the skeletons, the reveals, the theming and the parts you do
+not see in the screenshots.
 
 It depends on the library in this repo by path, and imports the engine and stylesheet
 straight from `priv/static` — a `path:` dependency never lands in `deps/`, so
@@ -12,35 +13,45 @@ imports in the [main README](../README.md) are the ones to use.
 
 ```bash
 cd example
-mix deps.get
-mix assets.setup     # downloads esbuild and tailwind once
-mix phx.server
+mix deps.get && mix compile && mix assets.setup
+mix phx.server          # → http://localhost:4000/demo
 ```
 
-Then open <http://localhost:4000/demo>.
+## What is on the page
 
-The green strip at the top of the page reports the running engine: state, phase, how many
-bars are drawn, whether the pane is live and whether anything threw. It turns red when one
-of those disagrees with what the page is showing — that is how the skeleton's own bugs were
-caught, and it is the quickest way to tell "the engine is wrong" from "the page is stale".
+| demo | what it shows |
+|---|---|
+| From your component | the sample is measured, the real card replaces it |
+| Changing size | a one-line sample, four lines of real content: the reveal eases to the height |
+| Plain children | `data` plus your own `loading` toggle, no async at all |
+| Your own skeleton | the `skeleton` slot: a chart drawn as a baseline and boxes |
+| Hints | `skullet-ignore` leaves a badge out, `skullet-block` draws a logo whole |
+| Memory | `remember` draws the next skeleton from the data this one last showed; **Forget** clears it |
+| Reveal modes | `smart`, `together`, `sequence`, `sweep`, `instant`, replayed live |
+| Your own reveal | `registerReveal("wipe-down", …)` in `assets/js/app.js`, asked for by name |
+| Suspense and failure | async + measured fallback + one error branch, always failing here |
+| Theming | one `<Skullet.provider>` with the controls panel above the page |
+| A provider's mode | dark bars on a light page, from `color-scheme` |
+| Images | four images served 1.2–3s late, fading in instead of popping |
 
-## What to look at
+The panel at the top sets latency, animation, speed, mode, radius, text metrics, hold,
+reveal delay and enter filter for **every** demo, through the provider — no demo code
+knows about it.
 
-- The **animation** select switches `shimmer` / `group-shimmer` / `pulse` / `none` live:
-  it is just the `theme` attribute (`theme={%{animation: …}}`), nothing special in the demo.
-- **On load** the skeleton holds, because the demo starts pinned. Press *Show loaded*: the
-  card crossfades in, easing to the real height.
-- **Press *Show loading***: the skeleton comes back, at full opacity, and stays as long as
-  you leave it. This is the path that regressed twice; it has a test now.
-- Press *Show loaded*, reload the page: the skeleton is now drawn from the **real** data
-  (it passes `remember="demo"`), not from the sample — same size, so nothing moves. That is
-  the shape memory, server-side.
-- The state line reads `assign: … · pinned: …`, so you can see which of the two decides
-  the visible state: `pinned` (the `loading` attribute) wins over the async assign.
+The footer shows the running engine: state, phase, bars drawn, and whether anything threw.
 
-The layout renders `<Skullet.Boot.boot />`, so the skeleton is painted before the engine's
-bundle even loads — throttle the network or block `app.js` in devtools and it is still
-there.
+## Deploying to Fly.io
 
-`lib/skullet_demo_web/live/demo_live.ex` is the whole of it: a `sample` map, an
-`assign_async/3` with 600 ms of latency, and the component call.
+The Docker build cannot see `../` (the library), so `mix.exs` swaps the path dependency for
+the GitHub one when `SKULLET_FROM_GIT` is set, and the generated `Dockerfile` sets it. That
+means the deployed demo runs the library from `main` on GitHub, not from your working copy.
+
+```bash
+cd example
+fly launch --copy-config --no-deploy    # keeps this fly.toml; change `app` if you like
+fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)"
+fly deploy
+```
+
+`PHX_HOST` in `fly.toml` must match the app name (or your custom domain). There is no
+database, so nothing else is needed.

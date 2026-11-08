@@ -24,7 +24,16 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/skullet_demo"
 import topbar from "../vendor/topbar"
-import { SkulletHook } from "../../../priv/static/skullet.js"
+import { SkulletHook, registerReveal } from "../../../priv/static/skullet.js"
+
+// A reveal of your own: the content arrives behind a mask wiped down the pane, 500ms.
+registerReveal("wipe-down", {
+  duration: 500,
+  wipe: {
+    mask: progress => `linear-gradient(#000 ${(progress * 100).toFixed(1)}%, transparent)`,
+    out: progress => `linear-gradient(transparent ${(progress * 100).toFixed(1)}%, #000)`
+  }
+})
 
 const BUILD = "engine-4 instant-bars single-owner resolve-nodes"
 

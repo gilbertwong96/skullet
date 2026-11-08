@@ -35,40 +35,40 @@ defmodule SkulletDemoWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://phoenix.hexdocs.pm/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
+    <div class="min-h-screen bg-base-200 text-base-content">
+      <header class="border-b border-base-300 bg-base-100">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
+          <a href="/demo" class="flex items-center gap-2 font-semibold">
+            <span class="text-lg">🦴</span> Skullet
+          </a>
+          <span class="hidden text-xs opacity-60 sm:inline">
+            measured skeletons for Phoenix LiveView
+          </span>
+          <nav class="ml-auto flex items-center gap-1 text-sm">
+            <a class="btn btn-ghost btn-sm" href="#skeletons">Skeletons</a>
+            <a class="btn btn-ghost btn-sm" href="#reveals">Reveals</a>
+            <a class="btn btn-ghost btn-sm" href="#styling">Styling</a>
+            <a class="btn btn-ghost btn-sm" href="#reference">Reference</a>
+            <a class="btn btn-ghost btn-sm" href="https://github.com/gilbertwong96/skullet">
+              GitHub
             </a>
-          </li>
-        </ul>
-      </div>
-    </header>
+          </nav>
+        </div>
+      </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+      <main class="mx-auto max-w-5xl px-4 py-8">
         {render_slot(@inner_block)}
-      </div>
-    </main>
+      </main>
 
-    <.flash_group flash={@flash} />
+      <footer class="border-t border-base-300 bg-base-100">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-4 py-3 font-mono text-xs opacity-70">
+          <span>engine</span>
+          <span data-skullet-build class="truncate"></span>
+        </div>
+      </footer>
+
+      <.flash_group flash={@flash} />
+    </div>
     """
   end
 

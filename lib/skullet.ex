@@ -42,8 +42,8 @@ defmodule Skullet do
   `--skullet-radius`, `--skullet-animation`, `--skullet-speed`, `--skullet-text-top`,
   `--skullet-text-bottom`, `--skullet-hold`, `--skullet-fade`, `--skullet-resize`), set per
   skeleton with the `theme` attribute or globally in CSS.
-  `reveal` is `"smart"` (waits, then crossfades), `"together"` (crossfades at once),
-  `"sequence"` (the bars leave one after another) or `"instant"`.
+  `reveal` is `"smart"` (decides from timing, input and size), `"together"`, `"sequence"`,
+  `"sweep"`, `"instant"`, or a name a page registered with `registerReveal/2` in JS.
 
   Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as
   one block and `skullet-ignore` leaves it out of the skeleton entirely.
@@ -77,7 +77,13 @@ defmodule Skullet do
 
   attr(:sample, :any, required: true, doc: "stands in for the data to draw the skeleton")
   attr(:loading, :boolean, default: false, doc: "forces the skeleton, even over data")
-  attr(:reveal, :string, default: "smart", values: ~w(smart instant))
+
+  attr(:reveal, :string,
+    default: "smart",
+    doc:
+      "`smart`, `together`, `sequence`, `sweep`, `instant`, or a name registered with `registerReveal/2` in JS"
+  )
+
   attr(:theme, :map, default: %{}, doc: "custom properties to override on this skeleton")
   attr(:label, :string, default: "Loading", doc: "read to screen readers while loading")
 

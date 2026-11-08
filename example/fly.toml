@@ -1,0 +1,27 @@
+# Deploy with: fly launch --copy-config --no-deploy  (then adjust `app` below)
+#              fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)"
+#              fly deploy
+#
+# The Docker build has no access to the library in this repo, so it fetches the same code
+# from GitHub instead — see `SKULLET_FROM_GIT` in the Dockerfile and `skullet_dep/0` in mix.exs.
+app = "skullet-demo"
+primary_region = "syd"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PHX_HOST = "skullet-demo.fly.dev"
+  PORT = "4000"
+
+[http_service]
+  internal_port = 4000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
