@@ -27,17 +27,20 @@ defmodule Skullet.Memory do
   @table __MODULE__
   @default_ttl :timer.minutes(30)
 
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
   @impl true
+  @spec init(:ok) :: {:ok, nil}
   def init(:ok) do
     :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
     {:ok, nil}
   end
 
   @doc "Remembers `value` for `scope` and `id`."
+  @spec put(term(), term(), term()) :: :ok
   def put(scope, id, value) do
     ensure_table()
     :ets.insert(@table, {{scope, id}, value, now()})
@@ -51,6 +54,7 @@ defmodule Skullet.Memory do
 
     * `:ttl_ms` — how old a value may be; defaults to `config :skullet, :memory_ttl_ms`
   """
+  @spec get(term(), term(), keyword()) :: term() | nil
   def get(scope, id, opts \\ []) do
     ttl = Keyword.get(opts, :ttl_ms, ttl_ms())
 
@@ -63,6 +67,7 @@ defmodule Skullet.Memory do
   end
 
   @doc "Forgets everything remembered under `scope`, as on sign-out."
+  @spec forget(term()) :: :ok
   def forget(scope) do
     with true <- :ets.whereis(@table) != :undefined do
       :ets.match_delete(@table, {{scope, :_}, :_, :_})
@@ -72,6 +77,7 @@ defmodule Skullet.Memory do
   end
 
   @doc "Forgets everything, for every scope."
+  @spec clear() :: :ok
   def clear do
     with true <- :ets.whereis(@table) != :undefined do
       :ets.delete_all_objects(@table)

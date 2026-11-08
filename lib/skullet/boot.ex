@@ -23,6 +23,7 @@ defmodule Skullet.Boot do
 
   attr(:nonce, :string, default: nil, doc: "the CSP nonce for the inline script")
 
+  @spec boot(map()) :: Phoenix.LiveView.Rendered.t()
   def boot(assigns) do
     assigns = assign(assigns, script: Phoenix.HTML.raw(@script <> ";__skulletPre.boot()"))
 
