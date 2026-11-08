@@ -57,6 +57,7 @@ defmodule SkulletDemoWeb.Docs do
     |> Makeup.highlight_inner_html(lexer: "html")
     |> Phoenix.HTML.raw()
   end
+
   attr :person, :map, required: true
 
   def person(assigns) do

@@ -36,7 +36,7 @@ defmodule SkulletDemoWeb.Layouts do
   def app(assigns) do
     ~H"""
     <div class="min-h-screen bg-base-200 text-base-content">
-      <header class="border-b border-base-300 bg-base-100">
+      <header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur">
         <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
           <a href="/demo" class="flex items-center gap-2 font-semibold">
             <span class="text-lg">🦴</span> Skullet
