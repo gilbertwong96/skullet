@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+    <style>
+      .skullet {
+        width: 480px;
+        font: 16px/24px system-ui, sans-serif;
+      }
+      img {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="skullet" phx-hook="Skullet" data-skullet-state="loading">
+      <span class="skullet-status">Loading</span>
+      <div data-skullet-overlay aria-hidden="true"></div>
+      <div class="skullet-content" data-skullet-content>
+        <img id="pic" src="/missing.png" width="80" height="80" alt="" />
+        <p>caption</p>
+      </div>
+    </div>
+
+    <script type="module">
+      import { attach } from "/skullet.js"
+
+      const engines = new Map()
+      window.harness = {
+        mount(id) {
+          engines.set(id, attach(document.getElementById(id)))
+        },
+        swap(id, html, state) {
+          const root = document.getElementById(id)
+          const engine = engines.get(id)
+          engine.beforeUpdate()
+          root.querySelector("[data-skullet-content]").innerHTML = html
+          root.setAttribute("data-skullet-state", state)
+          engine.update()
+        }
+      }
+    </script>
+  </body>
+</html>

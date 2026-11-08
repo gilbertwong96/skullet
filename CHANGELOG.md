@@ -23,3 +23,4 @@ First release.
   fallback + error branch).
 - `<Skullet.provider>` for `mode`, `theme`, `animation` and `speed` in one place.
 - `sweep` reveal.
+- Images that decode after the reveal fade in instead of popping (ten-second timeout).

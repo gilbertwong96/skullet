@@ -10,6 +10,8 @@ export type Durations = {
     resize: number;
 };
 export declare function durationsOf(element: Element): Durations;
+/** Longest an undecoded image stays hidden — a stalled request must not hold it back. */
+export declare const IMAGE_TIMEOUT_MS = 10000;
 export declare function prefersReducedMotion(): boolean;
 export declare function fadeIn(element: HTMLElement, duration: number): Animation;
 /** The reveal easing to its new height, when the sample guessed the content wrong. */

@@ -33,6 +33,12 @@ export declare class SkulletEngine {
     private stop;
     /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
      * cleared a beat later — unless a new cycle has already taken the container over. */
+    /**
+     * Images arrive after the data does. One that has not decoded yet would pop in, so it
+     * waits at zero opacity and fades in when it is ready (or after the timeout, if it never
+     * is). The pane's own box is what reserves the space, so nothing moves either way.
+     */
+    private revealImages;
     /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
     private sweepOut;
     /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */
