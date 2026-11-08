@@ -87,6 +87,14 @@ defmodule Skullet do
   )
 
   slot(:error, doc: "rendered in place of the content when the async assign failed")
+
+  slot(:skeleton,
+    doc: """
+    your own markup to measure instead of the sample — for a logo, a chart, a canvas.
+    It is rendered while loading in place of the inner block.
+    """
+  )
+
   slot(:inner_block, required: true, doc: "receives the sample, then the real value")
 
   @spec skeleton(map()) :: Phoenix.LiveView.Rendered.t()
@@ -116,16 +124,77 @@ defmodule Skullet do
       <%!-- Rendered here, not created by the engine: LiveView prunes children it does
       not know about, and would take the bars with them on the first patch. --%>
       <div data-skullet-overlay aria-hidden="true"></div>
-      <%= if @state == :failed do %>
-        {render_slot(@error)}
-      <% else %>
-        <div class="skullet-content" data-skullet-content>
-          {render_slot(@inner_block, @value)}
-        </div>
+      <%= cond do %>
+        <% @state == :failed -> %>
+          {render_slot(@error)}
+        <% @state == :loading and @skeleton != [] -> %>
+          <div class="skullet-content" data-skullet-content>
+            {render_slot(@skeleton)}
+          </div>
+        <% true -> %>
+          <div class="skullet-content" data-skullet-content>
+            {render_slot(@inner_block, @value)}
+          </div>
       <% end %>
     </div>
     """
   end
+
+  attr(:id, :string, default: nil, doc: "DOM id for the wrapper")
+  attr(:mode, :string, default: nil, values: [nil, "light", "dark", "system"])
+
+  attr(:animation, :string,
+    default: nil,
+    values: [nil, "shimmer", "group-shimmer", "pulse", "none"]
+  )
+
+  attr(:speed, :string, default: nil, values: [nil, "slow", "fast"])
+  attr(:theme, :map, default: %{}, doc: "custom properties for everything inside")
+  attr(:rest, :global)
+  slot(:inner_block, required: true)
+
+  @doc """
+  Sets the skeleton's look for everything inside — one place instead of every skeleton.
+
+      <Skullet.provider mode="dark" animation="group-shimmer" speed="fast">
+        …
+      </Skullet.provider>
+
+  `mode` sets `color-scheme` on the wrapper, which is what the bars' colours follow, so
+  `"dark"` gives dark-page bars even where the page itself is light. `theme`, `animation`
+  and `speed` become the custom properties the skeletons inside inherit.
+  """
+  def provider(assigns) do
+    style = provider_style(assigns)
+    assigns = assign(assigns, style_attrs: if(style, do: [{"style", style}], else: []))
+
+    ~H"""
+    <div id={@id} {@style_attrs} {@rest}>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  defp provider_style(assigns) do
+    overrides =
+      assigns.theme
+      |> maybe_put("animation", assigns.animation)
+      |> maybe_put("speed", assigns.speed)
+
+    [
+      if(assigns.mode in ["light", "dark"], do: "color-scheme: #{assigns.mode}"),
+      theme_style(overrides)
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("; ")
+    |> case do
+      "" -> nil
+      style -> style
+    end
+  end
+
+  defp maybe_put(theme, _key, nil), do: theme
+  defp maybe_put(theme, key, value), do: Map.put(theme, key, value)
 
   attr(:width, :any, default: "60%", doc: "any CSS length, or a number of pixels")
   attr(:height, :any, default: "1em", doc: "any CSS length, or a number of pixels")

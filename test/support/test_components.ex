@@ -32,6 +32,23 @@ defmodule Skullet.TestComponents do
     """
   end
 
+  def with_custom_skeleton(assigns) do
+    ~H"""
+    <.skeleton id={@id} sample={Skullet.Sample.sample_user()} data={@data}>
+      <div id="content">{@data.name}</div>
+      <:skeleton><div id="custom" skullet-block>custom skeleton</div></:skeleton>
+    </.skeleton>
+    """
+  end
+
+  def provider(assigns) do
+    ~H"""
+    <Skullet.provider mode={@mode} theme={@theme} animation={@animation} speed={@speed}>
+      <div id="inside">hi</div>
+    </Skullet.provider>
+    """
+  end
+
   def failed(assigns) do
     ~H"""
     <.skeleton id={@id} sample={Skullet.Sample.sample_user()} async={@async}>

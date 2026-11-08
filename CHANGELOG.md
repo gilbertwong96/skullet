@@ -19,3 +19,7 @@ First release.
 - Reveals: `smart`, `together`, `sequence`, `instant`. Timings are custom properties
   (`--skullet-hold`, `--skullet-fade`, `--skullet-resize`).
 - `<Skullet.box>` for what cannot be measured; `?skullet-debug` overlay; `skullet-xray`.
+- `skeleton` slot for per-component skeletons (and the Suspense shape: async + measured
+  fallback + error branch).
+- `<Skullet.provider>` for `mode`, `theme`, `animation` and `speed` in one place.
+- `sweep` reveal.

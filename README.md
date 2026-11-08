@@ -115,8 +115,10 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 | `label` | string | `"Loading"` | read to screen readers while loading |
 | `remember` | any | `nil` | opt in to memory under this scope (see below) |
 
-Slots: `inner_block` (required, receives the sample then the real value) and `error`
-(rendered in place of the content when the async assign failed).
+Slots: `inner_block` (required, receives the sample then the real value), `skeleton` (your
+own markup to measure instead of the sample — see [per-component
+skeletons](#per-component-skeletons)) and `error` (rendered in place of the content when
+the async assign failed).
 
 ## Theme
 
@@ -160,6 +162,47 @@ of the thing:
 ```
 
 It is drawn as a single block, like anything marked `skullet-block`.
+
+## Per-component skeletons
+
+Some things measure badly however you mark them. Give the component a companion skeleton
+and pass it to the `skeleton` slot — it is rendered and measured in place of the sample:
+
+```heex
+<Skullet.skeleton id="chart" async={@chart} sample={@sample}>
+  <Chart.chart chart={…} />
+  <:skeleton><Chart.skeleton /></:skeleton>
+</Skullet.skeleton>
+```
+
+`Chart.skeleton/1` is ordinary markup — `<Skullet.box>` blocks, a placeholder axis, an
+outline of the chart. It is only shown while loading, and the bars are measured from it
+rather than from the real chart.
+
+This is also the Suspense shape: an async assign, a measured fallback while it loads, and
+one error branch. There is no separate component for it:
+
+```heex
+<Skullet.skeleton :let={quote} id="quote" async={@quote} sample={@sample_quote}>
+  <Quote.quote quote={quote} />
+  <:skeleton><Quote.quote quote={@sample_quote} /></:skeleton>
+  <:error>Could not load the quote.</:error>
+</Skullet.skeleton>
+```
+
+## One place for the look
+
+Everything inside a provider inherits its look, so you set it once:
+
+```heex
+<Skullet.provider mode="dark" animation="group-shimmer" speed="fast" theme={%{radius: "6px"}}>
+  <.page />
+</Skullet.provider>
+```
+
+`mode` sets `color-scheme` on the wrapper, which is what the bars follow — `"dark"` gives
+dark-page bars even where the page is light. `theme`, `animation` and `speed` become the
+custom properties the skeletons inside inherit; a skeleton's own `theme` still wins.
 
 ## Debugging
 
@@ -210,7 +253,8 @@ easing to the content's real height over `--skullet-resize` (280 ms) if the samp
 it wrong.
 
 `together` is the crossfade without the wait. `sequence` takes the bars out one after
-another, top to bottom. `instant` shows and removes the skeleton with no transition.
+another, top to bottom. `sweep` wipes the skeleton away over the content, which is already
+in place. `instant` shows and removes the skeleton with no transition.
 
 ## Example app
 
@@ -220,8 +264,10 @@ mix phx.server`, then open <http://localhost:4000/demo>.
 
 ## Not implemented yet
 
-Per-component skeletons, the `sweep` reveal, a Suspense equivalent, and a provider-level
-`mode` are not in this version.
+Per-image skeletons while an image decodes (the skeleton re-measures when one lands, but
+each image does not keep its own bar until then), empty states (`empty` / `emptyMessage`),
+and custom reveal specs (per-piece order, enter filters, wipe masks and the `choose` hook —
+the timings themselves are the three custom properties).
 
 ## Plain pages
 

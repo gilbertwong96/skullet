@@ -33,6 +33,8 @@ export declare class SkulletEngine {
     private stop;
     /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
      * cleared a beat later — unless a new cycle has already taken the container over. */
+    /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
+    private sweepOut;
     /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */
     private fadeInSequence;
     /** Debug: did the reveal move the page? Red with the distance, green when it didn't. */
