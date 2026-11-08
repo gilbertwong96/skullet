@@ -27,6 +27,9 @@ function duration(style: CSSStyleDeclaration, name: string, fallback: number): n
   return Math.min(Math.max(parsed, 0), LONGEST_MS)
 }
 
+/** Longest an undecoded image stays hidden — a stalled request must not hold it back. */
+export const IMAGE_TIMEOUT_MS = 10_000
+
 export function prefersReducedMotion(): boolean {
   return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches
 }

@@ -3,7 +3,14 @@ import { barBox, resetFontCache } from "./metrics.js"
 import { drawShimmer, motionOf } from "./shimmer.js"
 import { attachShadow } from "./shadow.js"
 import { createBar } from "./bar.js"
-import { durationsOf, easeHeight, fadeIn, prefersReducedMotion, settle } from "./reveal.js"
+import {
+  IMAGE_TIMEOUT_MS,
+  durationsOf,
+  easeHeight,
+  fadeIn,
+  prefersReducedMotion,
+  settle
+} from "./reveal.js"
 
 const DEBUG = (() => {
   try {
@@ -192,6 +199,7 @@ export class SkulletEngine {
 
   private reveal(): void {
     this.clearHold()
+    this.revealImages()
 
     const fade = this.pass === "fade" && !this.instant
     this.pass = "instant"
@@ -243,6 +251,53 @@ export class SkulletEngine {
 
   /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
    * cleared a beat later — unless a new cycle has already taken the container over. */
+  /**
+   * Images arrive after the data does. One that has not decoded yet would pop in, so it
+   * waits at zero opacity and fades in when it is ready (or after the timeout, if it never
+   * is). The pane's own box is what reserves the space, so nothing moves either way.
+   */
+  private revealImages(): void {
+    const content = this.content
+    if (!content || prefersReducedMotion()) return
+
+    const fade = durationsOf(this.root).fade
+
+    for (const image of content.querySelectorAll("img")) {
+      if (image.complete) continue
+
+      image.style.opacity = "0"
+
+      let shown = false
+
+      const show = () => {
+        if (shown) return
+        shown = true
+
+        if (!image.isConnected) return
+
+        const animation = image.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: fade,
+          easing: "ease",
+          fill: "forwards"
+        })
+
+        animation.finished.then(
+          () => settle(image),
+          () => settle(image)
+        )
+      }
+
+      const timer = window.setTimeout(show, IMAGE_TIMEOUT_MS)
+
+      const ready = () => {
+        window.clearTimeout(timer)
+        show()
+      }
+
+      image.decode?.().then(ready, ready)
+    }
+  }
+
   /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
   private sweepOut(duration: number): void {
     const overlay = this.overlay

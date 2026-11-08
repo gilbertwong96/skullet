@@ -204,6 +204,13 @@ Everything inside a provider inherits its look, so you set it once:
 dark-page bars even where the page is light. `theme`, `animation` and `speed` become the
 custom properties the skeletons inside inherit; a skeleton's own `theme` still wins.
 
+## Images
+
+An image that is still decoding when the content arrives would pop in. It waits at zero
+opacity and fades in when it is ready; one that never arrives shows after ten seconds
+rather than staying hidden. Give images a `width` and `height` (or an `aspect-ratio`) — that
+is what reserves their space, with or without a skeleton over it.
+
 ## Debugging
 
 Add `?skullet-debug` to the URL to outline every skeleton: blue while it loads, then green
@@ -264,9 +271,7 @@ mix phx.server`, then open <http://localhost:4000/demo>.
 
 ## Not implemented yet
 
-Per-image skeletons while an image decodes (the skeleton re-measures when one lands, but
-each image does not keep its own bar until then), empty states (`empty` / `emptyMessage`),
-and custom reveal specs (per-piece order, enter filters, wipe masks and the `choose` hook —
+Empty states (`empty` / `emptyMessage`) and custom reveal specs (per-piece order, enter filters, wipe masks and the `choose` hook —
 the timings themselves are the three custom properties).
 
 ## Plain pages
