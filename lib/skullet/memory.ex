@@ -24,6 +24,21 @@ defmodule Skullet.Memory do
 
   use GenServer
 
+  @typedoc """
+  The scope a skeleton remembers under: usually the current user's id, but any term works
+  — a tenant, an account, `:global`.
+  """
+  @type scope :: term()
+
+  @typedoc "The skeleton's `id` attribute, which completes the key with the scope."
+  @type key :: String.t()
+
+  @typedoc "The data the skeleton last showed: whatever your component was passed."
+  @type value :: term()
+
+  @typedoc "How far back `get/3` looks; `:ttl_ms` may be negative, which expires everything."
+  @type option :: {:ttl_ms, integer()}
+
   @table __MODULE__
   @default_ttl :timer.minutes(30)
 
@@ -40,7 +55,7 @@ defmodule Skullet.Memory do
   end
 
   @doc "Remembers `value` for `scope` and `id`."
-  @spec put(term(), term(), term()) :: :ok
+  @spec put(scope(), key(), value()) :: :ok
   def put(scope, id, value) do
     ensure_table()
     :ets.insert(@table, {{scope, id}, value, now()})
@@ -54,7 +69,7 @@ defmodule Skullet.Memory do
 
     * `:ttl_ms` — how old a value may be; defaults to `config :skullet, :memory_ttl_ms`
   """
-  @spec get(term(), term(), keyword()) :: term() | nil
+  @spec get(scope(), key(), [option()]) :: value() | nil
   def get(scope, id, opts \\ []) do
     ttl = Keyword.get(opts, :ttl_ms, ttl_ms())
 
@@ -67,7 +82,7 @@ defmodule Skullet.Memory do
   end
 
   @doc "Forgets everything remembered under `scope`, as on sign-out."
-  @spec forget(term()) :: :ok
+  @spec forget(scope()) :: :ok
   def forget(scope) do
     with true <- :ets.whereis(@table) != :undefined do
       :ets.match_delete(@table, {{scope, :_}, :_, :_})
