@@ -216,6 +216,40 @@ opacity and fades in when it is ready; one that never arrives shows after ten se
 rather than staying hidden. Give images a `width` and `height` (or an `aspect-ratio`) — that
 is what reserves their space, with or without a skeleton over it.
 
+## Bring your own reveal
+
+`smart`, `together`, `sequence`, `sweep` and `instant` are just specs; register one and ask
+for it by name:
+
+```js
+import { registerReveal } from "../../deps/skullet/priv/static/skullet.js"
+
+registerReveal("wipe-down", {
+  duration: 400,
+  wipe: {
+    mask: progress => `linear-gradient(#000 ${progress * 100}%, transparent)`
+  }
+})
+```
+
+```heex
+<Skullet.skeleton id="profile" async={@user} sample={@sample} reveal="wipe-down">
+```
+
+A spec can say more than a name can:
+
+| field | what it does |
+|---|---|
+| `order` | `"together"`, or `(piece, settings) => ms` — `piece` carries its `rect`, its `unit` (the row or card it belongs to), whether it is `secondary` (smaller text), the `reveal` box and how `late` it landed; `settings` carries `cascade` and `secondaryDelay` |
+| `enter` | a `Keyframe` each piece starts from, on top of the fade: `{ filter: "blur(6px)", transform: "scale(0.98)" }` |
+| `wipe` | `{ mask(progress, pane) → string, out? }`: your own front, drawn each frame as the pane's `mask-image`; `out` masks the skeleton too, otherwise it crossfades |
+| `delay`, `duration`, `hold` | ms; `duration: 0` is instant, `hold` replaces `--skullet-hold` |
+| `choose` | `(context) => spec`, called as the content lands with `waited`, `input`, `refetch`, `hold`, `height` and `pieces` — what it returns wins |
+
+On a plain page you can skip the registry and hand the spec straight to the engine:
+`attach(root, { reveal: spec })`. A wipe bigger than a screen and a half falls back to a
+crossfade, and everything is instant under `prefers-reduced-motion`.
+
 ## Debugging
 
 Add `?skullet-debug` to the URL to outline every skeleton: blue while it loads, then green
@@ -291,8 +325,7 @@ mix phx.server`, then open <http://localhost:4000/demo>.
 
 ## Not implemented yet
 
-Empty states (`empty` / `emptyMessage`) and custom reveal specs (per-piece order, enter filters, wipe masks and the `choose` hook —
-the timings themselves are the three custom properties).
+Empty states (`empty` / `emptyMessage`).
 
 ## Plain pages
 

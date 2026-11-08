@@ -1,3 +1,4 @@
+import { registeredReveal } from "./registry.js";
 import { DEFAULT_DURATIONS } from "./reveal.js";
 /** A skeleton up for less than this is a flash — `smart` holds it back. */
 export const SKELETON_DELAY = DEFAULT_DURATIONS.hold;
@@ -7,6 +8,8 @@ const SMALL_PIECES = 3;
 /** A custom order's latest piece, and the longest any reveal runs. */
 export const MAX_DELAY = 1000;
 export const MAX_DURATION = 1000;
+/** A wipe bigger than this many screens crossfades instead: the front would be mostly off screen. */
+export const MAX_WIPE_AREA = 1.5;
 const clamp = (value, max) => Math.min(Math.max(value, 0), max);
 /** What a reveal brings in one by one: anything holding text or media of its own. */
 export function pieces(root) {
@@ -99,22 +102,22 @@ export const byRow = ({ rect, unit, secondary, late }, { cascade, secondaryDelay
 /** `together` for a small reveal, else rows cascading down the page. */
 export const byContent = (context) => context.height < SMALL_HEIGHT || context.pieces <= SMALL_PIECES ? together : { order: byRow };
 /** The cases `smart` settles before looking at the content: instant, or a quick crossfade. */
-export const quickly = (context) => context.input || context.waited < SKELETON_DELAY
+export const quickly = (context) => context.input || context.waited < context.hold
     ? instant
     : context.refetch
         ? { order: "together", duration: QUICK_FADE }
         : null;
 /** Picks how each reveal happens from how it loaded and what it holds. */
 export const smart = {
-    hold: SKELETON_DELAY,
     choose: (context) => quickly(context) ?? byContent(context)
 };
 const NAMED = { instant, together, sequence, sweep, smart };
-/** A built-in by name, or a spec as it is. */
+/** A built-in by name, a registered one, or a spec as it is. */
 export function revealSpec(mode) {
     if (mode && typeof mode === "object")
         return mode;
-    return NAMED[mode ?? "smart"] ?? together;
+    const name = mode ?? "smart";
+    return NAMED[name] ?? registeredReveal(name) ?? together;
 }
 /** Turns a spec into the plan to run, now that the content is here. */
 export function planReveal(spec, context, defaults) {
@@ -128,6 +131,8 @@ export function planReveal(spec, context, defaults) {
     const enter = resolved.enter ?? defaults.enter;
     if (!duration)
         return { kind: "instant" };
+    if (resolved.wipe)
+        return { kind: "wipe", wipe: resolved.wipe, delay, duration };
     if (resolved.sweep)
         return { kind: "sweep", delay, duration };
     if (typeof resolved.order === "function") {

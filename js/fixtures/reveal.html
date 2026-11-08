@@ -51,13 +51,15 @@
     </div>
 
     <script type="module">
-      import { attach } from "/skullet.js"
+      import { attach, registerReveal } from "/skullet.js"
 
       const engines = new Map()
 
+      window.registerReveal = registerReveal
+
       window.harness = {
-        mount(id) {
-          engines.set(id, attach(document.getElementById(id)))
+        mount(id, options) {
+          engines.set(id, attach(document.getElementById(id), options ?? {}))
         },
         swap(id, html, state) {
           const root = document.getElementById(id)

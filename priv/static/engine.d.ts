@@ -1,8 +1,13 @@
+import { type RevealSpec } from "./plan.js";
 /** Turns the overlay on or off for the whole page, from a console or a devtool. */
 export declare function setDebug(on: boolean): void;
 export declare function stateOf(root: Element): string;
+export type EngineOptions = {
+    reveal?: RevealSpec;
+};
 export declare class SkulletEngine {
     readonly root: HTMLElement;
+    private readonly override?;
     private content;
     private overlay;
     private bars;
@@ -23,7 +28,7 @@ export declare class SkulletEngine {
     private late;
     /** The skeleton was drawn from the data already on screen. */
     private refetched;
-    constructor(root: Element);
+    constructor(root: Element, options?: EngineOptions);
     start(): void;
     /** Runs before LiveView patches the content in: the last moment the old shape exists. */
     beforeUpdate(): void;
@@ -31,6 +36,8 @@ export declare class SkulletEngine {
     update(): void;
     destroy(): void;
     private get instant();
+    /** ms a skeleton waits before showing: a spec's `hold` wins over `--skullet-hold`. */
+    private hold;
     private show;
     private showBars;
     /** Phase lives in the shadow root: LiveView patches the light DOM, not this. */
@@ -52,6 +59,12 @@ export declare class SkulletEngine {
     private runPlan;
     /** `sequence`: pieces arrive in `order`, the bars they replace leave on the same beat. */
     private runSequence;
+    /**
+     * A wipe of your own: the pane's mask is drawn each frame from `wipe.mask`, and the
+     * skeleton's from `wipe.out` — or crossfaded out when you leave that off. Too big a
+     * reveal falls back to that crossfade: a front across it would be mostly off screen.
+     */
+    private wipeOut;
     /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
     private sweepOut;
     /** Debug: did the reveal move the page? Red with the distance, green when it didn't. */

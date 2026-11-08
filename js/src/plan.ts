@@ -1,3 +1,4 @@
+import { registeredReveal } from "./registry.js"
 import { DEFAULT_DURATIONS } from "./reveal.js"
 
 /** Where one piece of a reveal sits: a piece of content arriving, or a bar of the skeleton leaving. */
@@ -21,6 +22,8 @@ export type RevealContext = {
   input: boolean
   /** The skeleton was drawn from the data on screen. */
   refetch: boolean
+  /** ms a skeleton waits before showing — the spec's `hold`, or `--skullet-hold`. */
+  hold: number
   height: number
   /** How many pieces the content arrives in. */
   pieces: number
@@ -35,6 +38,17 @@ export type RevealSettings = { cascade: number; secondaryDelay: number }
 
 export type Order = (piece: Piece, settings: RevealSettings) => number | null
 
+/** A front crossing the whole reveal, drawn each frame from progress 0 to 1. */
+export type Wipe = {
+  /** The incoming pane's `mask-image` at `progress`. */
+  mask: (progress: number, pane: WipePane) => string
+  /** The outgoing skeleton's; the reveal crossfades it out when left out. */
+  out?: (progress: number, pane: WipePane) => string
+}
+
+/** One pane under a wipe: its own box, and the box the front crosses, both in viewport px. */
+export type WipePane = { rect: DOMRect; reveal: DOMRect }
+
 export type RevealSpec = {
   /** When each piece appears, in ms; null to appear at once. `"together"` for all at once. */
   order?: "together" | Order
@@ -42,6 +56,8 @@ export type RevealSpec = {
   enter?: Keyframe
   /** A front crossing the whole reveal: the built-in sweep. */
   sweep?: boolean
+  /** Your own front, drawn as a mask on the pane and, if you say so, on the skeleton. */
+  wipe?: Wipe
   delay?: number
   /** 0 is instant. */
   duration?: number
@@ -58,6 +74,7 @@ export type Plan =
   | { kind: "together"; delay: number; duration: number; enter?: Keyframe }
   | { kind: "sequence"; order: Order; delay: number; duration: number; enter?: Keyframe }
   | { kind: "sweep"; delay: number; duration: number }
+  | { kind: "wipe"; wipe: Wipe; delay: number; duration: number }
 
 /** A skeleton up for less than this is a flash — `smart` holds it back. */
 export const SKELETON_DELAY = DEFAULT_DURATIONS.hold
@@ -67,6 +84,8 @@ const SMALL_PIECES = 3
 /** A custom order's latest piece, and the longest any reveal runs. */
 export const MAX_DELAY = 1000
 export const MAX_DURATION = 1000
+/** A wipe bigger than this many screens crossfades instead: the front would be mostly off screen. */
+export const MAX_WIPE_AREA = 1.5
 
 const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max)
 
@@ -204,7 +223,7 @@ export const byContent = (context: RevealContext): RevealSpec =>
 
 /** The cases `smart` settles before looking at the content: instant, or a quick crossfade. */
 export const quickly = (context: RevealContext): RevealSpec | null =>
-  context.input || context.waited < SKELETON_DELAY
+  context.input || context.waited < context.hold
     ? instant
     : context.refetch
       ? { order: "together", duration: QUICK_FADE }
@@ -212,16 +231,17 @@ export const quickly = (context: RevealContext): RevealSpec | null =>
 
 /** Picks how each reveal happens from how it loaded and what it holds. */
 export const smart: RevealSpec = {
-  hold: SKELETON_DELAY,
   choose: (context) => quickly(context) ?? byContent(context)
 }
 
 const NAMED: Record<string, RevealSpec> = { instant, together, sequence, sweep, smart }
 
-/** A built-in by name, or a spec as it is. */
+/** A built-in by name, a registered one, or a spec as it is. */
 export function revealSpec(mode: RevealMode | string | null | undefined): RevealSpec {
   if (mode && typeof mode === "object") return mode
-  return NAMED[mode ?? "smart"] ?? together
+
+  const name = mode ?? "smart"
+  return NAMED[name] ?? registeredReveal(name) ?? together
 }
 
 export type RevealDefaults = { duration: number; delay: number; enter?: Keyframe }
@@ -244,6 +264,7 @@ export function planReveal(
   const enter = resolved.enter ?? defaults.enter
 
   if (!duration) return { kind: "instant" }
+  if (resolved.wipe) return { kind: "wipe", wipe: resolved.wipe, delay, duration }
   if (resolved.sweep) return { kind: "sweep", delay, duration }
 
   if (typeof resolved.order === "function") {

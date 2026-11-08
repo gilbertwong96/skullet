@@ -1,5 +1,7 @@
-import { SkulletEngine } from "./engine.js";
+import { type EngineOptions, SkulletEngine } from "./engine.js";
 export { setDebug } from "./engine.js";
+export { registerReveal } from "./registry.js";
+export type { Piece, Plan, RevealContext, RevealMode, RevealSpec, Wipe, WipePane } from "./plan.js";
 declare global {
     interface Window {
         __skulletEngine?: {
@@ -8,7 +10,11 @@ declare global {
     }
 }
 /** The engine for one `.skullet` root: what the hook drives, and what a plain page can. */
-export declare function attach(root: Element): SkulletEngine;
+/**
+ * Starts the engine on one skeleton. `options.reveal` takes a spec — or the name of one
+ * registered with `registerReveal/2` — and wins over the element's `reveal` attribute.
+ */
+export declare function attach(root: Element, options?: EngineOptions): SkulletEngine;
 type HookContext = {
     el: Element;
     engine?: SkulletEngine;

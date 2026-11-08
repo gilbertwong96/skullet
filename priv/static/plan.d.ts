@@ -18,6 +18,8 @@ export type RevealContext = {
     input: boolean;
     /** The skeleton was drawn from the data on screen. */
     refetch: boolean;
+    /** ms a skeleton waits before showing — the spec's `hold`, or `--skullet-hold`. */
+    hold: number;
     height: number;
     /** How many pieces the content arrives in. */
     pieces: number;
@@ -32,6 +34,18 @@ export type RevealSettings = {
     secondaryDelay: number;
 };
 export type Order = (piece: Piece, settings: RevealSettings) => number | null;
+/** A front crossing the whole reveal, drawn each frame from progress 0 to 1. */
+export type Wipe = {
+    /** The incoming pane's `mask-image` at `progress`. */
+    mask: (progress: number, pane: WipePane) => string;
+    /** The outgoing skeleton's; the reveal crossfades it out when left out. */
+    out?: (progress: number, pane: WipePane) => string;
+};
+/** One pane under a wipe: its own box, and the box the front crosses, both in viewport px. */
+export type WipePane = {
+    rect: DOMRect;
+    reveal: DOMRect;
+};
 export type RevealSpec = {
     /** When each piece appears, in ms; null to appear at once. `"together"` for all at once. */
     order?: "together" | Order;
@@ -39,6 +53,8 @@ export type RevealSpec = {
     enter?: Keyframe;
     /** A front crossing the whole reveal: the built-in sweep. */
     sweep?: boolean;
+    /** Your own front, drawn as a mask on the pane and, if you say so, on the skeleton. */
+    wipe?: Wipe;
     delay?: number;
     /** 0 is instant. */
     duration?: number;
@@ -65,12 +81,19 @@ export type Plan = {
     kind: "sweep";
     delay: number;
     duration: number;
+} | {
+    kind: "wipe";
+    wipe: Wipe;
+    delay: number;
+    duration: number;
 };
 /** A skeleton up for less than this is a flash — `smart` holds it back. */
 export declare const SKELETON_DELAY: 150;
 /** A custom order's latest piece, and the longest any reveal runs. */
 export declare const MAX_DELAY = 1000;
 export declare const MAX_DURATION = 1000;
+/** A wipe bigger than this many screens crossfades instead: the front would be mostly off screen. */
+export declare const MAX_WIPE_AREA = 1.5;
 /** What a reveal brings in one by one: anything holding text or media of its own. */
 export declare function pieces(root: Element): Element[];
 /** Its row or card: the nearest ancestor with two or more siblings like it. */
@@ -104,7 +127,7 @@ export declare const byContent: (context: RevealContext) => RevealSpec;
 export declare const quickly: (context: RevealContext) => RevealSpec | null;
 /** Picks how each reveal happens from how it loaded and what it holds. */
 export declare const smart: RevealSpec;
-/** A built-in by name, or a spec as it is. */
+/** A built-in by name, a registered one, or a spec as it is. */
 export declare function revealSpec(mode: RevealMode | string | null | undefined): RevealSpec;
 export type RevealDefaults = {
     duration: number;

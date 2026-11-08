@@ -4,6 +4,7 @@ import { drawShimmer, motionOf } from "./shimmer.js"
 import { attachShadow } from "./shadow.js"
 import {
   MAX_DELAY,
+  MAX_WIPE_AREA,
   type Plan,
   type RevealSpec,
   barPiece,
@@ -32,7 +33,7 @@ const DEBUG = (() => {
 const DEBUG_LOADING = "2px solid #3b82f6"
 
 /** `--skullet-delay` before a reveal starts, `--skullet-enter-*` for where pieces come from. */
-function settingsOf(root: Element): { fade: number; delay: number } {
+function settingsOf(root: Element): { fade: number; delay: number; hold: number } {
   const durations = durationsOf(root)
   const style = getComputedStyle(root)
   const raw = style.getPropertyValue("--skullet-delay").trim()
@@ -43,7 +44,11 @@ function settingsOf(root: Element): { fade: number; delay: number } {
       ? Number.parseFloat(raw) * 1000
       : 0
 
-  return { fade: durations.fade, delay: Math.min(Math.max(parsed, 0), 1000) }
+  return {
+    fade: durations.fade,
+    delay: Math.min(Math.max(parsed, 0), 1000),
+    hold: durations.hold
+  }
 }
 
 /** The `enter` keyframe a skeleton inherits: a filter and a scale, both optional. */
@@ -124,8 +129,11 @@ export function stateOf(root: Element): string {
 type Phase = "holding" | "bars"
 type Pass = "instant" | "fade"
 
+export type EngineOptions = { reveal?: RevealSpec }
+
 export class SkulletEngine {
   readonly root: HTMLElement
+  private readonly override?: RevealSpec
 
   private content: HTMLElement | null
   private overlay: HTMLElement | null = null
@@ -148,8 +156,9 @@ export class SkulletEngine {
   /** The skeleton was drawn from the data already on screen. */
   private refetched = false
 
-  constructor(root: Element) {
+  constructor(root: Element, options: EngineOptions = {}) {
     this.root = root as HTMLElement
+    this.override = options.reveal
     this.content = root.querySelector<HTMLElement>("[data-skullet-content]")
   }
 
@@ -244,6 +253,11 @@ export class SkulletEngine {
     return this.root.getAttribute("data-skullet-reveal") === "instant" || prefersReducedMotion()
   }
 
+  /** ms a skeleton waits before showing: a spec's `hold` wins over `--skullet-hold`. */
+  private hold(): number {
+    return this.spec().hold ?? settingsOf(this.root).hold
+  }
+
   private show(): void {
     if (this.state !== "loading") return
 
@@ -253,7 +267,7 @@ export class SkulletEngine {
 
     const prePainted = (this.bars?.children.length ?? 0) > 0
 
-    if (this.instant || prePainted) {
+    if (this.instant || prePainted || this.hold() <= 0) {
       this.showBars()
     } else {
       this.phase = "holding"
@@ -262,7 +276,7 @@ export class SkulletEngine {
       this.holdTimer = window.setTimeout(() => {
         this.holdTimer = 0
         if (this.phase === "holding") this.showBars()
-      }, durationsOf(this.root).hold)
+      }, this.hold())
     }
 
     this.schedule()
@@ -386,7 +400,7 @@ export class SkulletEngine {
 
   /** The spec this skeleton asks for — its `reveal` attribute, or `smart`. */
   private spec(): RevealSpec {
-    return revealSpec(this.root.getAttribute("data-skullet-reveal"))
+    return this.override ?? revealSpec(this.root.getAttribute("data-skullet-reveal"))
   }
 
   /** The plan for this reveal, decided the moment the content lands. */
@@ -400,6 +414,7 @@ export class SkulletEngine {
         waited: this.shownAt === 0 ? Number.POSITIVE_INFINITY : performance.now() - this.shownAt,
         input: performance.now() - lastInput < ACTIVE_WINDOW,
         refetch: this.refetched,
+        hold: this.hold(),
         height: content ? content.getBoundingClientRect().height : reveal.height,
         pieces: content ? content.children.length : 0
       },
@@ -421,10 +436,13 @@ export class SkulletEngine {
 
     if (plan.kind === "sweep") {
       this.sweepOut(duration, delay)
+    } else if (plan.kind === "wipe") {
+      this.wipeOut(plan, duration, delay)
     } else if (plan.kind === "sequence") {
       this.runSequence(plan, duration)
     } else {
-      if (this.content) fadeIn(this.content, duration, delay, plan.enter)
+      if (this.content)
+        fadeIn(this.content, duration, delay, "enter" in plan ? plan.enter : undefined)
       this.hideOverlay(true, duration, delay)
     }
   }
@@ -489,6 +507,80 @@ export class SkulletEngine {
         this.setPhase(null)
       }
     }, last + 100)
+  }
+
+  /**
+   * A wipe of your own: the pane's mask is drawn each frame from `wipe.mask`, and the
+   * skeleton's from `wipe.out` — or crossfaded out when you leave that off. Too big a
+   * reveal falls back to that crossfade: a front across it would be mostly off screen.
+   */
+  private wipeOut(plan: Extract<Plan, { kind: "wipe" }>, duration: number, delay: number): void {
+    const content = this.content
+    const overlay = this.overlay
+    const bars = this.bars
+    if (!content || !overlay || !bars) return
+
+    const rect = content.getBoundingClientRect()
+    const reveal = this.root.getBoundingClientRect()
+    const pane = { rect, reveal }
+
+    if (rect.width * rect.height > innerWidth * innerHeight * MAX_WIPE_AREA) {
+      if (this.content) fadeIn(content, duration, delay)
+      this.hideOverlay(true, duration, delay)
+      return
+    }
+
+    const maskOf = plan.wipe.out
+
+    const frame = (progress: number, element: HTMLElement) => {
+      const image = maskOf ? maskOf(progress, pane) : ""
+      element.style.maskImage = image
+      element.style.webkitMaskImage = image
+    }
+
+    const clear = () => {
+      for (const element of [content, overlay]) {
+        element.style.removeProperty("mask-image")
+        element.style.removeProperty("-webkit-mask-image")
+      }
+
+      if (this.bars === bars && this.phase === null) {
+        bars.replaceChildren()
+        this.setPhase(null)
+      }
+    }
+
+    let done = false
+
+    const finish = () => {
+      if (done) return
+      done = true
+      clear()
+    }
+
+    const start = performance.now() + delay
+    const step = () => {
+      const progress = Math.min(Math.max((performance.now() - start) / duration, 0), 1)
+
+      const image = plan.wipe.mask(progress, pane)
+      content.style.maskImage = image
+      content.style.webkitMaskImage = image
+      if (maskOf) frame(progress, overlay)
+
+      if (progress < 1) requestAnimationFrame(step)
+      else finish()
+    }
+
+    if (maskOf) {
+      // the skeleton is driven by its own mask, not by the container's fade
+      bars.style.transition = "none"
+      this.setPhase(null)
+    } else {
+      this.hideOverlay(true, duration, delay)
+    }
+
+    window.requestAnimationFrame(step)
+    window.setTimeout(finish, delay + duration + 200)
   }
 
   /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
