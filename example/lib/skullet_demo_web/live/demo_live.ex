@@ -32,7 +32,8 @@ defmodule SkulletDemoWeb.DemoLive do
     "memory" => :memory,
     "modes" => :reveal_demo,
     "custom" => :custom,
-    "suspense" => :suspense
+    "suspense" => :suspense,
+    "images" => :images
   }
 
   @codes %{
@@ -115,7 +116,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:real_rows, @real_rows)
      |> assign(:sample_chart, @sample_chart)
      |> assign(:real_chart, @real_chart)
-     |> assign(:images, @images)
+     |> assign(:images_sample, @images)
      |> assign(:plain_user, @real_card)
      |> assign(:pinned, false)
      |> assign(:controls, controls())
@@ -127,7 +128,8 @@ defmodule SkulletDemoWeb.DemoLive do
      |> replay(:memory)
      |> replay(:reveal_demo)
      |> replay(:custom)
-     |> replay(:suspense)}
+     |> replay(:suspense)
+     |> replay(:images)}
   end
 
   @impl true
@@ -195,6 +197,16 @@ defmodule SkulletDemoWeb.DemoLive do
   defp data_for(:memory), do: @real_card
   defp data_for(:reveal_demo), do: @real_card
   defp data_for(:custom), do: @real_card
+
+  defp data_for(:images) do
+    token = System.unique_integer([:positive])
+
+    @images
+    |> Enum.with_index()
+    |> Enum.map(fn {image, index} ->
+      Map.put(image, :src, "/slow/#{1200 + index * 600}#{image.src}?n=#{token}")
+    end)
+  end
 
   # The theme the provider applies to every skeleton in the page.
   defp theme(controls) do
@@ -339,7 +351,7 @@ defmodule SkulletDemoWeb.DemoLive do
               blurb="A chart does not measure well. The `skeleton` slot supplies the shape instead: a baseline and a row of boxes."
             >
               <:actions>
-                <button class="btn btn-xs" phx-click="replay" phx-value-demo="own">Replay</button>
+                <button class="btn btn-xs" phx-click="replay" phx-value-demo="images">Replay</button>
               </:actions>
               <Skullet.skeleton :let={values} id="s-own" async={@own} sample={@sample_chart}>
                 <div class="flex h-28 items-end gap-2">
@@ -556,18 +568,20 @@ defmodule SkulletDemoWeb.DemoLive do
               blurb="An image still decoding when the content arrives waits at zero opacity and fades in. These four are served with a delay."
             >
               <:actions>
-                <button class="btn btn-xs" phx-click="replay" phx-value-demo="own">Replay</button>
+                <button class="btn btn-xs" phx-click="replay" phx-value-demo="images">Replay</button>
               </:actions>
-              <div class="grid grid-cols-4 gap-3">
-                <img
-                  :for={{image, index} <- Enum.with_index(@images)}
-                  src={"/slow/#{1200 + index * 600}#{image.src}"}
-                  width="96"
-                  height="96"
-                  alt=""
-                  class="size-24 rounded-xl"
-                />
-              </div>
+              <Skullet.skeleton :let={images} id="s-images" async={@images} sample={@images_sample}>
+                <div class="grid grid-cols-4 gap-3">
+                  <img
+                    :for={image <- images}
+                    src={image.src}
+                    width="96"
+                    height="96"
+                    alt={image.label}
+                    class="size-24 rounded-xl"
+                  />
+                </div>
+              </Skullet.skeleton>
             </.demo>
 
             <.demo
