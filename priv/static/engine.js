@@ -75,8 +75,11 @@ export class SkulletEngine {
         this.pinned = this.root.getBoundingClientRect().height;
         this.root.style.height = `${this.pinned}px`;
         this.root.style.overflow = "hidden";
-        if (this.content)
+        // `sequence` and `sweep` animate the skeleton away; the content is simply there.
+        const mode = this.root.getAttribute("data-skullet-reveal");
+        if (this.content && mode !== "sequence" && mode !== "sweep") {
             fadeIn(this.content, durationsOf(this.root).fade);
+        }
         this.safetyTimer = window.setTimeout(() => {
             this.safetyTimer = 0;
             this.release();
@@ -180,8 +183,11 @@ export class SkulletEngine {
         const target = this.content ? this.content.getBoundingClientRect().height : this.pinned;
         const durations = durationsOf(this.root);
         this.easing = true;
-        if (this.root.getAttribute("data-skullet-reveal") === "sequence")
+        const mode = this.root.getAttribute("data-skullet-reveal");
+        if (mode === "sequence")
             this.fadeInSequence(durations.fade);
+        else if (mode === "sweep")
+            this.sweepOut(durations.fade);
         else
             this.hideOverlay(true);
         let settled = false;
@@ -211,6 +217,32 @@ export class SkulletEngine {
     }
     /** Off is a phase, not an animation: the shadow's transition fades it, and the bars are
      * cleared a beat later — unless a new cycle has already taken the container over. */
+    /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
+    sweepOut(duration) {
+        const overlay = this.overlay;
+        const bars = this.bars;
+        if (!overlay || !bars)
+            return;
+        bars.style.transition = "none";
+        const clear = () => {
+            overlay.style.removeProperty("clip-path");
+            bars.style.removeProperty("transition");
+            if (this.bars === bars && this.phase === null) {
+                bars.replaceChildren();
+                this.setPhase(null);
+            }
+        };
+        let cleared = false;
+        const finish = () => {
+            if (cleared)
+                return;
+            cleared = true;
+            clear();
+        };
+        const animation = overlay.animate([{ clipPath: "inset(0% 0 0 0)" }, { clipPath: "inset(100% 0 0 0)" }], { duration, easing: "ease-in", fill: "forwards" });
+        animation.finished.then(finish, finish);
+        window.setTimeout(finish, duration + 200);
+    }
     /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */
     fadeInSequence(fade) {
         const bars = this.bars;
