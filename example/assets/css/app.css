@@ -117,3 +117,41 @@
   color: #fff;
   font: 600 14px/1.4 system-ui, sans-serif;
 }
+
+/* Syntax highlighting for the code snippets, from Makeup's token classes.
+   daisyUI's theme variables keep it readable in both colour schemes. */
+.highlight .nt,
+.highlight .nt a {
+  color: var(--color-primary, #7c3aed);
+}
+.highlight .na,
+.highlight .nc,
+.highlight .nf {
+  color: var(--color-info, #0ea5e9);
+}
+.highlight .s,
+.highlight .s1,
+.highlight .s2,
+.highlight .si {
+  color: var(--color-success, #059669);
+}
+.highlight .k,
+.highlight .kd,
+.highlight .kn {
+  color: var(--color-secondary, #db2777);
+}
+.highlight .mi,
+.highlight .mf {
+  color: var(--color-warning, #d97706);
+}
+.highlight .c,
+.highlight .c1,
+.highlight .cm {
+  color: var(--color-base-content, #6b7280);
+  opacity: 0.6;
+}
+.highlight .p,
+.highlight .o {
+  color: var(--color-base-content, #374151);
+  opacity: 0.75;
+}

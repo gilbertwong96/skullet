@@ -45,12 +45,18 @@ defmodule SkulletDemoWeb.Docs do
         <summary class="cursor-pointer text-xs font-medium opacity-60 hover:opacity-100">
           code
         </summary>
-        <pre class="mt-2 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs leading-relaxed"><code>{@code}</code></pre>
+        <pre class="highlight mt-2 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs leading-relaxed"><code>{highlight(@code)}</code></pre>
       </details>
     </article>
     """
   end
 
+  # HEEx reads as HTML with Elixir inside; the HTML lexer keeps the tags readable.
+  defp highlight(source) do
+    source
+    |> Makeup.highlight_inner_html(lexer: "html")
+    |> Phoenix.HTML.raw()
+  end
   attr :person, :map, required: true
 
   def person(assigns) do
