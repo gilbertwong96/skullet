@@ -315,6 +315,46 @@ test("the timings are custom properties", async () => {
   })
 })
 
+test("a sweep reveal wipes the skeleton away over the content", async () => {
+  await withPage(async (page) => {
+    await open(page, "reveal")
+    await page.evaluate(() => {
+      document.getElementById("root").setAttribute("data-skullet-reveal", "sweep")
+    })
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p>", "loaded")
+
+    const during = await page.evaluate(() => {
+      const root = document.getElementById("root")
+      const overlay = root.querySelector("[data-skullet-overlay]")
+      const pane = root.querySelector("[data-skullet-content]")
+      return {
+        wiping: overlay.getAnimations().length > 0,
+        paneAnimations: pane.getAnimations().length,
+        paneOpacity: getComputedStyle(pane).opacity
+      }
+    })
+
+    assert.equal(during.wiping, true, "the overlay is not being wiped")
+    assert.equal(during.paneAnimations, 0, "sweep should not fade the content")
+    assert.equal(during.paneOpacity, "1")
+
+    await page.waitForTimeout(500)
+
+    const after = await rootInfo(page)
+    assert.equal(after.bars, 0)
+    assert.equal(after.phase, null)
+    assert.equal(
+      await page.evaluate(
+        () => document.querySelector("#root > [data-skullet-overlay]").style.clipPath
+      ),
+      ""
+    )
+  })
+})
+
 test("a pane LiveView reused for something else is found again", async () => {
   await withPage(async (page) => {
     await open(page, "reveal")

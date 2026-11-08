@@ -104,6 +104,57 @@ defmodule SkulletTest do
     assert LazyHTML.attribute(overlay, "aria-hidden") == ["true"]
   end
 
+  test "a custom skeleton is measured instead of the sample" do
+    loading =
+      render_component(&Skullet.TestComponents.with_custom_skeleton/1, id: "chart", data: nil)
+
+    assert text(query(loading, "#custom")) == "custom skeleton"
+    assert empty?(loading, "#content")
+
+    loaded =
+      render_component(&Skullet.TestComponents.with_custom_skeleton/1,
+        id: "chart",
+        data: @real
+      )
+
+    assert text(query(loaded, "#content")) == "Real Name"
+    assert empty?(loaded, "#custom")
+  end
+
+  test "a provider sets the scheme and the properties everything inside inherits" do
+    html =
+      render_component(&Skullet.TestComponents.provider/1,
+        mode: "dark",
+        theme: %{base: "red"},
+        animation: "group-shimmer",
+        speed: "fast"
+      )
+
+    style =
+      html
+      |> LazyHTML.from_document()
+      |> LazyHTML.query("[style]")
+      |> LazyHTML.attribute("style")
+      |> List.first()
+
+    assert style =~ "color-scheme: dark"
+    assert style =~ "--skullet-base: red"
+    assert style =~ "--skullet-animation: group-shimmer"
+    assert style =~ "--skullet-speed: fast"
+  end
+
+  test "a provider with nothing to say renders no style" do
+    html =
+      render_component(&Skullet.TestComponents.provider/1, %{
+        mode: nil,
+        theme: %{},
+        animation: nil,
+        speed: nil
+      })
+
+    assert html |> LazyHTML.from_document() |> LazyHTML.query("[style]") |> Enum.empty?()
+  end
+
   test "the pre-paint script is inlined, with the nonce it is given" do
     html = render_component(&Skullet.Boot.boot/1, %{nonce: "abc123"})
     script = html |> LazyHTML.from_document() |> LazyHTML.query("script[data-skullet-boot]")
