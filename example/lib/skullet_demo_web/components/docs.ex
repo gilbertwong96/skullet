@@ -71,19 +71,4 @@ defmodule SkulletDemoWeb.Docs do
     </div>
     """
   end
-
-  attr :controls, :map, required: true
-  slot :inner_block, required: true
-
-  def card(assigns) do
-    ~H"""
-    <div class="flex items-center gap-4">
-      <img src={@controls.avatar} width="56" height="56" alt="" class="size-14 rounded-full" />
-      <div class="min-w-0">
-        <p class="truncate font-semibold">{@controls.name}</p>
-        <p class="truncate text-sm opacity-70">{@controls.bio}</p>
-      </div>
-    </div>
-    """
-  end
 end

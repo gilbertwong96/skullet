@@ -1,7 +1,7 @@
 # Skullet demo
 
 A Phoenix LiveView app showing `<Skullet.skeleton>` on real `assign_async` calls: the demo
-page at `/demo` walks through the skeletons, the reveals, the theming and the parts you do
+page at `/` walks through the skeletons, the reveals, the theming and the parts you do
 not see in the screenshots.
 
 It depends on the library in this repo by path, and imports the engine and stylesheet
@@ -14,7 +14,7 @@ imports in the [main README](../README.md) are the ones to use.
 ```bash
 cd example
 mix deps.get && mix compile && mix assets.setup
-mix phx.server          # → http://localhost:4000/demo
+mix phx.server          # → http://localhost:4000
 ```
 
 ## What is on the page

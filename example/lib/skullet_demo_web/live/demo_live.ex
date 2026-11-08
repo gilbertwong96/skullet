@@ -65,24 +65,6 @@ defmodule SkulletDemoWeb.DemoLive do
     avatar: "/images/b.svg"
   }
 
-  @sample_rows [
-    %{name: "Ada Lovelace", role: "Mathematics"},
-    %{name: "Grace Hopper", role: "Compilers"},
-    %{name: "Alan Turing", role: "Machines"},
-    %{name: "Katherine Johnson", role: "Orbital mechanics"},
-    %{name: "Margaret Hamilton", role: "Flight software"},
-    %{name: "Barbara Liskov", role: "Abstraction"}
-  ]
-
-  @real_rows [
-    %{name: "Ada Lovelace", role: "Analytical Engine"},
-    %{name: "Grace Hopper", role: "COBOL"},
-    %{name: "Alan Turing", role: "Computability"},
-    %{name: "Katherine Johnson", role: "Trajectories"},
-    %{name: "Margaret Hamilton", role: "Apollo guidance"},
-    %{name: "Barbara Liskov", role: "Substitution principle"}
-  ]
-
   @sample_chart [40, 64, 52, 88, 72, 96, 60, 80]
   @real_chart [72, 48, 92, 60, 84, 68, 96, 54]
 
@@ -97,7 +79,7 @@ defmodule SkulletDemoWeb.DemoLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Skullet — measured skeletons for Phoenix LiveView")
+     |> assign(:page_title, "Skullet")
      |> assign(:reveals, @reveals)
      |> assign(:animations, @animations)
      |> assign(:speeds, @speeds)
@@ -112,8 +94,6 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:real_card, @real_card)
      |> assign(:sample_short, @sample_short)
      |> assign(:real_long, @real_long)
-     |> assign(:sample_rows, @sample_rows)
-     |> assign(:real_rows, @real_rows)
      |> assign(:sample_chart, @sample_chart)
      |> assign(:real_chart, @real_chart)
      |> assign(:images_sample, @images)

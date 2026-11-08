@@ -350,7 +350,7 @@ in place. `instant` shows and removes the skeleton with no transition.
 
 `example/` is a Phoenix LiveView app using the component on a real `assign_async`, with a
 button that pins the loading state. `cd example && mix deps.get && mix assets.setup &&
-mix phx.server`, then open <http://localhost:4000/demo>.
+mix phx.server`, then open <http://localhost:4000>.
 
 ## Not implemented yet
 
