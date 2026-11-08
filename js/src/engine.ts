@@ -2,6 +2,7 @@ import { measure, type Rect } from "./measure.js"
 import { barBox, resetFontCache } from "./metrics.js"
 import { drawShimmer, motionOf } from "./shimmer.js"
 import { attachShadow } from "./shadow.js"
+import { type Plan, type RevealSpec, planReveal, revealSpec } from "./plan.js"
 import { createBar } from "./bar.js"
 import {
   IMAGE_TIMEOUT_MS,
@@ -59,6 +60,8 @@ export class SkulletEngine {
   private holdTimer = 0
   private safetyTimer = 0
   private easing = false
+  /** performance.now() when the bars first showed; 0 when they never did. */
+  private shownAt = 0
 
   constructor(root: Element) {
     this.root = root as HTMLElement
@@ -185,6 +188,7 @@ export class SkulletEngine {
 
   private showBars(): void {
     this.phase = "bars"
+    this.shownAt = performance.now()
     this.setPhase("bars")
     this.schedule()
   }
@@ -218,11 +222,7 @@ export class SkulletEngine {
     const durations = durationsOf(this.root)
     this.easing = true
 
-    const mode = this.root.getAttribute("data-skullet-reveal")
-
-    if (mode === "sequence") this.fadeInSequence(durations.fade)
-    else if (mode === "sweep") this.sweepOut(durations.fade)
-    else this.hideOverlay(true)
+    this.runPlan(this.plan())
 
     let settled = false
     const finish = () => {
@@ -296,6 +296,37 @@ export class SkulletEngine {
 
       image.decode?.().then(ready, ready)
     }
+  }
+
+  /** The spec this skeleton asks for — its `reveal` attribute, or `smart`. */
+  private spec(): RevealSpec {
+    return revealSpec(this.root.getAttribute("data-skullet-reveal"))
+  }
+
+  /** The plan for this reveal, decided the moment the content lands. */
+  private plan(): Plan {
+    const content = this.content
+    const reveal = this.root.getBoundingClientRect()
+
+    return planReveal(
+      this.spec(),
+      {
+        waited: this.shownAt === 0 ? Number.POSITIVE_INFINITY : performance.now() - this.shownAt,
+        input: false,
+        refetch: false,
+        height: content ? content.getBoundingClientRect().height : reveal.height,
+        pieces: content ? content.children.length : 0
+      },
+      durationsOf(this.root).fade
+    )
+  }
+
+  private runPlan(plan: Plan): void {
+    const durations = durationsOf(this.root)
+
+    if (plan.kind === "sequence") this.fadeInSequence(durations.fade)
+    else if (plan.kind === "sweep") this.sweepOut(durations.fade)
+    else this.hideOverlay(plan.kind === "together")
   }
 
   /** `sweep`: a wipe uncovers the content behind the skeleton's front. */

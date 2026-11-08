@@ -1,0 +1,83 @@
+/** Where one piece of a reveal sits: a piece of content arriving, or a bar of the skeleton leaving. */
+export type Piece = {
+    rect: DOMRect;
+    /** Its row or card: the nearest ancestor with two or more siblings like it. */
+    unit: DOMRect | null;
+    /** Smaller text than the largest in its unit. */
+    secondary: boolean;
+    /** The whole reveal. */
+    reveal: DOMRect;
+    /** ms since the first of the reveals landing alongside this one. */
+    late: number;
+};
+/** What a reveal knows as its content lands, for `choose`. */
+export type RevealContext = {
+    /** ms the skeleton was up; Infinity when it was never shown. */
+    waited: number;
+    /** Someone scrolled, touched or typed in the last 400ms. */
+    input: boolean;
+    /** The skeleton was drawn from the data on screen. */
+    refetch: boolean;
+    height: number;
+    /** How many pieces the content arrives in. */
+    pieces: number;
+};
+/**
+ * How content replaces its skeleton. The built-in modes are these objects, and what
+ * `choose` returns wins over the fields beside it.
+ */
+export type RevealSpec = {
+    /** When each piece appears, in ms; null to appear at once. `"together"` for all at once. */
+    order?: "together" | ((piece: Piece) => number | null);
+    /** Where each piece starts from, on top of the fade: `{ filter: "blur(6px)" }`. */
+    enter?: Keyframe;
+    /** A front crossing the whole reveal: the built-in sweep. */
+    sweep?: boolean;
+    delay?: number;
+    /** 0 is instant. */
+    duration?: number;
+    /** ms a skeleton waits before it shows, so data that beats it never shows one. */
+    hold?: number;
+    choose?: (context: RevealContext) => RevealSpec;
+};
+/** A named built-in, or a spec of your own. */
+export type RevealMode = "instant" | "together" | "sequence" | "sweep" | "smart" | RevealSpec;
+export type Plan = {
+    kind: "instant";
+} | {
+    kind: "together";
+    delay: number;
+    duration: number;
+    enter?: Keyframe;
+} | {
+    kind: "sequence";
+    order: (piece: Piece) => number | null;
+    delay: number;
+    duration: number;
+    enter?: Keyframe;
+} | {
+    kind: "sweep";
+    delay: number;
+    duration: number;
+};
+/** A skeleton up for less than this is a flash — `smart` holds it back. */
+export declare const SKELETON_DELAY: 150;
+/** A custom order's latest piece, and the longest any reveal runs. */
+export declare const MAX_DELAY = 1000;
+export declare const MAX_DURATION = 1000;
+export declare const instant: RevealSpec;
+export declare const together: RevealSpec;
+export declare const sequence: RevealSpec;
+export declare const sweep: RevealSpec;
+/** `sequence`: each piece timed by its place in the reveal, top to bottom, then a little left to right. */
+export declare function byPosition({ rect, reveal }: Piece): number;
+/** `together` for a small reveal, else a cascade down the page. */
+export declare const byContent: (context: RevealContext) => RevealSpec;
+/** The cases `smart` settles before looking at the content: instant, or a quick crossfade. */
+export declare const quickly: (context: RevealContext) => RevealSpec | null;
+/** Picks how each reveal happens from how it loaded and what it holds. */
+export declare const smart: RevealSpec;
+/** A built-in by name, or a spec as it is. */
+export declare function revealSpec(mode: RevealMode | string | null | undefined): RevealSpec;
+/** Turns a spec into the plan to run, now that the content is here. */
+export declare function planReveal(spec: RevealSpec, context: RevealContext, fallback: number): Plan;

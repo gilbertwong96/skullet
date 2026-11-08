@@ -3,11 +3,13 @@ export declare const DEFAULT_DURATIONS: {
     readonly hold: 150;
     readonly fade: 200;
     readonly resize: 280;
+    readonly sequence: 320;
 };
 export type Durations = {
     hold: number;
     fade: number;
     resize: number;
+    sequence: number;
 };
 export declare function durationsOf(element: Element): Durations;
 /** Longest an undecoded image stays hidden — a stalled request must not hold it back. */

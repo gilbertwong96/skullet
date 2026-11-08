@@ -132,6 +132,7 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 | `--skullet-hold` | `150ms` | how long a skeleton waits before showing, so fast data never shows one |
 | `--skullet-fade` | `200ms` | the crossfade at the reveal |
 | `--skullet-resize` | `280ms` | the height ease when the real content is a different size |
+| `--skullet-cascade` | `320ms` | how long a `sequence` takes from its first piece to its last |
 | `--skullet-animation` | `shimmer` | `shimmer`, `group-shimmer`, `pulse` or `none` |
 | `--skullet-speed` | `slow` | `slow` or `fast` |
 | `--skullet-text-top` | `ascender` | `ascender`, `cap-height` or `x-height` — where each line's bar starts |

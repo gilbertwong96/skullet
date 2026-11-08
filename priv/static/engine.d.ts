@@ -17,6 +17,8 @@ export declare class SkulletEngine {
     private holdTimer;
     private safetyTimer;
     private easing;
+    /** performance.now() when the bars first showed; 0 when they never did. */
+    private shownAt;
     constructor(root: Element);
     start(): void;
     /** Runs before LiveView patches the content in: the last moment the old shape exists. */
@@ -39,6 +41,11 @@ export declare class SkulletEngine {
      * is). The pane's own box is what reserves the space, so nothing moves either way.
      */
     private revealImages;
+    /** The spec this skeleton asks for — its `reveal` attribute, or `smart`. */
+    private spec;
+    /** The plan for this reveal, decided the moment the content lands. */
+    private plan;
+    private runPlan;
     /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
     private sweepOut;
     /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */

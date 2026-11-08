@@ -2,6 +2,7 @@ import { measure } from "./measure.js";
 import { barBox, resetFontCache } from "./metrics.js";
 import { drawShimmer, motionOf } from "./shimmer.js";
 import { attachShadow } from "./shadow.js";
+import { planReveal, revealSpec } from "./plan.js";
 import { createBar } from "./bar.js";
 import { IMAGE_TIMEOUT_MS, durationsOf, easeHeight, fadeIn, prefersReducedMotion, settle } from "./reveal.js";
 const DEBUG = (() => {
@@ -42,6 +43,8 @@ export class SkulletEngine {
     holdTimer = 0;
     safetyTimer = 0;
     easing = false;
+    /** performance.now() when the bars first showed; 0 when they never did. */
+    shownAt = 0;
     constructor(root) {
         this.root = root;
         this.content = root.querySelector("[data-skullet-content]");
@@ -155,6 +158,7 @@ export class SkulletEngine {
     }
     showBars() {
         this.phase = "bars";
+        this.shownAt = performance.now();
         this.setPhase("bars");
         this.schedule();
     }
@@ -184,13 +188,7 @@ export class SkulletEngine {
         const target = this.content ? this.content.getBoundingClientRect().height : this.pinned;
         const durations = durationsOf(this.root);
         this.easing = true;
-        const mode = this.root.getAttribute("data-skullet-reveal");
-        if (mode === "sequence")
-            this.fadeInSequence(durations.fade);
-        else if (mode === "sweep")
-            this.sweepOut(durations.fade);
-        else
-            this.hideOverlay(true);
+        this.runPlan(this.plan());
         let settled = false;
         const finish = () => {
             if (settled)
@@ -253,6 +251,31 @@ export class SkulletEngine {
             };
             image.decode?.().then(ready, ready);
         }
+    }
+    /** The spec this skeleton asks for — its `reveal` attribute, or `smart`. */
+    spec() {
+        return revealSpec(this.root.getAttribute("data-skullet-reveal"));
+    }
+    /** The plan for this reveal, decided the moment the content lands. */
+    plan() {
+        const content = this.content;
+        const reveal = this.root.getBoundingClientRect();
+        return planReveal(this.spec(), {
+            waited: this.shownAt === 0 ? Number.POSITIVE_INFINITY : performance.now() - this.shownAt,
+            input: false,
+            refetch: false,
+            height: content ? content.getBoundingClientRect().height : reveal.height,
+            pieces: content ? content.children.length : 0
+        }, durationsOf(this.root).fade);
+    }
+    runPlan(plan) {
+        const durations = durationsOf(this.root);
+        if (plan.kind === "sequence")
+            this.fadeInSequence(durations.fade);
+        else if (plan.kind === "sweep")
+            this.sweepOut(durations.fade);
+        else
+            this.hideOverlay(plan.kind === "together");
     }
     /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
     sweepOut(duration) {

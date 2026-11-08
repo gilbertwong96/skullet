@@ -5,6 +5,7 @@
   --skullet-hold: 150ms;
   --skullet-fade: 200ms;
   --skullet-resize: 280ms;
+  --skullet-cascade: 320ms;
   --skullet-animation: shimmer;
   --skullet-speed: slow;
   /* How much of each line is drawn: from the font's ascender/cap-height/x-height

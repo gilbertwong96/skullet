@@ -1,7 +1,7 @@
 /** Defaults for the three timings; every one is a custom property too. */
-export const DEFAULT_DURATIONS = { hold: 150, fade: 200, resize: 280 } as const
+export const DEFAULT_DURATIONS = { hold: 150, fade: 200, resize: 280, sequence: 320 } as const
 
-export type Durations = { hold: number; fade: number; resize: number }
+export type Durations = { hold: number; fade: number; resize: number; sequence: number }
 
 const LONGEST_MS = 5000
 
@@ -11,7 +11,8 @@ export function durationsOf(element: Element): Durations {
   return {
     hold: duration(style, "--skullet-hold", DEFAULT_DURATIONS.hold),
     fade: duration(style, "--skullet-fade", DEFAULT_DURATIONS.fade),
-    resize: duration(style, "--skullet-resize", DEFAULT_DURATIONS.resize)
+    resize: duration(style, "--skullet-resize", DEFAULT_DURATIONS.resize),
+    sequence: duration(style, "--skullet-cascade", DEFAULT_DURATIONS.sequence)
   }
 }
 
