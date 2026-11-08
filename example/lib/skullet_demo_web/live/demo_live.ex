@@ -351,7 +351,7 @@ defmodule SkulletDemoWeb.DemoLive do
               blurb="A chart does not measure well. The `skeleton` slot supplies the shape instead: a baseline and a row of boxes."
             >
               <:actions>
-                <button class="btn btn-xs" phx-click="replay" phx-value-demo="images">Replay</button>
+                <button class="btn btn-xs" phx-click="replay" phx-value-demo="own">Replay</button>
               </:actions>
               <Skullet.skeleton :let={values} id="s-own" async={@own} sample={@sample_chart}>
                 <div class="flex h-28 items-end gap-2">
