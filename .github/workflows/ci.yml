@@ -20,17 +20,18 @@ jobs:
           elixir-version: "1.18"
           otp-version: "27"
 
+      # _build carries the Dialyzer PLT, which is the slow part of `mix ci`.
       - uses: actions/cache@v4
         with:
           path: |
             deps
             _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          key: ${{ runner.os }}-mix-1.18-27-${{ hashFiles('mix.lock') }}
 
       - run: mix deps.get
-      - run: mix format --check-formatted
-      - run: mix compile --warnings-as-errors
-      - run: mix test
+      # VibeKit's pipeline: compile, format, test, credo --strict, dialyzer,
+      # ex_dna --max-clones 0, reach.check --arch --smells
+      - run: mix ci
       - run: mix hex.build
 
   engine:
