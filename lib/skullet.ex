@@ -89,6 +89,7 @@ defmodule Skullet do
   slot(:error, doc: "rendered in place of the content when the async assign failed")
   slot(:inner_block, required: true, doc: "receives the sample, then the real value")
 
+  @spec skeleton(map()) :: Phoenix.LiveView.Rendered.t()
   def skeleton(assigns) do
     {state, value} = state_and_value(assigns)
     if state == :loaded, do: remember(assigns, value)
@@ -140,6 +141,7 @@ defmodule Skullet do
         <p>{report.title}</p>
       </Skullet.skeleton>
   """
+  @spec box(map()) :: Phoenix.LiveView.Rendered.t()
   def box(assigns) do
     assigns = assign(assigns, style: box_style(assigns))
 
