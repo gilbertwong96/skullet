@@ -2,7 +2,15 @@ import { measure, type Rect } from "./measure.js"
 import { barBox, resetFontCache } from "./metrics.js"
 import { drawShimmer, motionOf } from "./shimmer.js"
 import { attachShadow } from "./shadow.js"
-import { type Plan, type RevealSpec, planReveal, revealSpec } from "./plan.js"
+import {
+  MAX_DELAY,
+  type Plan,
+  type RevealSpec,
+  barPiece,
+  planReveal,
+  revealSpec,
+  timePieces
+} from "./plan.js"
 import { createBar } from "./bar.js"
 import {
   IMAGE_TIMEOUT_MS,
@@ -22,6 +30,37 @@ const DEBUG = (() => {
 })()
 
 const DEBUG_LOADING = "2px solid #3b82f6"
+
+const ACTIVE_WINDOW = 400
+let lastInput = Number.NEGATIVE_INFINITY
+let listening = false
+
+function listenForInput(): void {
+  if (listening || typeof addEventListener !== "function") return
+
+  listening = true
+
+  for (const type of ["wheel", "touchmove", "keydown"]) {
+    addEventListener(
+      type,
+      () => {
+        lastInput = performance.now()
+      },
+      { passive: true, capture: true }
+    )
+  }
+}
+
+/** Reveals landing within this window share one top-to-bottom order, so they read as one page. */
+const BATCH_WINDOW = 150
+let batch: number | null = null
+
+function batchStart(): number {
+  const now = performance.now()
+
+  if (batch === null || now - batch > BATCH_WINDOW) batch = now
+  return batch
+}
 const DEBUG_STILL = "2px solid #22c55e"
 const DEBUG_MOVED = "2px solid #ef4444"
 
@@ -62,6 +101,10 @@ export class SkulletEngine {
   private easing = false
   /** performance.now() when the bars first showed; 0 when they never did. */
   private shownAt = 0
+  /** ms since the first reveal of the batch this one joins. */
+  private late = 0
+  /** The skeleton was drawn from the data already on screen. */
+  private refetched = false
 
   constructor(root: Element) {
     this.root = root as HTMLElement
@@ -71,6 +114,7 @@ export class SkulletEngine {
   start(): void {
     if (this.started) return
     this.started = true
+    listenForInput()
 
     const content = this.content
     if (!content) return
@@ -100,12 +144,6 @@ export class SkulletEngine {
     this.root.style.height = `${this.pinned}px`
     this.root.style.overflow = "hidden"
 
-    // `sequence` and `sweep` animate the skeleton away; the content is simply there.
-    const mode = this.root.getAttribute("data-skullet-reveal")
-    if (this.content && mode !== "sequence" && mode !== "sweep") {
-      fadeIn(this.content, durationsOf(this.root).fade)
-    }
-
     this.safetyTimer = window.setTimeout(
       () => {
         this.safetyTimer = 0
@@ -134,8 +172,10 @@ export class SkulletEngine {
       this.clearSafety()
       this.release()
 
-      if (previous === "loaded") this.show()
-      else this.schedule()
+      if (previous === "loaded") {
+        this.refetched = true
+        this.show()
+      } else this.schedule()
     }
   }
 
@@ -205,6 +245,10 @@ export class SkulletEngine {
     this.clearHold()
     this.revealImages()
 
+    this.late = performance.now() - batchStart()
+    const plan = this.plan()
+    this.refetched = false
+
     const fade = this.pass === "fade" && !this.instant
     this.pass = "instant"
     this.phase = null
@@ -222,7 +266,7 @@ export class SkulletEngine {
     const durations = durationsOf(this.root)
     this.easing = true
 
-    this.runPlan(this.plan())
+    this.runPlan(plan)
 
     let settled = false
     const finish = () => {
@@ -312,8 +356,8 @@ export class SkulletEngine {
       this.spec(),
       {
         waited: this.shownAt === 0 ? Number.POSITIVE_INFINITY : performance.now() - this.shownAt,
-        input: false,
-        refetch: false,
+        input: performance.now() - lastInput < ACTIVE_WINDOW,
+        refetch: this.refetched,
         height: content ? content.getBoundingClientRect().height : reveal.height,
         pieces: content ? content.children.length : 0
       },
@@ -322,11 +366,76 @@ export class SkulletEngine {
   }
 
   private runPlan(plan: Plan): void {
-    const durations = durationsOf(this.root)
+    const duration = "duration" in plan ? plan.duration : durationsOf(this.root).fade
 
-    if (plan.kind === "sequence") this.fadeInSequence(durations.fade)
-    else if (plan.kind === "sweep") this.sweepOut(durations.fade)
-    else this.hideOverlay(plan.kind === "together")
+    if (plan.kind === "instant") {
+      this.hideOverlay(false)
+    } else if (plan.kind === "sweep") {
+      this.sweepOut(duration)
+    } else if (plan.kind === "sequence") {
+      this.runSequence(plan, duration)
+    } else {
+      if (this.content) fadeIn(this.content, duration)
+      this.hideOverlay(true, duration)
+    }
+  }
+
+  /** `sequence`: pieces arrive in `order`, the bars they replace leave on the same beat. */
+  private runSequence(plan: Extract<Plan, { kind: "sequence" }>, duration: number): void {
+    const content = this.content
+    const bars = this.bars
+    if (!content || !bars) return
+
+    // The order is measured against the content's own box: the root is still pinned to the
+    // skeleton's height at this point, which would squash every piece to the same delay.
+    const box = content.getBoundingClientRect()
+    const reveal = new DOMRect(box.left, box.top, box.width, box.height)
+    const pieces = timePieces(content, reveal, plan.order, this.late)
+    const units = [...new Set(pieces.map((piece) => piece.piece.unit).filter(Boolean))] as DOMRect[]
+
+    for (const { element, order } of pieces) {
+      const delay = Math.min(order, MAX_DELAY) + plan.delay
+      const animation = element.animate([{ opacity: 0, ...plan.enter }, { opacity: 1 }], {
+        duration,
+        delay,
+        easing: "ease",
+        fill: "both"
+      })
+
+      // A finished piece looks like it always did: drop the animation, not the element.
+      animation.finished.then(
+        () => animation.cancel(),
+        () => animation.cancel()
+      )
+    }
+
+    bars.style.transition = "none"
+
+    let last = 0
+
+    for (const bar of [...bars.children] as HTMLElement[]) {
+      const order = plan.order(barPiece(bar.getBoundingClientRect(), reveal, units, this.late)) ?? 0
+      const delay = Math.min(order, MAX_DELAY) + plan.delay
+      last = Math.max(last, delay + duration)
+
+      const animation = bar.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration,
+        delay,
+        easing: "ease",
+        fill: "forwards"
+      })
+
+      animation.finished.catch(() => {})
+    }
+
+    window.setTimeout(() => {
+      bars.style.removeProperty("transition")
+
+      if (this.bars === bars && this.phase === null) {
+        bars.replaceChildren()
+        this.setPhase(null)
+      }
+    }, last + 100)
   }
 
   /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
@@ -364,33 +473,6 @@ export class SkulletEngine {
     window.setTimeout(finish, duration + 200)
   }
 
-  /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */
-  private fadeInSequence(fade: number): void {
-    const bars = this.bars
-    if (!bars) return
-
-    const stagger = 30
-    const longest = fade + Math.min(bars.children.length * stagger, 600)
-
-    // The container stays opaque; each bar takes itself out, in reading order.
-    bars.style.transition = "none"
-
-    for (const [index, bar] of [...bars.children].entries()) {
-      const element = bar as HTMLElement
-      element.style.transition = `opacity ${fade}ms ease ${Math.min(index * stagger, 600)}ms`
-      element.style.opacity = "0"
-    }
-
-    window.setTimeout(() => {
-      bars.style.removeProperty("transition")
-
-      if (this.bars === bars && this.phase === null) {
-        bars.replaceChildren()
-        this.setPhase(null)
-      }
-    }, longest)
-  }
-
   /** Debug: did the reveal move the page? Red with the distance, green when it didn't. */
   private markMovement(revealed: number): void {
     if (!debugOn(this.root)) return
@@ -400,7 +482,7 @@ export class SkulletEngine {
     this.root.title = moved < 1 ? "skullet: no movement" : `skullet: moved ${moved.toFixed(1)}px`
   }
 
-  private hideOverlay(animate: boolean): void {
+  private hideOverlay(animate: boolean, duration?: number): void {
     this.setPhase(null)
     const bars = this.bars
     if (!bars) return
@@ -410,9 +492,16 @@ export class SkulletEngine {
       return
     }
 
+    const fade = duration ?? durationsOf(this.root).fade
+
+    if (duration !== undefined) bars.style.transitionDuration = `${duration}ms`
+
     window.setTimeout(() => {
-      if (this.bars === bars && this.phase === null) bars.replaceChildren()
-    }, durationsOf(this.root).fade)
+      if (this.bars !== bars || this.phase !== null) return
+
+      bars.replaceChildren()
+      bars.style.removeProperty("transition-duration")
+    }, fade)
   }
 
   private release(): void {

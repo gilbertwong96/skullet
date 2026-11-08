@@ -71,6 +71,103 @@ export const MAX_DURATION = 1000
 
 const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max)
 
+/** What a reveal brings in one by one: anything holding text or media of its own. */
+export function pieces(root: Element): Element[] {
+  const found: Element[] = []
+
+  const visit = (element: Element) => {
+    for (const child of element.children) {
+      const ownText = [...child.childNodes].some(
+        (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+      )
+
+      if (!child.firstElementChild || ownText || child.localName === "svg") {
+        found.push(child)
+      } else {
+        visit(child)
+      }
+    }
+  }
+
+  visit(root)
+  return found
+}
+
+/** Its row or card: the nearest ancestor with two or more siblings like it. */
+export function unitOf(piece: Element, root: Element): Element {
+  for (
+    let element: Element | null = piece;
+    element && element !== root;
+    element = element.parentElement
+  ) {
+    const parent = element.parentElement
+    if (!parent) break
+
+    const alike = [...parent.children].filter(
+      (sibling) =>
+        sibling.localName === element!.localName && sibling.className === element!.className
+    )
+
+    if (alike.length >= 3) return element
+  }
+
+  return piece
+}
+
+export type ContentPiece = { element: Element; piece: Piece; order: number }
+
+/**
+ * Times each piece of the content by `order`, in viewport coordinates, with `late` shared
+ * by the reveals that landed together.
+ */
+export function timePieces(
+  content: Element,
+  reveal: DOMRect,
+  order: (piece: Piece) => number | null,
+  late: number
+): ContentPiece[] {
+  const fontSize = (element: Element) => Number.parseFloat(getComputedStyle(element).fontSize) || 16
+  const units = new Map<Element, { rect: DOMRect; size: number }>()
+
+  const piecesIn = pieces(content).map((element) => {
+    const unit = unitOf(element, content)
+    let found = units.get(unit)
+
+    if (!found) {
+      found = { rect: unit.getBoundingClientRect(), size: 0 }
+      units.set(unit, found)
+    }
+
+    found.size = Math.max(found.size, fontSize(element))
+    return { element, unit, size: fontSize(element) }
+  })
+
+  return piecesIn.map(({ element, unit, size }) => {
+    const piece: Piece = {
+      rect: element.getBoundingClientRect(),
+      unit: unit.getBoundingClientRect(),
+      secondary: size < (units.get(unit)?.size ?? size),
+      reveal,
+      late
+    }
+
+    return { element, piece, order: order(piece) ?? 0 }
+  })
+}
+
+/** The bar's piece: the unit that contains it, if any. */
+export function barPiece(rect: DOMRect, reveal: DOMRect, units: DOMRect[], late: number): Piece {
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+
+  const unit =
+    units.find((box) => x >= box.left && x <= box.right && y >= box.top && y <= box.bottom) ?? null
+
+  const fontSize = unit ? Math.max(rect.height, 1) : rect.height
+
+  return { rect, unit, secondary: unit ? rect.height < fontSize * 0.8 : false, reveal, late }
+}
+
 export const instant: RevealSpec = { duration: 0 }
 export const together: RevealSpec = { order: "together" }
 export const sequence: RevealSpec = { order: byPosition }

@@ -389,7 +389,64 @@ test("a pane LiveView reused for something else is found again", async () => {
   })
 })
 
-test("a sequence reveal takes the bars out one after another", async () => {
+test("smart crossfades quickly on a refetch", async () => {
+  await withPage(async (page) => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    await swap(page, "root", "<p>real</p>", "loaded")
+    await page.waitForTimeout(500)
+
+    // a second loading cycle whose skeleton is up past the hold: the shape is known by then
+    await swap(page, "root", "<p>sample</p>", "loading")
+    await page.waitForTimeout(400)
+    await swap(page, "root", "<p>real</p>", "loaded")
+
+    assert.deepEqual((await paneInfo(page)).animations, [120])
+  })
+})
+
+test("smart reveals at once while someone is scrolling or typing", async () => {
+  await withPage(async (page) => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    await page.keyboard.press("ArrowDown")
+    await swap(page, "root", "<p>real</p>", "loaded")
+
+    assert.deepEqual((await paneInfo(page)).animations, [])
+    assert.equal((await paneInfo(page)).visibility, "visible")
+  })
+})
+
+test("a large reveal cascades its pieces instead of fading as one", async () => {
+  await withPage(async (page) => {
+    await open(page, "reveal")
+    await mount(page)
+    await page.waitForTimeout(300)
+
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p><p>d</p><p>e</p>", "loaded")
+
+    const animated = await page.evaluate(() => {
+      const pane = document.querySelector("#root > [data-skullet-content]")
+      const paragraphs = [...pane.querySelectorAll("p")]
+      return {
+        pane: pane.getAnimations().length,
+        pieces: paragraphs.map((paragraph) => paragraph.getAnimations().length)
+      }
+    })
+
+    assert.equal(animated.pane, 0, "the pane itself should not fade on a cascade")
+    assert.ok(
+      animated.pieces.every((count) => count === 1),
+      `pieces did not all animate: ${animated.pieces}`
+    )
+  })
+})
+
+test("a sequence reveal times each piece by its place in the page", async () => {
   await withPage(async (page) => {
     await open(page, "reveal")
     await page.evaluate(() => {
@@ -398,23 +455,50 @@ test("a sequence reveal takes the bars out one after another", async () => {
     await mount(page)
     await page.waitForTimeout(300)
 
-    const staggered = await page.evaluate(() => {
-      const overlay = document.querySelector("#root > [data-skullet-overlay]")
-      const bars = [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
-      return bars.map((bar) => getComputedStyle(bar).transitionDelay)
+    await swap(page, "root", "<p>a</p><p>b</p><p>c</p><p>d</p>", "loaded")
+
+    const during = await page.evaluate(() => {
+      const root = document.getElementById("root")
+      const overlay = root.querySelector("[data-skullet-overlay]")
+      const pane = root.querySelector("[data-skullet-content]")
+
+      // A bar also carries its shimmer animation, whose delay is the shared negative phase;
+      // the reveal's own animation is the script one.
+      const delayOf = (element) =>
+        element
+          .getAnimations()
+          .filter((animation) => !("animationName" in animation))
+          .map((animation) => Number(animation.effect.getComputedTiming().delay))
+
+      return {
+        pieces: [...pane.querySelectorAll("p")].map((element) => ({
+          top: element.getBoundingClientRect().top,
+          delays: delayOf(element)
+        })),
+        bars: [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")].map(delayOf)
+      }
     })
 
-    await swap(page, "root", "<p>a</p><p>b</p><p>c</p>", "loaded")
-    await page.waitForTimeout(60)
+    const pieces = [...during.pieces].sort((a, b) => a.top - b.top)
+    assert.ok(pieces.length > 1)
+    assert.ok(
+      pieces.every((piece) => piece.delays.length === 1),
+      "every piece should animate once"
+    )
 
-    const delays = await page.evaluate(() => {
-      const overlay = document.querySelector("#root > [data-skullet-overlay]")
-      const bars = [...overlay.shadowRoot.querySelectorAll("[data-skullet-bar]")]
-      return bars.map((bar) => getComputedStyle(bar).transitionDelay)
-    })
+    const delays = pieces.map((piece) => piece.delays[0])
 
-    assert.ok(staggered.length > 0)
-    assert.equal(new Set(delays).size, delays.length, `delays are not distinct: ${delays}`)
+    for (let index = 1; index < delays.length; index++) {
+      assert.ok(
+        delays[index] > delays[index - 1],
+        `piece ${index} is timed before the one above it: ${delays[index - 1]} → ${delays[index]}`
+      )
+    }
+
+    assert.ok(
+      during.bars.every((delays) => delays.length === 1),
+      "the bars should animate once each"
+    )
 
     await page.waitForTimeout(1200)
     assert.equal((await rootInfo(page)).bars, 0)

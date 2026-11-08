@@ -19,6 +19,10 @@ export declare class SkulletEngine {
     private easing;
     /** performance.now() when the bars first showed; 0 when they never did. */
     private shownAt;
+    /** ms since the first reveal of the batch this one joins. */
+    private late;
+    /** The skeleton was drawn from the data already on screen. */
+    private refetched;
     constructor(root: Element);
     start(): void;
     /** Runs before LiveView patches the content in: the last moment the old shape exists. */
@@ -46,10 +50,10 @@ export declare class SkulletEngine {
     /** The plan for this reveal, decided the moment the content lands. */
     private plan;
     private runPlan;
+    /** `sequence`: pieces arrive in `order`, the bars they replace leave on the same beat. */
+    private runSequence;
     /** `sweep`: a wipe uncovers the content behind the skeleton's front. */
     private sweepOut;
-    /** `sequence`: the bars leave one after another instead of the whole skeleton at once. */
-    private fadeInSequence;
     /** Debug: did the reveal move the page? Red with the distance, green when it didn't. */
     private markMovement;
     private hideOverlay;

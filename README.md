@@ -255,10 +255,20 @@ in the markup:
 
 ## Reveals
 
-`smart` (the default) waits `--skullet-hold` (150 ms) before drawing a skeleton at all, so
-data that lands quickly never shows one; then it crossfades over `--skullet-fade` (200 ms),
-easing to the content's real height over `--skullet-resize` (280 ms) if the sample guessed
-it wrong.
+`smart` (the default) decides at the moment the content lands, from how the page is being
+used and what arrived:
+
+- **instant** if the skeleton was up for less than `--skullet-hold` (150 ms), or somebody
+  scrolled, touched or typed in the last 400 ms — a skeleton then is a flicker, not a cue;
+- **a quick crossfade** (120 ms) when a second cycle refetches something whose shape is
+  already known;
+- **one crossfade** over `--skullet-fade` (200 ms) for a small reveal — under 72px tall, or
+  three pieces or fewer;
+- **a cascade** down the page for anything bigger: each piece arrives in its own place,
+  spread over `--skullet-cascade` (320 ms), with reveals landing together sharing one order.
+
+Either way it eases to the content's real height over `--skullet-resize` (280 ms) if the
+sample guessed it wrong.
 
 `together` is the crossfade without the wait. `sequence` takes the bars out one after
 another, top to bottom. `sweep` wipes the skeleton away over the content, which is already

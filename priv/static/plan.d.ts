@@ -65,6 +65,22 @@ export declare const SKELETON_DELAY: 150;
 /** A custom order's latest piece, and the longest any reveal runs. */
 export declare const MAX_DELAY = 1000;
 export declare const MAX_DURATION = 1000;
+/** What a reveal brings in one by one: anything holding text or media of its own. */
+export declare function pieces(root: Element): Element[];
+/** Its row or card: the nearest ancestor with two or more siblings like it. */
+export declare function unitOf(piece: Element, root: Element): Element;
+export type ContentPiece = {
+    element: Element;
+    piece: Piece;
+    order: number;
+};
+/**
+ * Times each piece of the content by `order`, in viewport coordinates, with `late` shared
+ * by the reveals that landed together.
+ */
+export declare function timePieces(content: Element, reveal: DOMRect, order: (piece: Piece) => number | null, late: number): ContentPiece[];
+/** The bar's piece: the unit that contains it, if any. */
+export declare function barPiece(rect: DOMRect, reveal: DOMRect, units: DOMRect[], late: number): Piece;
 export declare const instant: RevealSpec;
 export declare const together: RevealSpec;
 export declare const sequence: RevealSpec;

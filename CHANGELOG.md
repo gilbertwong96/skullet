@@ -22,5 +22,7 @@ First release.
 - `skeleton` slot for per-component skeletons (and the Suspense shape: async + measured
   fallback + error branch).
 - `<Skullet.provider>` for `mode`, `theme`, `animation` and `speed` in one place.
-- `sweep` reveal.
+- `sweep` reveal, and `smart` now decides between instant, a quick refetch crossfade, one
+  crossfade and a page cascade, from how long the skeleton was up, recent input, refetches
+  and the size of what arrives.
 - Images that decode after the reveal fade in instead of popping (ten-second timeout).
