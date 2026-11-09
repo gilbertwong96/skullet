@@ -39,23 +39,13 @@ defmodule SkulletDemo.MixProject do
   #
   # Type `mix help deps` for examples and options.
 
-  # Locally the demo runs against the library in this repo; a Docker build has no "../"
-  # to look at, so it fetches the same code from GitHub instead (the Dockerfile asks for it).
-  defp skullet_dep do
-    if System.get_env("SKULLET_FROM_GIT") do
-      {:skullet, git: "https://github.com/gilbertwong96/skullet", branch: "main"}
-    else
-      {:skullet, path: ".."}
-    end
-  end
-
   defp deps do
     [
       {:phoenix, "~> 1.8.16"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.2.0"},
-      skullet_dep(),
+      {:skullet, path: ".."},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:makeup, "~> 1.1"},
       {:makeup_html, "~> 0.1"},

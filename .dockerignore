@@ -1,0 +1,17 @@
+# The demo's image is built from the repository root (see example/Dockerfile), so the
+# library stays in and everything that is not needed to build it goes out.
+.git
+.gitignore
+.worktrees
+.superpowers
+docs
+js/node_modules
+js/test
+js/fixtures
+js/src
+example/deps
+example/_build
+example/node_modules
+example/.elixir_ls
+**/erl_crash.dump
+skullet-*.tar

@@ -42,16 +42,25 @@ The footer shows the running engine: state, phase, bars drawn, and whether anyth
 
 ## Deploying to Fly.io
 
-The Docker build cannot see `../` (the library), so `mix.exs` swaps the path dependency for
-the GitHub one when `SKULLET_FROM_GIT` is set, and the generated `Dockerfile` sets it. That
-means the deployed demo runs the library from `main` on GitHub, not from your working copy.
+The image is built from the **repository root**, not from `example/`: the demo depends on
+the library beside it (`{:skullet, path: ".."}`), and its stylesheet and engine are imported
+straight out of `priv/static`. `example/Dockerfile` lays the repo out that way inside the
+builder.
+
+One `shared-cpu-1x` machine with 256MB, suspended when idle and resumed on the next request:
 
 ```bash
-cd example
-fly launch --copy-config --no-deploy    # keeps this fly.toml; change `app` if you like
-fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)"
-fly deploy
+# from the repository root
+fly launch --copy-config --no-deploy --ha=false -c example/fly.toml   # change `app` / PHX_HOST
+fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)" -c example/fly.toml
+fly deploy --ha=false -c example/fly.toml
 ```
 
-`PHX_HOST` in `fly.toml` must match the app name (or your custom domain). There is no
-database, so nothing else is needed.
+- `--ha=false` keeps it to one machine; `fly scale count 1` if a second one appears.
+- `auto_stop_machines = "suspend"` freezes the VM instead of shutting it down, so the next
+  request wakes it in about a second without booting the release again. LiveView sockets
+  drop while suspended; the page reconnects when the machine comes back.
+- 256MB is the smallest machine. The release idles at roughly 140–160MB, so there is room
+  for a handful of viewers; `fly scale vm shared-cpu-1x --memory 512` if you want more.
+- The build needs no database, only `SECRET_KEY_BASE`. `PHX_HOST` in `fly.toml` must match
+  the app name (or your custom domain).

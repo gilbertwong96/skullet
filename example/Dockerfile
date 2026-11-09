@@ -1,21 +1,10 @@
-# This file is based on these images:
+# Build from the repository root, because the demo depends on the library next to it:
 #
-#   - https://hub.docker.com/r/hexpm/elixir/tags - for the builder image
-#     E.g.: docker.io/hexpm/elixir:1.20.5-erlang-29.1.2-debian-trixie-20261104-slim
-#   - https://hub.docker.com/_/debian/tags?name=trixie-20261104-slim - for the runner image
-#     E.g.: docker.io/debian:trixie-20261104-slim
+#   docker build -f example/Dockerfile -t skullet-demo .
+#   fly deploy -c example/fly.toml
 #
-# Find builder and runner images on Docker Hub or on Hex's Build Server (Bob).
-# We recommend using Bob's Web UI to find recent tags:
-#
-#   - https://bob.hex.pm/docker?repo=hexpm/elixir&os=debian&sort=elixir_version,erlang_version,os_version
-#
-# We suggest using the same Debian version for both the builder and runner images.
-#
-# We suggest Debian/Ubuntu instead of Alpine to avoid production compatibility issues
-# (such as DNS resolution failures, and dynamically linked NIFs/precompiled binaries).
-#
-# For finding packages in Debian, search on https://packages.debian.org/.
+# The example's `mix.exs` reaches the library at `path: ".."`, so this image lays the
+# repository out as it is: the library at /app, the demo at /app/example.
 
 ARG ELIXIR_VERSION=1.20.5
 ARG OTP_VERSION=29.1.2
@@ -31,57 +20,47 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends build-essential git \
   && rm -rf /var/lib/apt/lists/*
 
-# prepare build dir
 WORKDIR /app
 
-# install hex + rebar
 RUN mix local.hex --force \
   && mix local.rebar --force
 
-# set build ENV
 ENV MIX_ENV="prod"
 
-# install mix dependencies
+# the library: the demo depends on it by path, and its compiled assets are imported
 COPY mix.exs mix.lock ./
-ENV SKULLET_FROM_GIT=1
-RUN mix deps.get --only $MIX_ENV
-RUN mkdir config
-
-# copy compile-time config files before we compile dependencies
-# to ensure any relevant config change will trigger the dependencies
-# to be re-compiled.
-COPY config/config.exs config/${MIX_ENV}.exs config/
-RUN mix deps.compile
-
-RUN mix assets.setup
-
+COPY lib lib
 COPY priv priv
 
-COPY lib lib
+# the demo
+COPY example/mix.exs example/mix.lock example/
+RUN cd example && mix deps.get --only $MIX_ENV
 
-# Compile the release
-RUN mix compile
+RUN mkdir -p example/config
+COPY example/config/config.exs example/config/$MIX_ENV.exs example/config/
+RUN cd example && mix deps.compile
 
-COPY assets assets
+RUN cd example && mix assets.setup
 
-# compile assets
-RUN mix assets.deploy
+COPY example/priv example/priv
+COPY example/lib example/lib
+RUN cd example && mix compile
 
-# Changes to config/runtime.exs don't require recompiling the code
-COPY config/runtime.exs config/
+COPY example/assets example/assets
+RUN cd example && mix assets.deploy
 
-COPY rel rel
-RUN mix release
+# changes to runtime.exs do not require recompiling the code
+COPY example/config/runtime.exs example/config/
 
-# start a new build stage so that the final image will only contain
-# the compiled release and other runtime necessities
+COPY example/rel example/rel
+RUN cd example && mix release
+
 FROM ${RUNNER_IMAGE} AS final
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends libstdc++6 openssl libncurses6 locales ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# Set the locale
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
   && locale-gen
 
@@ -92,17 +71,11 @@ ENV LC_ALL=en_US.UTF-8
 WORKDIR "/app"
 RUN chown nobody /app
 
-# set runner ENV
 ENV MIX_ENV="prod"
 
-# Only copy the final release from the build stage
-COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/skullet_demo ./
+# only the release goes into the final image
+COPY --from=builder --chown=nobody:root /app/example/_build/${MIX_ENV}/rel/skullet_demo ./
 
 USER nobody
-
-# If using an environment that doesn't automatically reap zombie processes, it is
-# advised to add an init process such as tini via `apt-get install`
-# above and adding an entrypoint. See https://github.com/krallin/tini for details
-# ENTRYPOINT ["/tini", "--"]
 
 CMD ["/app/bin/server"]

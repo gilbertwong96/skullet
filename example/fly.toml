@@ -1,14 +1,15 @@
-# Deploy with: fly launch --copy-config --no-deploy  (then adjust `app` below)
-#              fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)"
-#              fly deploy
+# Deploy from the repository root, because the demo depends on the library beside it:
 #
-# The Docker build has no access to the library in this repo, so it fetches the same code
-# from GitHub instead — see `SKULLET_FROM_GIT` in the Dockerfile and `skullet_dep/0` in mix.exs.
+#   fly launch --copy-config --no-deploy --ha=false -c example/fly.toml
+#   fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)" -c example/fly.toml
+#   fly deploy --ha=false -c example/fly.toml
+#
+# One shared-1x machine with 256MB, suspended when idle and resumed on the next request.
 app = "skullet-demo"
 primary_region = "syd"
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "example/Dockerfile"
 
 [env]
   PHX_HOST = "skullet-demo.fly.dev"
@@ -17,11 +18,12 @@ primary_region = "syd"
 [http_service]
   internal_port = 4000
   force_https = true
-  auto_stop_machines = "stop"
+  # suspend freezes the VM with its memory and resumes it on the next request;
+  # `stop` would boot the release again from scratch.
+  auto_stop_machines = "suspend"
   auto_start_machines = true
   min_machines_running = 0
 
 [[vm]]
-  memory = "512mb"
-  cpu_kind = "shared"
-  cpus = 1
+  size = "shared-cpu-1x"
+  memory = "256mb"
