@@ -47,13 +47,23 @@ the library beside it (`{:skullet, path: ".."}`), and its stylesheet and engine 
 straight out of `priv/static`. `example/Dockerfile` lays the repo out that way inside the
 builder.
 
-One `shared-cpu-1x` machine with 256MB, suspended when idle and resumed on the next request:
+One `shared-cpu-1x` machine with 256MB, suspended when idle and resumed on the next request.
+The live demo runs at <https://skullet-demo.fly.dev>.
+
+The build happens on an amd64 machine, so `.github/workflows/deploy-demo.yml` is the
+supported path: it builds with the runner's own Docker (`--local-only`) and deploys on every
+push touching `example/`, `lib/`, or `priv/`, plus manual runs from the Actions tab. Fly's
+remote builders cannot download the Tailwind binary, and Apple Silicon needs Rosetta
+enabled in Docker Desktop to run the Erlang VM under amd64 emulation.
 
 ```bash
-# from the repository root
-fly launch --copy-config --no-deploy --ha=false -c example/fly.toml   # change `app` / PHX_HOST
-fly secrets set SECRET_KEY_BASE="$(mix phx.gen.secret)" -c example/fly.toml
-fly deploy --ha=false -c example/fly.toml
+# one-time, from the repository root
+fly apps create skullet-demo                                    # or edit `app` / PHX_HOST
+fly secrets set SECRET_KEY_BASE="$(cd example && mix phx.gen.secret)"
+fly tokens create deploy -a skullet-demo                        # → FLY_API_TOKEN repo secret
+
+# deploy
+git push origin main                                            # or: gh workflow run deploy-demo.yml
 ```
 
 - `--ha=false` keeps it to one machine; `fly scale count 1` if a second one appears.
@@ -62,5 +72,6 @@ fly deploy --ha=false -c example/fly.toml
   drop while suspended; the page reconnects when the machine comes back.
 - 256MB is the smallest machine. The release idles at roughly 140–160MB, so there is room
   for a handful of viewers; `fly scale vm shared-cpu-1x --memory 512` if you want more.
+  Measured on the live app: suspended after ~6 minutes idle, 1.1s to wake and render.
 - The build needs no database, only `SECRET_KEY_BASE`. `PHX_HOST` in `fly.toml` must match
   the app name (or your custom domain).
