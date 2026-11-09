@@ -9,7 +9,7 @@ app = "skullet-demo"
 primary_region = "syd"
 
 [build]
-  dockerfile = "example/Dockerfile"
+  dockerfile = "Dockerfile"
 
 [env]
   PHX_HOST = "skullet-demo.fly.dev"

@@ -5,6 +5,8 @@
 .worktrees
 .superpowers
 docs
+deps
+_build
 js/node_modules
 js/test
 js/fixtures
