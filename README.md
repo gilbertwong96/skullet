@@ -1,5 +1,7 @@
 # Skullet
 
+[![coverage](https://codecov.io/gh/gilbertwong96/skullet/graph/badge.svg?branch=main)](https://codecov.io/gh/gilbertwong96/skullet)
+
 Draws a skeleton of exactly what is about to load.
 
 Your own component renders from sample data with its text transparent; the browser lays it

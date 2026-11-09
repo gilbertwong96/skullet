@@ -81,7 +81,7 @@ defmodule Skullet.MixProject do
       ci: [
         "compile --warnings-as-errors",
         "format --check-formatted",
-        "coveralls",
+        "coveralls.lcov",
         "credo --strict",
         "dialyzer",
         "spec_lint --warnings-as-errors",

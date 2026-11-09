@@ -29,10 +29,20 @@ jobs:
           key: ${{ runner.os }}-mix-1.18-27-${{ hashFiles('mix.lock') }}
 
       - run: mix deps.get
-      # VibeKit's pipeline: compile, format, coveralls (the suite, 95% floor),
-      # credo --strict, dialyzer, ex_dna --max-clones 0, reach.check --arch --smells
+      # VibeKit's pipeline: compile, format, coveralls.lcov (the suite, 95% floor,
+      # and cover/lcov.info), credo --strict, dialyzer, ex_dna --max-clones 0,
+      # reach.check --arch --smells
       - run: mix ci
       - run: mix hex.build
+
+      # excoveralls writes absolute `SF:` paths; Codecov matches repo-relative ones.
+      - run: sed -i "s|$PWD/||" cover/lcov.info
+
+      - uses: codecov/codecov-action@v5
+        with:
+          files: cover/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   engine:
     runs-on: ubuntu-latest
