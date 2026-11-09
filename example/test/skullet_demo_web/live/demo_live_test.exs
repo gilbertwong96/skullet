@@ -12,15 +12,17 @@ defmodule SkulletDemoWeb.DemoLiveTest do
     end
   end
 
-  test "the panel says when the hold outlasts the latency", %{conn: conn} do
+  test "the panel says what the hold does, and when it hides the skeleton", %{conn: conn} do
     {:ok, view, html} = live(conn, "/")
+    assert html =~ "before a skeleton shows"
     refute html =~ "is not shorter than"
 
     assert render_change(view, "control", %{"controls" => %{"hold" => "800ms"}}) =~
              "is not shorter than"
 
-    refute render_change(view, "control", %{"controls" => %{"hold" => ""}}) =~
-             "is not shorter than"
+    html = render_change(view, "control", %{"controls" => %{"hold" => ""}})
+    assert html =~ "before a skeleton shows"
+    refute html =~ "is not shorter than"
   end
 
   test "the header offers the three page themes", %{conn: conn} do

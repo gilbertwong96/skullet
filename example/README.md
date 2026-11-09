@@ -38,9 +38,9 @@ mix phx.server          # → http://localhost:4000
 The panel at the top sets latency, animation, speed, radius, text metrics, hold, reveal
 delay and enter filter for **every** demo, through the provider — no demo code knows about
 it. The page's own theme is the switch in the header (system / light / dark), kept in
-`localStorage`; the bars follow it, since `color-scheme` comes with the theme. A `hold`
-that is not shorter than the latency leaves nothing to see — no skeleton, and no reveal to
-animate — so the panel says so when you pick one. `mode` on a
+`localStorage`; the bars follow it, since `color-scheme` comes with the theme. The line under
+the panel spells out what `hold` and the latency add up to: a hold that is not shorter than
+the latency leaves nothing to see, no skeleton and no reveal to animate. `mode` on a
 provider is how one subtree asks for the other scheme — the panel in *A provider's mode*
 does that, and can be flipped to show it.
 

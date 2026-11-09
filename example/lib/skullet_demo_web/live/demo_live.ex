@@ -678,6 +678,9 @@ defmodule SkulletDemoWeb.DemoLive do
   defp hold_ms(""), do: 150
   defp hold_ms(value), do: value |> String.trim_trailing("ms") |> String.to_integer()
 
+  defp hold_label(""), do: "150ms"
+  defp hold_label(value), do: value
+
   attr :controls, :map, required: true
   attr :radii, :list, required: true
   attr :texts, :list, required: true
@@ -788,15 +791,25 @@ defmodule SkulletDemoWeb.DemoLive do
       </div>
 
       <%!-- The same `--skullet-hold` both delays the skeleton and marks a reveal too soon to
-      animate, so a hold that outlasts the latency leaves nothing to see. Say it, rather than
-      let it read as broken. --%>
+      animate, so a hold that outlasts the latency leaves nothing to see. Say which case this
+      is, rather than let it read as broken. --%>
       <p
         :if={hold_ms(@controls["hold"]) >= String.to_integer(@controls["latency"])}
         class="mt-3 text-xs opacity-60"
       >
-        `hold` ({@controls["hold"] || "150ms"}) is not shorter than the {@controls["latency"]}ms
+        `hold` ({hold_label(@controls["hold"])}) is not shorter than the {@controls["latency"]}ms
         latency: the skeleton never shows, and `smart` has nothing to reveal, so every Replay
         below lands at once. Lower hold or raise the latency.
+      </p>
+      <p
+        :if={hold_ms(@controls["hold"]) < String.to_integer(@controls["latency"])}
+        class="mt-3 text-xs opacity-60"
+      >
+        `hold` waits {hold_label(@controls["hold"])} before a skeleton shows; with a {@controls[
+          "latency"
+        ]}ms latency it is up for about {String.to_integer(@controls["latency"]) -
+          hold_ms(@controls["hold"])}ms
+        before the reveal — and a reveal over a shown skeleton animates.
       </p>
     </form>
     """
