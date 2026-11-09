@@ -7,20 +7,11 @@ defmodule Skullet do
   per wrapped line, one block per image or control. Nothing is guessed, so nothing moves
   when the content arrives.
 
-  The inner block receives the sample while loading, and the real value once it is there:
+  The most common shape, one `assign_async/3` and a sample:
 
       <Skullet.skeleton :let={user} id="profile" async={@user} sample={@sample_user}>
         <Profile.card user={user} />
       </Skullet.skeleton>
-
-      <Skullet.skeleton :let={user} id="profile" data={@user} sample={@sample_user}>
-        <Profile.card user={user} />
-      </Skullet.skeleton>
-
-  `sample` is required: it is the only data available during a dead render, and writing a
-  second skeleton is the thing this component exists to delete. `id` is required twice
-  over — `phx-hook` needs one, and it is the key shape memory will use; a generated id
-  would change on every render and remount the hook.
 
   Wiring, in the app's `assets/js/app.js` and `assets/css/app.css`:
 
@@ -29,36 +20,18 @@ defmodule Skullet do
 
       @import "../../deps/skullet/priv/static/skullet.css";
 
-  The CSS is not optional: it keeps the sample invisible before the engine runs, and shows
-  it instead of a blank box if the engine never does. For bars on the very first paint —
-  before the bundle has loaded — render `Skullet.Boot.boot/1` once in the layout; under a
-  Content Security Policy pass it that script's `nonce`.
+  The CSS is not optional: it keeps the sample invisible before the engine runs.
 
-  A background refetch keeps the content on screen: `assign_async/3` leaves the previous
-  result in place while the new one loads, so pass `reset: true` (or assign a fresh
-  `AsyncResult.loading()`) to have the skeleton return.
+  The detail lives in the guides:
 
-  Theme through custom properties (`--skullet-base`, `--skullet-highlight`,
-  `--skullet-radius`, `--skullet-animation`, `--skullet-speed`, `--skullet-text-top`,
-  `--skullet-text-bottom`, and the reveal's `--skullet-hold`, `--skullet-fade`,
-  `--skullet-resize`, `--skullet-cascade`, `--skullet-delay`, `--skullet-secondary-delay`,
-  `--skullet-enter-filter`, `--skullet-enter-scale`), set per skeleton with the `theme`
-  attribute — every property is a theme key, its name without the prefix — or globally in
-  CSS.
-  `reveal` is `"smart"` (decides from timing, input and size), `"together"`, `"sequence"`,
-  `"sweep"`, `"instant"`, or a name a page registered with `registerReveal/2` in JS.
+    * [Usage](usage.html) — async assigns and plain data, attributes and slots, empty and
+      error states, memory, images, plain pages without LiveView.
+    * [Theming](theming.html) — every custom property, the `theme` map, the provider.
+    * [Reveals](reveals.html) — how `smart` decides, the built-in modes, specs of your own.
+    * [Internals](internals.html) — how measuring works, first paint, the engine's build.
 
-  Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as
-  one block and `skullet-ignore` leaves it out of the skeleton entirely.
-
-  A result that arrived but holds nothing is its own pane: `empty` renders the
-  `:empty_message` slot in place of the content, and the reveal measures that message and
-  eases to its height. It is content, not a loading state — the skeleton still shows while
-  the data is missing, and the `:error` slot still wins when the assign failed.
-
-  Pass `remember` — usually the current user's id — to have the next skeleton drawn from
-  the data this one last showed instead of from the sample. It is held in ETS, expires,
-  and is per node; call `Skullet.Memory.forget/1` on sign-out.
+  `Skullet.Boot.boot/1` covers the gap before the bundle loads, and `Skullet.Memory`
+  backs `remember`.
   """
 
   use Phoenix.Component

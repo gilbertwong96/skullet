@@ -63,7 +63,7 @@ defmodule Skullet.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      files: ~w(lib priv mix.exs README.md CHANGELOG.md LICENSE .formatter.exs),
+      files: ~w(lib priv guides mix.exs README.md CHANGELOG.md LICENSE .formatter.exs),
       links: %{"GitHub" => "https://github.com/gilbertwong96/skullet"}
     ]
   end
@@ -71,7 +71,17 @@ defmodule Skullet.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md", "CHANGELOG.md"],
+      extras: [
+        "README.md",
+        "guides/usage.md",
+        "guides/theming.md",
+        "guides/reveals.md",
+        "guides/internals.md",
+        "CHANGELOG.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r|^guides/|
+      ],
       source_url: "https://github.com/gilbertwong96/skullet"
     ]
   end

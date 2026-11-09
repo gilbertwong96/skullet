@@ -9,10 +9,11 @@ defmodule Skullet.Boot do
 
   Render it once per page, after the markup it measures:
 
-      <Skullet.Boot nonce={@nonce} />
+      <Skullet.Boot.boot nonce={@nonce} />
 
   It is about 9KB of JavaScript inlined into the page, so it is your call to place it. Under
-  a Content Security Policy, pass the script's `nonce`.
+  a Content Security Policy, pass the script's `nonce`; [usage](usage.html) has a plug that
+  makes one.
   """
 
   use Phoenix.Component
