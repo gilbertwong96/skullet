@@ -119,6 +119,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:real_chart, @real_chart)
      |> assign(:images_sample, @images)
      |> assign(:plain_user, @real_card)
+     |> assign(:own_mode, "dark")
      |> assign(:pinned, false)
      |> assign(:controls, controls())
      |> assign(:codes, @codes)
@@ -148,6 +149,10 @@ defmodule SkulletDemoWeb.DemoLive do
 
   def handle_event("pin", _params, socket) do
     {:noreply, update(socket, :pinned, &(!&1))}
+  end
+
+  def handle_event("own_mode", %{"mode" => mode}, socket) do
+    {:noreply, assign(socket, :own_mode, if(mode == "", do: nil, else: mode))}
   end
 
   def handle_event("forget", _params, socket) do
@@ -579,16 +584,27 @@ defmodule SkulletDemoWeb.DemoLive do
             <.demo
               id="provider"
               title="A provider's mode"
-              blurb="`mode` sets `color-scheme` on the wrapper, which is what the bars' colours follow — dark bars on a light page."
+              blurb="`mode` sets `color-scheme` on the wrapper, and that is the palette the bars are drawn from — not the page's. Flip it: the panel's own colours do not move, only what the skeleton inside is made of. An unset mode follows the page, and an inner provider wins over the outer one."
             >
-              <Skullet.provider mode="dark" class="rounded-lg bg-neutral p-4 text-neutral-content">
-                <div class="flex items-center gap-4">
-                  <div class="size-14 rounded-full bg-white/20"></div>
-                  <div class="min-w-0">
-                    <p class="truncate font-semibold">Dark bars, light page</p>
-                    <p class="truncate text-sm opacity-70">inside a provider with mode="dark"</p>
-                  </div>
+              <:actions>
+                <div class="join">
+                  <button
+                    :for={{label, value} <- [{"page", ""}, {"light", "light"}, {"dark", "dark"}]}
+                    class={["btn btn-xs join-item", (@own_mode || "") == value && "btn-active"]}
+                    phx-click="own_mode"
+                    phx-value-mode={value}
+                  >
+                    {label}
+                  </button>
                 </div>
+              </:actions>
+              <Skullet.provider
+                mode={@own_mode}
+                class="rounded-lg bg-neutral p-4 text-neutral-content"
+              >
+                <Skullet.skeleton :let={user} id="s-provider" loading={true} sample={@sample_card}>
+                  <.person person={user} />
+                </Skullet.skeleton>
               </Skullet.provider>
             </.demo>
           </section>

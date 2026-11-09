@@ -24,6 +24,16 @@ defmodule SkulletDemoWeb.DemoLiveTest do
     assert themes == ["system", "light", "dark"]
   end
 
+  test "the provider card can ask for its own colour scheme", %{conn: conn} do
+    {:ok, view, html} = live(conn, "/")
+
+    assert html =~ ~s(color-scheme: dark)
+
+    assert render_click(view, "own_mode", %{"mode" => "light"}) =~ "color-scheme: light"
+    # an empty mode means "follow the page", so the wrapper stops overriding it
+    refute render_click(view, "own_mode", %{"mode" => ""}) =~ "color-scheme:"
+  end
+
   defp options(html) do
     html
     |> LazyHTML.from_document()
