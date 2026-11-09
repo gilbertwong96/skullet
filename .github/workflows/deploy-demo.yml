@@ -26,7 +26,13 @@ jobs:
       # fly.io/install.sh, not the setup-flyctl action: that one resolves the latest
       # flyctl through the GitHub API, which 504s often enough to fail the job.
       - name: Install flyctl
-        run: curl -fsSL https://fly.io/install.sh | sh
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSL https://fly.io/install.sh | sh; then exit 0; fi
+            echo "flyctl download failed, retrying"
+            sleep $((attempt * 15))
+          done
+          exit 1
 
       # --local-only builds with the runner's own amd64 Docker: Fly's remote builders
       # cannot reach GitHub for the Tailwind binary, and local amd64 builds on Apple
