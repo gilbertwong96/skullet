@@ -66,15 +66,3 @@ band across the whole skeleton, which reads better when the bars are close toget
 follow the same rule as upstream: the band is capped at 320px, bands are 2.5 band-widths
 apart on a 110° slant, and the loop is timed to a 1280px reference width so the pace is the
 same on any screen. `pulse` fades the bars in and out, and `none` holds them still.
-
-## Files
-
-`priv/static` ships four files and one source map, and only the first two are yours to
-import:
-
-| file | what it is |
-|---|---|
-| `skullet.js` | the engine as one ES module — what a bundler imports |
-| `skullet.min.js` | the same engine as a script, with its source map: it defines `window.Skullet` (`attach`, `setDebug`, `registerReveal`, `SkulletHook`) |
-| `skullet.pre.js` | the pre-paint script `Skullet.Boot` inlines into the page, not a file you load |
-| `skullet.css` | the stylesheet |

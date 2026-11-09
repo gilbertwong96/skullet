@@ -35,6 +35,27 @@ With a `path:` or `git:` dependency there is no `deps/skullet` directory — poi
 imports at that checkout instead. The CSS file is not optional: it is what keeps the sample
 invisible before the engine runs.
 
+`priv/static` ships two bundles, their pre-paint script and the stylesheet; only the first
+two are yours to import:
+
+| file | what it is |
+|---|---|
+| `skullet.js` | the engine as one ES module — what a bundler imports |
+| `skullet.min.js` | the same engine as a script, with its source map: it defines `window.Skullet` (`attach`, `setDebug`, `registerReveal`, `SkulletHook`) |
+| `skullet.pre.js` | the pre-paint script `Skullet.Boot` inlines into the page, not a file you load |
+| `skullet.css` | the stylesheet |
+
+No build step? Copy `skullet.min.js` and `skullet.css` where your static files live and use
+the engine off `window.Skullet`:
+
+```html
+<link rel="stylesheet" href="/assets/skullet.css">
+<script src="/assets/skullet.min.js"></script>
+<script>
+  Skullet.attach(document.querySelector(".skullet"))
+</script>
+```
+
 ## The first skeleton
 
 ```heex
@@ -53,16 +74,12 @@ the browser paints it, rather than after the bundle loads. It is an inline scrip
 Content Security Policy needs its nonce — [usage](guides/usage.md#content-security-policy)
 wires one through a plug, the session and the LiveView.
 
-## Guides
+## Where to read next
 
-- [Usage](guides/usage.md) — async assigns and plain data, attributes and slots, empty and
-  error states, memory, images, plain pages without LiveView.
-- [Theming](guides/theming.md) — every custom property, the `theme` map, and the provider
-  that sets them in one place.
-- [Reveals](guides/reveals.md) — how `smart` decides, the built-in modes, and specs of your
-  own.
-- [Internals](guides/internals.md) — how measuring works, first paint, the engine's build,
-  the demo app.
+[Usage](guides/usage.md) covers the data sources, attributes, slots and the empty and error
+states; [theming](guides/theming.md) the custom properties and the provider that sets them
+in one place; [reveals](guides/reveals.md) how content replaces its skeleton; and
+[internals](guides/internals.md) how measuring works and how the engine is built.
 
 API reference: `Skullet.skeleton/1`, `Skullet.provider/1`, `Skullet.box/1`,
 `Skullet.Boot.boot/1`, `Skullet.Memory`. Changes are in the

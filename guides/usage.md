@@ -297,9 +297,8 @@ moved. `skullet-debug` on any one element does the same for that subtree, and
 
 ## Plain pages
 
-The engine does not need LiveView. Importing `priv/static/skullet.js` on a page with the
-component's markup gives you `attach(root)`, which starts the engine on that element, and
-`setDebug(on)`:
+The engine does not need LiveView. Given the markup the component renders, `attach(root)`
+starts the engine on that element and `setDebug(on)` turns the outline on for the page:
 
 ```js
 import { attach, setDebug } from "../../deps/skullet/priv/static/skullet.js"
@@ -307,14 +306,13 @@ import { attach, setDebug } from "../../deps/skullet/priv/static/skullet.js"
 attach(document.querySelector(".skullet"))
 ```
 
-No build step at all? Copy `priv/static/skullet.min.js` and `priv/static/skullet.css`
-where your static files live and load them directly — the script leaves the same engine on
-`window.Skullet`:
+`attach` returns the engine, so a page that swaps content itself drives it the way the
+LiveView hook does: `beforeUpdate()`, then `update()` after the new markup is in, and
+`destroy()` when the element goes. It takes the reveal as an option —
+`attach(root, { reveal: spec })` — which wins over the element's `reveal` attribute; see
+[reveals](reveals.md).
 
-```html
-<link rel="stylesheet" href="/assets/skullet.css">
-<script src="/assets/skullet.min.js"></script>
-<script>
-  Skullet.attach(document.querySelector(".skullet"))
-</script>
-```
+The markup is the component's: a `.skullet` root with `data-skullet-state` (`loading` or
+`loaded`), a `[data-skullet-overlay]` for the bars, and a `[data-skullet-content]` around
+the content. Loading it without a bundler is in
+[installation](readme.html#installation).
