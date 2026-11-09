@@ -57,4 +57,34 @@ defmodule Skullet.TestComponents do
     </.skeleton>
     """
   end
+
+  attr(:data, :any, default: nil)
+  attr(:async, :any, default: nil)
+  attr(:empty, :boolean, default: false)
+  slot(:empty_message)
+
+  def with_empty_state(assigns) do
+    ~H"""
+    <.skeleton
+      :let={user}
+      id={@id}
+      sample={Skullet.Sample.sample_user()}
+      data={@data}
+      async={@async}
+      empty={@empty}
+    >
+      <div id="content">{user.name}</div>
+      <:error><p id="error">Could not load.</p></:error>
+      <:empty_message><p id="empty">No messages yet.</p></:empty_message>
+    </.skeleton>
+    """
+  end
+
+  def empty_without_message(assigns) do
+    ~H"""
+    <.skeleton :let={user} id={@id} sample={Skullet.Sample.sample_user()} data={@data} empty>
+      <div id="content">{user.name}</div>
+    </.skeleton>
+    """
+  end
 end

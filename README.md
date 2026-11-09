@@ -112,6 +112,7 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 | `async` | `%AsyncResult{}` | `nil` | from `assign_async/3` |
 | `data` | any | `nil` | plain data; `nil` is loading |
 | `loading` | boolean | `false` | forces the skeleton, even over data |
+| `empty` | boolean | `false` | shows the `empty_message` slot in place of the content (see [empty states](#empty-states)) |
 | `reveal` | `"smart"` \| `"together"` \| `"sequence"` \| `"instant"` | `"smart"` | how content replaces its skeleton |
 | `theme` | map | `%{}` | custom properties for this skeleton alone |
 | `label` | string | `"Loading"` | read to screen readers while loading |
@@ -119,8 +120,9 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 
 Slots: `inner_block` (required, receives the sample then the real value), `skeleton` (your
 own markup to measure instead of the sample — see [per-component
-skeletons](#per-component-skeletons)) and `error` (rendered in place of the content when
-the async assign failed — see [errors](#errors)).
+skeletons](#per-component-skeletons)), `error` (rendered in place of the content when
+the async assign failed — see [errors](#errors)) and `empty_message` (rendered in place of
+the content while `empty` is true — see [empty states](#empty-states)).
 
 ## Theme
 
@@ -312,6 +314,39 @@ Render that frame in the slot:
 </:error>
 ```
 
+## Empty states
+
+An empty result is neither loading nor an error: the data arrived and there is nothing in
+it. `empty` swaps the content pane for the `empty_message` slot, and the reveal treats that
+message as content — it measures it and eases to its height, with no skeleton of its own.
+
+```heex
+<Skullet.skeleton :let={messages} id="inbox" data={@messages} sample={@sample_messages}
+  empty={@messages == []}>
+  <Inbox.messages messages={messages} />
+  <:empty_message>
+    <p class="rounded-lg border border-dashed border-base-300 p-6 text-center text-sm">
+      No messages yet.
+    </p>
+  </:empty_message>
+</Skullet.skeleton>
+```
+
+It is your markup, styled none of it by the library — the same deal as the `error` slot.
+Two rules keep it predictable:
+
+- **Content first.** `empty` only replaces content that arrived. While the data is still
+  missing the skeleton shows as usual (from the sample — the result is not known to be
+  empty yet), and a failed assign still renders the `error` slot instead.
+- **No message, no change.** Leave the slot out and the content stays: `empty` on its own
+  renders what it always did.
+
+With an async assign, emptiness rides on the result:
+
+```heex
+empty={@messages.ok? and @messages.result == []}
+```
+
 ## Hints
 
 Measuring gets most markup right. Where it does not — a logo, a chart, a canvas — say so
@@ -353,10 +388,6 @@ in place. `instant` shows and removes the skeleton with no transition.
 `example/` is a Phoenix LiveView app using the component on a real `assign_async`, with a
 button that pins the loading state. `cd example && mix deps.get && mix assets.setup &&
 mix phx.server`, then open <http://localhost:4000>.
-
-## Not implemented yet
-
-Empty states (`empty` / `emptyMessage`).
 
 ## Plain pages
 

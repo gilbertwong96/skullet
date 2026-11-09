@@ -48,6 +48,11 @@ defmodule Skullet do
   Where measuring reads the markup wrong, say so in it: `skullet-block` draws an element as
   one block and `skullet-ignore` leaves it out of the skeleton entirely.
 
+  A result that arrived but holds nothing is its own pane: `empty` renders the
+  `:empty_message` slot in place of the content, and the reveal measures that message and
+  eases to its height. It is content, not a loading state — the skeleton still shows while
+  the data is missing, and the `:error` slot still wins when the assign failed.
+
   Pass `remember` — usually the current user's id — to have the next skeleton drawn from
   the data this one last showed instead of from the sample. It is held in ETS, expires,
   and is per node; call `Skullet.Memory.forget/1` on sign-out.
@@ -78,6 +83,11 @@ defmodule Skullet do
   attr(:sample, :any, required: true, doc: "stands in for the data to draw the skeleton")
   attr(:loading, :boolean, default: false, doc: "forces the skeleton, even over data")
 
+  attr(:empty, :boolean,
+    default: false,
+    doc: "shows the `empty_message` slot in place of the content"
+  )
+
   attr(:reveal, :string,
     default: "smart",
     doc:
@@ -104,6 +114,14 @@ defmodule Skullet do
     doc: """
     your own markup to measure instead of the sample — for a logo, a chart, a canvas.
     It is rendered while loading in place of the inner block.
+    """
+  )
+
+  slot(:empty_message,
+    doc: """
+    rendered in place of the content while `empty` is true — the content itself when left
+    out. It is your markup: the library styles none of it, so a dashed box, an illustration
+    or a card frame all work here.
     """
   )
 
@@ -147,6 +165,10 @@ defmodule Skullet do
         <% @state == :loading and @skeleton != [] -> %>
           <div class="skullet-content" data-skullet-content>
             {render_slot(@skeleton)}
+          </div>
+        <% @state == :loaded and @empty and @empty_message != [] -> %>
+          <div class="skullet-content" data-skullet-content>
+            {render_slot(@empty_message)}
           </div>
         <% true -> %>
           <div class="skullet-content" data-skullet-content>

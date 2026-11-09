@@ -33,6 +33,7 @@ defmodule SkulletDemoWeb.DemoLive do
     "modes" => :reveal_demo,
     "custom" => :custom,
     "suspense" => :suspense,
+    "empty" => :empty,
     "images" => :images
   }
 
@@ -68,6 +69,12 @@ defmodule SkulletDemoWeb.DemoLive do
   @sample_chart [40, 64, 52, 88, 72, 96, 60, 80]
   @real_chart [72, 48, 92, 60, 84, 68, 96, 54]
 
+  @sample_messages [
+    %{from: "Ada Lovelace", body: "Sample line one, as long as a typical message."},
+    %{from: "Grace Hopper", body: "Sample line two, a little longer than the first."},
+    %{from: "Katherine Johnson", body: "Sample line three."}
+  ]
+
   @images [
     %{src: "/images/a.svg", label: "A"},
     %{src: "/images/b.svg", label: "B"},
@@ -95,6 +102,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:sample_short, @sample_short)
      |> assign(:real_long, @real_long)
      |> assign(:sample_chart, @sample_chart)
+     |> assign(:sample_messages, @sample_messages)
      |> assign(:real_chart, @real_chart)
      |> assign(:images_sample, @images)
      |> assign(:plain_user, @real_card)
@@ -109,6 +117,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> replay(:reveal_demo)
      |> replay(:custom)
      |> replay(:suspense)
+     |> replay(:empty)
      |> replay(:images)}
   end
 
@@ -177,6 +186,7 @@ defmodule SkulletDemoWeb.DemoLive do
   defp data_for(:memory), do: @real_card
   defp data_for(:reveal_demo), do: @real_card
   defp data_for(:custom), do: @real_card
+  defp data_for(:empty), do: []
 
   defp data_for(:images) do
     token = System.unique_integer([:positive])
@@ -454,6 +464,41 @@ defmodule SkulletDemoWeb.DemoLive do
                 reveal="wipe-down"
               >
                 <.person person={user} />
+              </Skullet.skeleton>
+            </.demo>
+
+            <.demo
+              id="empty"
+              title="Empty states"
+              blurb="The result arrived empty, which is neither loading nor an error: `empty` swaps in the `empty_message` slot, and the reveal measures that message like any other content."
+            >
+              <:actions>
+                <button class="btn btn-xs" phx-click="replay" phx-value-demo="empty">Replay</button>
+              </:actions>
+              <Skullet.skeleton
+                :let={messages}
+                id="s-empty"
+                async={@empty}
+                sample={@sample_messages}
+                empty={@empty.ok? and @empty.result == []}
+              >
+                <div class="grid gap-2">
+                  <div
+                    :for={message <- messages}
+                    class="min-w-0 rounded-lg border border-base-300 px-3 py-2"
+                  >
+                    <p class="truncate text-sm font-medium">{message.from}</p>
+                    <p class="truncate text-sm opacity-70">{message.body}</p>
+                  </div>
+                </div>
+                <:empty_message>
+                  <div class="rounded-lg border border-dashed border-base-300 p-6 text-center">
+                    <p class="text-sm font-medium">No messages yet</p>
+                    <p class="mt-1 text-xs opacity-60">
+                      Anything that arrives will show up here.
+                    </p>
+                  </div>
+                </:empty_message>
               </Skullet.skeleton>
             </.demo>
 

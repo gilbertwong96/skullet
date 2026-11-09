@@ -97,6 +97,56 @@ defmodule SkulletTest do
     assert text(query(html, "#content")) == "Sample Name"
   end
 
+  test "an empty result shows the empty message in place of the content" do
+    html =
+      render_component(&Skullet.TestComponents.with_empty_state/1,
+        id: "inbox",
+        data: [],
+        empty: true
+      )
+
+    assert attr(html, "data-skullet-state") == "loaded"
+    assert attr(html, "aria-busy") == "false"
+    assert text(query(html, "#empty")) == "No messages yet."
+    assert empty?(html, "#content")
+    # the message is the content pane, so the engine measures and reveals it
+    refute empty?(html, "[data-skullet-content] #empty")
+    assert empty?(html, ".skullet-status")
+  end
+
+  test "empty without a message leaves the content alone" do
+    html =
+      render_component(&Skullet.TestComponents.empty_without_message/1,
+        id: "inbox",
+        data: @real
+      )
+
+    assert text(query(html, "#content")) == "Real Name"
+    assert empty?(html, "#empty")
+  end
+
+  test "content that has not arrived is not empty yet" do
+    html =
+      render_component(&Skullet.TestComponents.with_empty_state/1, id: "inbox", empty: true)
+
+    assert attr(html, "data-skullet-state") == "loading"
+    assert text(query(html, "#content")) == "Sample Name"
+    assert empty?(html, "#empty")
+  end
+
+  test "an empty state does not hide a failure" do
+    html =
+      render_component(&Skullet.TestComponents.with_empty_state/1,
+        id: "inbox",
+        empty: true,
+        async: AsyncResult.failed(%AsyncResult{}, :boom)
+      )
+
+    assert attr(html, "data-skullet-state") == "failed"
+    assert text(query(html, "#error")) == "Could not load."
+    assert empty?(html, "#empty")
+  end
+
   test "the overlay is rendered by the server, so LiveView keeps it" do
     # LiveView prunes children it does not know about: an overlay created only by JS
     # is removed by the first patch, taking the reveal with it.

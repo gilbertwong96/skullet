@@ -30,3 +30,5 @@ First release.
   crossfade and a page cascade, from how long the skeleton was up, recent input, refetches
   and the size of what arrives.
 - Images that decode after the reveal fade in instead of popping (ten-second timeout).
+- Empty states: `empty` with an `empty_message` slot shows a message in place of content
+  that arrived empty, measured and revealed like any other content.
