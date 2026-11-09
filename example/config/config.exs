@@ -56,9 +56,11 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# A nonce per request. Off by default, on in prod.exs; it has to be set before the
+# environment config is imported, or it would override that file instead of the other way
+# round. See SkulletDemoWeb.CSP.
+config :skullet_demo, csp: false
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
-
-# A nonce per request, for production only: see SkulletDemoWeb.CSP.
-config :skullet_demo, csp: false
