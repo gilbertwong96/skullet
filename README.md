@@ -36,6 +36,16 @@ imports at that checkout instead.
 
 The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
 
+`priv/static` ships four files — plus the source maps for the two bundles — and only the
+first two are yours to import:
+
+| file | what it is |
+|---|---|
+| `skullet.js` | the engine as one ES module — what a bundler imports |
+| `skullet.min.js` | the same engine as a script: it defines `window.Skullet` (`attach`, `setDebug`, `registerReveal`, `SkulletHook`) |
+| `skullet.pre.js` | the pre-paint script `Skullet.Boot` inlines into the page, not a file you load |
+| `skullet.css` | the stylesheet |
+
 ## Before the first paint
 
 The sample is laid out from the server's HTML, but the bars are drawn by JavaScript — so
@@ -403,6 +413,18 @@ component's markup gives you `attach(root)`, which starts the engine on that ele
 import { attach, setDebug } from "../../deps/skullet/priv/static/skullet.js"
 
 attach(document.querySelector(".skullet"))
+```
+
+No build step at all? Copy `priv/static/skullet.min.js` and `priv/static/skullet.css`
+where your static files live and load them directly — the script leaves the same engine on
+`window.Skullet`:
+
+```html
+<link rel="stylesheet" href="/assets/skullet.css">
+<script src="/assets/skullet.min.js"></script>
+<script>
+  Skullet.attach(document.querySelector(".skullet"))
+</script>
 ```
 
 ## Working on the engine

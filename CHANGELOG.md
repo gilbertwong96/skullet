@@ -32,5 +32,8 @@ First release.
 - Images that decode after the reveal fade in instead of popping (ten-second timeout).
 - Empty states: `empty` with an `empty_message` slot shows a message in place of content
   that arrived empty, measured and revealed like any other content.
+- `priv/static` ships bundles rather than one file per module: `skullet.js` (ESM),
+  `skullet.min.js` (a script defining `window.Skullet`), their source maps, the inlined
+  `skullet.pre.js` and one hand-written `skullet.d.ts`.
 - Every documented custom property is a `theme` key, including the reveal's `hold`, `fade`,
   `resize`, `cascade`, `delay`, `secondary_delay`, `enter_filter` and `enter_scale`.

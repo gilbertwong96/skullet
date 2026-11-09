@@ -1,4 +1,5 @@
 import { type EngineOptions, SkulletEngine } from "./engine.js"
+import { measure } from "./measure.js"
 
 export { setDebug } from "./engine.js"
 export { registerReveal } from "./registry.js"
@@ -6,12 +7,12 @@ export type { Piece, Plan, RevealContext, RevealMode, RevealSpec, Wipe, WipePane
 
 declare global {
   interface Window {
-    __skulletEngine?: { attach: typeof attach }
+    __skulletEngine?: { attach: typeof attach; measure: typeof measure }
   }
 }
 
-// A plain page (and the pre-paint tests) can reach the engine without a bundler.
-window.__skulletEngine = { attach }
+// A plain page (and the fixtures) can reach the engine without a bundler.
+window.__skulletEngine = { attach, measure }
 
 /** The engine for one `.skullet` root: what the hook drives, and what a plain page can. */
 /**

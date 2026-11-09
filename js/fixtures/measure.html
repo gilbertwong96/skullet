@@ -58,7 +58,8 @@
 
     <script type="module">
       import { attach } from "/skullet.js"
-      import { measure } from "/measure.js"
+
+      const { measure } = window.__skulletEngine
 
       // One measure pass, for timing the hot path without the draw around it.
       window.measureOnce = () => {
