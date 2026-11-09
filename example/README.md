@@ -80,5 +80,16 @@ for the Tailwind binary, which is why the command above builds in your own Docke
 - 256MB is the smallest machine. The release idles at roughly 140–160MB, so there is room
   for a handful of viewers; `fly scale vm shared-cpu-1x --memory 512` if you want more.
   Measured on the live app: suspended after ~6 minutes idle, 1.1s to wake and render.
+- A suspended machine is billed for its rootfs at $0.15/GB-month, and Fly hands out an 8GB
+  one by default: $1.20 a month for sitting still, more than half what the machine costs
+  while it runs. The image needs about 150MB, so 1GB is plenty:
+
+  ```bash
+  fly machine update <id> -a skullet-demo --rootfs-size 1   # df / → 974M, 2% used
+  ```
+
+  It is a machine setting, not a `fly.toml` one (`persist_rootfs` covers persistence, not
+  size), so a deploy that recreates the machine hands back the 8GB default — re-apply it
+  after one.
 - The build needs no database, only `SECRET_KEY_BASE`. `PHX_HOST` in `fly.toml` must match
   the app name (or your custom domain).
