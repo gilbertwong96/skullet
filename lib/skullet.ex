@@ -22,6 +22,10 @@ defmodule Skullet do
 
   The CSS is not optional: it keeps the sample invisible before the engine runs.
 
+  Under a Content Security Policy the boot script and the theme's `<style>` block need the
+  page's nonce: `nonce={@csp_nonce}` on `skeleton/1`, `provider/1` and `box/1`; see the
+  [CSP section](usage.html#content-security-policy).
+
   The detail lives in the guides:
 
     * [Usage](usage.html) — async assigns and plain data, attributes and slots, empty and
@@ -79,6 +83,12 @@ defmodule Skullet do
   )
 
   attr(:theme, :map, default: %{}, doc: "custom properties to override on this skeleton")
+
+  attr(:nonce, :string,
+    default: nil,
+    doc: "the CSP nonce for the `<style>` block this emits when `theme` is set"
+  )
+
   attr(:label, :string, default: "Loading", doc: "read to screen readers while loading")
 
   attr(:remember, :any,
@@ -115,13 +125,12 @@ defmodule Skullet do
   def skeleton(assigns) do
     {state, value} = state_and_value(assigns)
     if state == :loaded, do: remember(assigns, value)
-    style = theme_style(assigns.theme)
 
     assigns =
       assign(assigns,
         state: state,
         value: value,
-        style_attrs: if(style, do: [{"style", style}], else: [])
+        style_tag: style_tag(theme_css(assigns.id, assigns.theme), assigns.nonce)
       )
 
     ~H"""
@@ -132,8 +141,8 @@ defmodule Skullet do
       data-skullet-state={@state}
       data-skullet-reveal={@reveal}
       aria-busy={to_string(@state == :loading)}
-      {@style_attrs}
     >
+      {@style_tag}
       <span
         :if={@state == :loading}
         class="skullet-status"
@@ -164,6 +173,7 @@ defmodule Skullet do
   end
 
   attr(:id, :string, default: nil, doc: "DOM id for the wrapper")
+  attr(:nonce, :string, default: nil, doc: "the CSP nonce for the `<style>` block this emits")
   attr(:mode, :string, default: nil, values: [nil, "light", "dark", "system"])
 
   attr(:animation, :string,
@@ -189,10 +199,17 @@ defmodule Skullet do
   """
   def provider(assigns) do
     style = provider_style(assigns)
-    assigns = assign(assigns, style_attrs: if(style, do: [{"style", style}], else: []))
+    id = assigns.id || (style && derived_id("skullet-provider", style))
+
+    assigns =
+      assign(assigns,
+        id: id,
+        style_tag: style && style_tag("##{id} { #{style} }", assigns.nonce)
+      )
 
     ~H"""
-    <div id={@id} {@style_attrs} {@rest}>
+    <div id={@id} {@rest}>
+      {@style_tag}
       {render_slot(@inner_block)}
     </div>
     """
@@ -222,6 +239,7 @@ defmodule Skullet do
   attr(:width, :any, default: "60%", doc: "any CSS length, or a number of pixels")
   attr(:height, :any, default: "1em", doc: "any CSS length, or a number of pixels")
   attr(:radius, :any, default: nil, doc: "defaults to `--skullet-radius`")
+  attr(:nonce, :string, default: nil, doc: "the CSP nonce for the `<style>` block this emits")
 
   @doc """
   A placeholder block for what cannot be measured — a logo, a chart, a canvas.
@@ -235,10 +253,18 @@ defmodule Skullet do
   """
   @spec box(map()) :: Phoenix.LiveView.Rendered.t()
   def box(assigns) do
-    assigns = assign(assigns, style: box_style(assigns))
+    style = box_style(assigns)
+    name = derived_id("skullet-box", style)
+
+    assigns =
+      assign(assigns,
+        class: "skullet-box #{name}",
+        style_tag: style_tag(".#{name} { #{style} }", assigns.nonce)
+      )
 
     ~H"""
-    <span class="skullet-box" skullet-block style={@style}></span>
+    <span class={@class} skullet-block></span>
+    {@style_tag}
     """
   end
 
@@ -251,6 +277,17 @@ defmodule Skullet do
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(";")
+  end
+
+  # A stable name for a rule, derived from the declarations it carries: the same box gets
+  # the same class on every render, so LiveView patches nothing.
+  defp derived_id(prefix, declarations) do
+    digest =
+      :crypto.hash(:sha256, declarations)
+      |> Base.encode16(case: :lower)
+      |> binary_part(0, 8)
+
+    "#{prefix}-#{digest}"
   end
 
   defp css_length(value) when is_number(value), do: "#{value}px"
@@ -284,6 +321,27 @@ defmodule Skullet do
       scope -> Skullet.Memory.put(scope, assigns.id, value)
     end
   end
+
+  # HEEx reads `<style>` as raw text, so the element is built here: interpolating inside it
+  # would come out literally, and the CSS has to carry a CSP nonce.
+  defp style_tag(nil, _nonce), do: nil
+
+  defp style_tag(css, nonce) do
+    if String.contains?(css, ["<", ">"]) do
+      raise ArgumentError, "theme values must not contain < or >, got: #{inspect(css)}"
+    end
+
+    attributes =
+      if nonce,
+        do: Phoenix.HTML.safe_to_string(Phoenix.HTML.attributes_escape(nonce: nonce)),
+        else: ""
+
+    Phoenix.HTML.raw(["<style", attributes, ">", css, "</style>"])
+  end
+
+  defp theme_css(_id, theme) when map_size(theme) == 0, do: nil
+
+  defp theme_css(id, theme), do: "##{id} { #{theme_style(theme)} }"
 
   defp theme_style(theme) when map_size(theme) == 0, do: nil
 

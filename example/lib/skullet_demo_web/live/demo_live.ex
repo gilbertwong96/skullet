@@ -252,6 +252,7 @@ defmodule SkulletDemoWeb.DemoLive do
     ~H"""
     <Layouts.app flash={@flash}>
       <Skullet.provider
+        nonce={@csp_nonce}
         animation={@controls["animation"]}
         speed={@controls["speed"]}
         theme={provider_theme(@controls)}
@@ -359,18 +360,24 @@ defmodule SkulletDemoWeb.DemoLive do
                 <button class="btn btn-xs" phx-click="replay" phx-value-demo="own">Replay</button>
               </:actions>
               <Skullet.skeleton :let={values} id="s-own" async={@own} sample={@sample_chart}>
-                <div class="flex h-28 items-end gap-2">
-                  <div
-                    :for={value <- values}
-                    class="w-5 rounded-t bg-primary"
-                    style={"height: #{value}%"}
-                  >
-                  </div>
-                </div>
+                <%!-- An svg, not a div with a height: the demo runs under a CSP, and a
+                style attribute is exactly what one blocks. --%>
+                <svg viewBox="0 0 100 100" class="h-28 w-full" preserveAspectRatio="none">
+                  <rect
+                    :for={{value, index} <- Enum.with_index(values)}
+                    x={index * 12 + 2}
+                    y={100 - value}
+                    width="8"
+                    height={value}
+                    rx="0.6"
+                    class="fill-primary"
+                  />
+                </svg>
                 <:skeleton>
                   <div class="flex h-28 items-end gap-2 border-b border-base-300 pb-1">
                     <Skullet.box
                       :for={height <- @sample_chart}
+                      nonce={@csp_nonce}
                       width={20}
                       height={"#{height}%"}
                       radius="4px"
@@ -535,10 +542,10 @@ defmodule SkulletDemoWeb.DemoLive do
                 <.person person={user} />
                 <:skeleton>
                   <div class="flex items-center gap-4">
-                    <Skullet.box width={56} height={56} radius="999px" />
+                    <Skullet.box width={56} height={56} radius="999px" nonce={@csp_nonce} />
                     <div class="min-w-0 flex-1">
-                      <Skullet.box width="40%" height={16} />
-                      <Skullet.box width="70%" height={12} radius="6px" />
+                      <Skullet.box width="40%" height={16} nonce={@csp_nonce} />
+                      <Skullet.box width="70%" height={12} radius="6px" nonce={@csp_nonce} />
                     </div>
                   </div>
                 </:skeleton>
@@ -595,6 +602,7 @@ defmodule SkulletDemoWeb.DemoLive do
                 </div>
               </:actions>
               <Skullet.provider
+                nonce={@csp_nonce}
                 mode={@own_mode}
                 class="rounded-lg bg-neutral p-4 text-neutral-content"
               >

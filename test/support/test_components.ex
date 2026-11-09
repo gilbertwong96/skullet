@@ -11,6 +11,7 @@ defmodule Skullet.TestComponents do
   attr(:theme, :map, default: %{})
   attr(:label, :string, default: "Loading")
   attr(:reveal, :string, default: "smart")
+  attr(:nonce, :string, default: nil)
   slot(:error)
 
   def profile(assigns) do
@@ -23,6 +24,7 @@ defmodule Skullet.TestComponents do
       data={@data}
       loading={@loading}
       theme={@theme}
+      nonce={@nonce}
       label={@label}
       reveal={@reveal}
       remember={@remember}
@@ -41,9 +43,19 @@ defmodule Skullet.TestComponents do
     """
   end
 
+  attr(:id, :string, default: nil)
+  attr(:nonce, :string, default: nil)
+
   def provider(assigns) do
     ~H"""
-    <Skullet.provider mode={@mode} theme={@theme} animation={@animation} speed={@speed}>
+    <Skullet.provider
+      id={@id}
+      mode={@mode}
+      theme={@theme}
+      animation={@animation}
+      speed={@speed}
+      nonce={@nonce}
+    >
       <div id="inside">hi</div>
     </Skullet.provider>
     """

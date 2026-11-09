@@ -48,7 +48,8 @@ The footer shows the running engine: state, phase, bars drawn, and whether anyth
 
 In production the app runs under a Content Security Policy — a nonce per request, set by
 `SkulletDemoWeb.CSP` and carried through the session so both the request's render and the
-LiveView's can sign the inline scripts. Dev leaves it off, because Phoenix's live-reloader
+LiveView's can sign the inline scripts and the theme's `<style>` blocks. Nothing is
+`'unsafe-inline'`: the demo's own markup has no `style` attributes either. Dev leaves it off, because Phoenix's live-reloader
 injects a script it cannot sign; `SKULLET_DEMO_CSP=true mix phx.server` turns it on there
 too.
 

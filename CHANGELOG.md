@@ -32,6 +32,9 @@ First release.
 - Images that decode after the reveal fade in instead of popping (ten-second timeout).
 - Empty states: `empty` with an `empty_message` slot shows a message in place of content
   that arrived empty, measured and revealed like any other content.
+- `theme`, `mode`, `animation` and `speed` are emitted as a `<style>` block keyed by the
+  element's id instead of a `style` attribute, and a `<Skullet.box>` is a class and a rule,
+  so a Content Security Policy needs no `'unsafe-inline'` for styles. Pass `nonce={…}`.
 - `priv/static` ships bundles rather than one file per module: `skullet.js` (ESM),
   `skullet.min.js` (a script defining `window.Skullet`, with its source map), the inlined
   `skullet.pre.js` and one hand-written `skullet.d.ts`.

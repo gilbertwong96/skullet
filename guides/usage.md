@@ -217,13 +217,17 @@ is the whole recipe. Without a CSP, leave the attribute off.
 
 ## Content Security Policy
 
-`<Skullet.Boot.boot />` is the one piece of Skullet that needs a nonce: it inlines a
-`<script>`, so a policy like `script-src 'self'` blocks it — and with it the skeleton that
-was meant to be on screen before the first paint. The engine and the stylesheet are ordinary
-assets, served from your own origin.
+Skullet needs a nonce in two places, and neither of them is `'unsafe-inline'`:
+
+- **the boot script**, which `<Skullet.Boot.boot />` inlines into the page;
+- **the theme**, which is emitted as a `<style>` block rather than a `style` attribute —
+  a nonce rescues `<style>` elements, and nothing rescues a `style` attribute.
+
+Everything else is ordinary: the engine and the stylesheet are assets from your own origin,
+and the bars are positioned through the CSSOM, which no policy blocks.
 
 Make the nonce where the policy is made, keep it for the rest of the request, and hand it to
-the script:
+whatever emits markup:
 
 ```elixir
 # lib/my_app_web/plugs/csp.ex
@@ -248,7 +252,7 @@ defmodule MyAppWeb.CSP do
   defp policy(nonce) do
     "default-src 'self'; " <>
       "script-src 'self' 'nonce-#{nonce}'; " <>
-      "style-src 'self' 'unsafe-inline'; " <>
+      "style-src 'self' 'nonce-#{nonce}'; " <>
       "img-src 'self' data:; connect-src 'self'; base-uri 'none'"
   end
 end
@@ -268,10 +272,27 @@ def mount(_params, session, socket) do
 end
 ```
 
+Then pass it to the four places that emit markup:
+
 ```heex
-<%!-- layouts/root.html.heex, at the end of <body>, after the markup it measures --%>
+<%!-- layouts/root.html.heex --%>
 <Skullet.Boot.boot nonce={@csp_nonce} />
+
+<%!-- any inline script of your own, e.g. a theme bootstrap --%>
+<script nonce={@csp_nonce}>…</script>
+
+<%!-- the theme: a provider, a skeleton with its own theme, a box --%>
+<Skullet.provider theme={%{radius: "6px"}} nonce={@csp_nonce}>
+  <Skullet.skeleton id="chart" sample={@sample} theme={%{speed: "fast"}} nonce={@csp_nonce}>
+    <Skullet.box width={240} height={120} nonce={@csp_nonce} />
+  </Skullet.skeleton>
+</Skullet.provider>
 ```
+
+`theme` and `mode` become `#the-id { --skullet-…: … }` in a `<style>` block that carries the
+nonce, and a box becomes a class plus its own rule — which is why nothing needs a `style`
+attribute. Without a `nonce`, the same blocks are emitted unsigned and a strict policy drops
+them, so the theme silently falls back to the defaults.
 
 Two things that surprise people:
 
@@ -280,13 +301,9 @@ Two things that surprise people:
   the second render has only socket assigns. The session is the one place both see, which is
   why the plug writes it there. Skip that and the attribute is simply dropped on the second
   render; the script has already run by then, but the markup no longer tells the truth.
-- **The theme is inline styles.** `theme={…}` and `<Skullet.provider theme={…}>` become
-  `style` attributes on the wrapper, and the engine positions every bar through the CSSOM.
-  Keep `style-src` compatible with that — `'unsafe-inline'` is the easy way; a class of your
-  own is the strict one.
-
-Any other inline script of yours (a theme bootstrap, an analytics stub) needs the same
-nonce; the demo's `<script nonce={@csp_nonce}>` in `example/` is one.
+- **A `style` attribute cannot be rescued by a nonce.** That is why the theme is a rule and
+  a box is a class: per-instance styling belongs in a `<style>` block with the nonce on it.
+  A chart of your own with per-bar heights wants the same treatment.
 
 ## Debugging
 

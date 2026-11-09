@@ -70,9 +70,23 @@ because it is the only data a dead render has, and `id` because the hook needs o
 generated one would change every render.
 
 Render `<Skullet.Boot.boot />` once in the layout and that first skeleton is drawn before
-the browser paints it, rather than after the bundle loads. It is an inline script, so a
-Content Security Policy needs its nonce — [usage](guides/usage.md#content-security-policy)
-wires one through a plug, the session and the LiveView.
+the browser paints it, rather than after the bundle loads.
+
+Under a Content Security Policy, Skullet wants a nonce in two places, and neither of them
+is `'unsafe-inline'`:
+
+- `script-src` for the boot script above, which is inlined;
+- `style-src` for the theme, which is emitted as a `<style>` block rather than a `style`
+  attribute, since a nonce rescues the element and nothing rescues the attribute.
+
+```heex
+<Skullet.Boot.boot nonce={@csp_nonce} />
+<Skullet.provider theme={%{radius: "6px"}} nonce={@csp_nonce}>
+  …
+</Skullet.provider>
+```
+
+[usage](guides/usage.md#content-security-policy) has the plug, the session hop and the rest.
 
 ## Where to read next
 

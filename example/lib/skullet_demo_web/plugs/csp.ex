@@ -37,7 +37,7 @@ defmodule SkulletDemoWeb.CSP do
   defp policy(nonce) do
     "default-src 'self'; " <>
       "script-src 'self' 'nonce-#{nonce}'; " <>
-      "style-src 'self' 'unsafe-inline'; " <>
+      "style-src 'self' 'nonce-#{nonce}'; " <>
       "img-src 'self' data:; " <>
       "connect-src 'self'; " <>
       "base-uri 'none'; form-action 'self'"

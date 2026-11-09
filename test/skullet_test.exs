@@ -32,6 +32,9 @@ defmodule SkulletTest do
   defp empty?(html, selector), do: html |> query(selector) |> Enum.empty?()
   defp attrs(html), do: html |> root() |> LazyHTML.attributes() |> List.flatten() |> Map.new()
 
+  defp css(html),
+    do: html |> LazyHTML.from_document() |> LazyHTML.query("style") |> LazyHTML.text()
+
   test "a dead render is loading, and renders the sample" do
     html = skeleton_html([])
 
@@ -176,23 +179,22 @@ defmodule SkulletTest do
   test "a provider sets the scheme and the properties everything inside inherits" do
     html =
       render_component(&Skullet.TestComponents.provider/1,
+        id: "panel",
         mode: "dark",
         theme: %{base: "red"},
         animation: "group-shimmer",
         speed: "fast"
       )
 
-    style =
-      html
-      |> LazyHTML.from_document()
-      |> LazyHTML.query("[style]")
-      |> LazyHTML.attribute("style")
-      |> List.first()
+    # a rule for the wrapper's id, not a style attribute: a nonce cannot rescue those
+    rule = css(html)
 
-    assert style =~ "color-scheme: dark"
-    assert style =~ "--skullet-base: red"
-    assert style =~ "--skullet-animation: group-shimmer"
-    assert style =~ "--skullet-speed: fast"
+    assert rule =~ "#panel {"
+    assert rule =~ "color-scheme: dark"
+    assert rule =~ "--skullet-base: red"
+    assert rule =~ "--skullet-animation: group-shimmer"
+    assert rule =~ "--skullet-speed: fast"
+    refute html =~ ~s(style=")
   end
 
   test "a provider with nothing to say renders no style" do
@@ -204,7 +206,7 @@ defmodule SkulletTest do
         speed: nil
       })
 
-    assert html |> LazyHTML.from_document() |> LazyHTML.query("[style]") |> Enum.empty?()
+    refute html =~ "<style"
   end
 
   test "the pre-paint script is inlined, with the nonce it is given" do
@@ -222,9 +224,19 @@ defmodule SkulletTest do
     box = LazyHTML.from_document(html) |> LazyHTML.query(".skullet-box")
 
     assert LazyHTML.attribute(box, "skullet-block") == [""]
-    assert LazyHTML.attribute(box, "style") |> List.first() =~ "width:240px"
-    assert LazyHTML.attribute(box, "style") |> List.first() =~ "height:120px"
-    assert LazyHTML.attribute(box, "style") |> List.first() =~ "border-radius:8px"
+    assert [class] = LazyHTML.attribute(box, "class")
+    assert [name] = class |> String.split() |> Enum.drop(1)
+
+    rule = css(html)
+    assert rule =~ ".#{name} {"
+    assert rule =~ "width:240px"
+    assert rule =~ "height:120px"
+    assert rule =~ "border-radius:8px"
+    refute html =~ ~s(style=")
+
+    # the same box is the same class, so LiveView patches nothing between renders
+    assert render_component(&Skullet.box/1, width: 240, height: 120, radius: "8px") == html
+    refute render_component(&Skullet.box/1, width: 100, height: 120, radius: "8px") == html
   end
 
   test "remembering the last data draws the next skeleton from it" do
@@ -275,37 +287,46 @@ defmodule SkulletTest do
     assert empty?(html, "[data-skullet-content] .skullet-status")
   end
 
-  test "a theme renders as custom properties on the root" do
+  test "a theme becomes a rule for that skeleton" do
     html = skeleton_html(theme: %{base: "rgb(0 0 0 / 0.1)", radius: "8px"})
-    style = attr(html, "style")
 
-    assert style =~ "--skullet-base: rgb(0 0 0 / 0.1)"
-    assert style =~ "--skullet-radius: 8px"
+    assert css(html) =~ "#profile {"
+    assert css(html) =~ "--skullet-base: rgb(0 0 0 / 0.1)"
+    assert css(html) =~ "--skullet-radius: 8px"
+    refute Map.has_key?(attrs(html), "style")
+  end
+
+  test "a theme carries the CSP nonce it is given" do
+    html = skeleton_html(theme: %{radius: "8px"}, nonce: "abc123")
+    style = html |> LazyHTML.from_document() |> LazyHTML.query("style")
+
+    assert LazyHTML.attribute(style, "nonce") == ["abc123"]
   end
 
   test "string keys are accepted" do
     html = skeleton_html(theme: %{"speed" => "fast"})
 
-    assert attr(html, "style") =~ "--skullet-speed: fast"
+    assert css(html) =~ "--skullet-speed: fast"
   end
 
-  test "an empty theme renders no style attribute" do
+  test "an empty theme renders no rule" do
     html = skeleton_html(theme: %{})
 
     refute Map.has_key?(attrs(html), "style")
+    refute html =~ "<style"
   end
 
   test "non-string values are stringified" do
     html = skeleton_html(theme: %{radius: 8})
 
-    assert attr(html, "style") =~ "--skullet-radius: 8"
+    assert css(html) =~ "--skullet-radius: 8"
   end
 
   test "the text knobs are reachable from a theme" do
     html = skeleton_html(theme: %{text_top: "x-height", text_bottom: "baseline"})
 
-    assert attr(html, "style") =~ "--skullet-text-top: x-height"
-    assert attr(html, "style") =~ "--skullet-text-bottom: baseline"
+    assert css(html) =~ "--skullet-text-top: x-height"
+    assert css(html) =~ "--skullet-text-bottom: baseline"
   end
 
   test "every custom property the README documents is a theme key" do
@@ -327,10 +348,10 @@ defmodule SkulletTest do
       enter_scale: "--skullet-enter-scale"
     }
 
-    style = skeleton_html(theme: Map.new(keys, fn {key, _var} -> {key, "1"} end)) |> attr("style")
+    rule = skeleton_html(theme: Map.new(keys, fn {key, _var} -> {key, "1"} end)) |> css()
 
     for {_key, var} <- keys do
-      assert style =~ "#{var}: 1"
+      assert rule =~ "#{var}: 1"
     end
   end
 
