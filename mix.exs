@@ -53,7 +53,12 @@ defmodule Skullet.MixProject do
       {:phoenix_live_view, "~> 1.2"},
       {:phoenix_html, "~> 4.3"},
       {:lazy_html, ">= 0.1.0", only: :test},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      # ExDoc brings makeup + makeup_elixir; the guides also fence heex, js and css.
+      {:makeup_eex, "~> 2.0", only: :dev, runtime: false},
+      {:makeup_html, "~> 1.0", only: :dev, runtime: false},
+      {:makeup_js, "~> 0.1", only: :dev, runtime: false},
+      {:makeup_css, "~> 0.2", only: :dev, runtime: false}
     ]
   end
 
