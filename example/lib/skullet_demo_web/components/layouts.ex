@@ -37,14 +37,14 @@ defmodule SkulletDemoWeb.Layouts do
     ~H"""
     <div class="min-h-screen bg-base-200 text-base-content">
       <header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur">
-        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 sm:py-3">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2 sm:py-3">
           <a href="/" class="flex items-center gap-2 font-semibold">
             <span class="text-lg">🦴</span> Skullet
           </a>
           <span class="hidden text-xs opacity-60 sm:inline">
             measured skeletons for Phoenix LiveView
           </span>
-          <nav class="ml-auto flex flex-wrap items-center justify-end gap-1 text-sm">
+          <nav class="flex w-full flex-wrap items-center justify-between gap-1 text-sm sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
             <a class="btn btn-ghost btn-xs sm:btn-sm" href="#skeletons">Skeletons</a>
             <a class="btn btn-ghost btn-xs sm:btn-sm" href="#reveals">Reveals</a>
             <a class="btn btn-ghost btn-xs sm:btn-sm" href="#styling">Styling</a>
