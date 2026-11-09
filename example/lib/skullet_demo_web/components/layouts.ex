@@ -37,26 +37,26 @@ defmodule SkulletDemoWeb.Layouts do
     ~H"""
     <div class="min-h-screen bg-base-200 text-base-content">
       <header class="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur">
-        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
+        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 sm:py-3">
           <a href="/" class="flex items-center gap-2 font-semibold">
             <span class="text-lg">🦴</span> Skullet
           </a>
           <span class="hidden text-xs opacity-60 sm:inline">
             measured skeletons for Phoenix LiveView
           </span>
-          <nav class="ml-auto flex items-center gap-1 text-sm">
-            <a class="btn btn-ghost btn-sm" href="#skeletons">Skeletons</a>
-            <a class="btn btn-ghost btn-sm" href="#reveals">Reveals</a>
-            <a class="btn btn-ghost btn-sm" href="#styling">Styling</a>
-            <a class="btn btn-ghost btn-sm" href="#reference">Reference</a>
-            <a class="btn btn-ghost btn-sm" href="https://github.com/gilbertwong96/skullet">
+          <nav class="ml-auto flex flex-wrap items-center justify-end gap-1 text-sm">
+            <a class="btn btn-ghost btn-xs sm:btn-sm" href="#skeletons">Skeletons</a>
+            <a class="btn btn-ghost btn-xs sm:btn-sm" href="#reveals">Reveals</a>
+            <a class="btn btn-ghost btn-xs sm:btn-sm" href="#styling">Styling</a>
+            <a class="btn btn-ghost btn-xs sm:btn-sm" href="#reference">Reference</a>
+            <a class="btn btn-ghost btn-xs sm:btn-sm" href="https://github.com/gilbertwong96/skullet">
               GitHub
             </a>
           </nav>
         </div>
       </header>
 
-      <main class="mx-auto max-w-5xl px-4 py-8">
+      <main class="mx-auto max-w-5xl px-4 py-6 sm:py-8">
         {render_slot(@inner_block)}
       </main>
 

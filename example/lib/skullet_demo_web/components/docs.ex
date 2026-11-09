@@ -11,8 +11,8 @@ defmodule SkulletDemoWeb.Docs do
 
   def section(assigns) do
     ~H"""
-    <section id={@id} class="scroll-mt-24 border-t border-base-300 pt-10">
-      <h2 class="text-2xl font-semibold tracking-tight">{@title}</h2>
+    <section id={@id} class="scroll-mt-24 min-w-0 border-t border-base-300 pt-8 sm:pt-10">
+      <h2 class="text-xl font-semibold tracking-tight sm:text-2xl">{@title}</h2>
       <p :if={@blurb} class="mt-1 max-w-2xl text-sm opacity-70">{@blurb}</p>
       <div class="mt-6 grid gap-6">
         {render_slot(@inner_block)}
@@ -30,10 +30,13 @@ defmodule SkulletDemoWeb.Docs do
 
   def demo(assigns) do
     ~H"""
-    <article id={@id} class="scroll-mt-24 rounded-xl border border-base-300 bg-base-100 p-5">
+    <article
+      id={@id}
+      class="scroll-mt-24 min-w-0 overflow-hidden rounded-xl border border-base-300 bg-base-100 p-4 sm:p-5"
+    >
       <header class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 class="font-semibold">{@title}</h3>
+          <h3 class="min-w-0 font-semibold">{@title}</h3>
           <p :if={@blurb} class="mt-0.5 max-w-xl text-sm opacity-70">{@blurb}</p>
         </div>
         <div class="flex items-center gap-2">{render_slot(@actions)}</div>
@@ -41,11 +44,11 @@ defmodule SkulletDemoWeb.Docs do
 
       <div class="mt-4">{render_slot(@inner_block)}</div>
 
-      <details :if={@code} class="mt-4 group">
+      <details :if={@code} class="group mt-4 min-w-0">
         <summary class="cursor-pointer text-xs font-medium opacity-60 hover:opacity-100">
           code
         </summary>
-        <pre class="highlight mt-2 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs leading-relaxed"><code>{highlight(@code)}</code></pre>
+        <pre class="highlight mt-2 max-w-full overflow-x-auto rounded-lg bg-base-200 p-3 text-xs leading-relaxed"><code>{highlight(@code)}</code></pre>
       </details>
     </article>
     """

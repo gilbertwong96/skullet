@@ -230,8 +230,8 @@ defmodule SkulletDemoWeb.DemoLive do
         speed={@controls["speed"]}
         theme={provider_theme(@controls)}
       >
-        <header class="mb-10">
-          <h1 class="text-3xl font-semibold tracking-tight">
+        <header class="mb-8 sm:mb-10">
+          <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
             Skullet for Phoenix LiveView
           </h1>
           <p class="mt-2 max-w-2xl text-sm opacity-70">
@@ -551,7 +551,7 @@ defmodule SkulletDemoWeb.DemoLive do
                 <button class="btn btn-xs" phx-click="replay" phx-value-demo="images">Replay</button>
               </:actions>
               <Skullet.skeleton :let={images} id="s-images" async={@images} sample={@images_sample}>
-                <div class="grid grid-cols-4 gap-3">
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <img
                     :for={image <- images}
                     src={image.src}
@@ -621,7 +621,7 @@ defmodule SkulletDemoWeb.DemoLive do
     ~H"""
     <form phx-change="control" class="rounded-xl border border-base-300 bg-base-100 p-4">
       <p class="mb-3 text-xs font-medium uppercase tracking-wide opacity-60">Every demo above</p>
-      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <.field label="latency">
           <select name="controls[latency]" class="select select-sm w-full">
             <option
@@ -674,7 +674,7 @@ defmodule SkulletDemoWeb.DemoLive do
           </select>
         </.field>
 
-        <.field label="text bars">
+        <.field label="text bars" wide>
           <select name="controls[text]" class="select select-sm w-full">
             <option
               :for={{label, value} <- @texts}
@@ -727,11 +727,12 @@ defmodule SkulletDemoWeb.DemoLive do
   end
 
   attr :label, :string, required: true
+  attr :wide, :boolean, default: false, doc: "takes the whole row on a narrow screen"
   slot :inner_block, required: true
 
   defp field(assigns) do
     ~H"""
-    <label class="block">
+    <label class={["block", @wide && "col-span-2"]}>
       <span class="mb-1 block text-xs opacity-60">{@label}</span>
       {render_slot(@inner_block)}
     </label>
