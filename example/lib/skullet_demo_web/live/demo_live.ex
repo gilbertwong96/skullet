@@ -95,10 +95,11 @@ defmodule SkulletDemoWeb.DemoLive do
   ]
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     {:ok,
      socket
      |> assign(:page_title, "Skullet")
+     |> assign(:csp_nonce, session["csp_nonce"])
      |> assign(:reveals, @reveals)
      |> assign(:animations, @animations)
      |> assign(:speeds, @speeds)

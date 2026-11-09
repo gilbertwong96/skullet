@@ -8,6 +8,9 @@ defmodule SkulletDemoWeb.Router do
     plug :put_root_layout, html: {SkulletDemoWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+
+    # Off in dev by default: the live-reloader injects a script it cannot sign.
+    plug SkulletDemoWeb.CSP
   end
 
   pipeline :api do

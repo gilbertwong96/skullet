@@ -49,7 +49,9 @@ because it is the only data a dead render has, and `id` because the hook needs o
 generated one would change every render.
 
 Render `<Skullet.Boot.boot />` once in the layout and that first skeleton is drawn before
-the browser paints it, rather than after the bundle loads.
+the browser paints it, rather than after the bundle loads. It is an inline script, so a
+Content Security Policy needs its nonce — [usage](guides/usage.md#content-security-policy)
+wires one through a plug, the session and the LiveView.
 
 ## Guides
 

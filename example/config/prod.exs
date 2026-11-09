@@ -25,3 +25,7 @@ config :logger, level: :info
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+
+# The deployed demo runs under a Content Security Policy: a nonce per request, and the
+# header that carries it. See SkulletDemoWeb.CSP.
+config :skullet_demo, csp: true

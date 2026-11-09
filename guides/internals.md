@@ -30,7 +30,7 @@ synchronous `<script>`. It paints before first paint, and the engine takes the b
 when it starts.
 
 Place it once per page, at the end of `<body>`; see [usage](usage.md#before-the-first-paint)
-for the CSP nonce.
+for the component and [the CSP section](usage.md#content-security-policy) for its nonce.
 
 ## Working on the engine
 

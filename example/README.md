@@ -46,6 +46,12 @@ does that, and can be flipped to show it.
 
 The footer shows the running engine: state, phase, bars drawn, and whether anything threw.
 
+In production the app runs under a Content Security Policy — a nonce per request, set by
+`SkulletDemoWeb.CSP` and carried through the session so both the request's render and the
+LiveView's can sign the inline scripts. Dev leaves it off, because Phoenix's live-reloader
+injects a script it cannot sign; `SKULLET_DEMO_CSP=true mix phx.server` turns it on there
+too.
+
 ## Deploying to Fly.io
 
 The image is built from the **repository root**, not from `example/`: the demo depends on

@@ -11,9 +11,9 @@ defmodule Skullet.Boot do
 
       <Skullet.Boot.boot nonce={@nonce} />
 
-  It is about 9KB of JavaScript inlined into the page, so it is your call to place it. Under
-  a Content Security Policy, pass the script's `nonce`; [usage](usage.html) has a plug that
-  makes one.
+  It is about 9KB of JavaScript inlined into the page, so it is your call to place it. Being
+  inline, a Content Security Policy needs its `nonce` — [usage](usage.html#content-security-policy)
+  has a plug that makes one and carries it into the LiveView.
   """
 
   use Phoenix.Component

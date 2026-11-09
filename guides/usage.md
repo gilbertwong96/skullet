@@ -212,24 +212,81 @@ It inlines a ~9KB script that measures and draws every loading skeleton **synchr
 before the browser's first paint**, using the same geometry, font metrics and shimmer code
 as the engine; the engine then takes those bars over.
 
-It is a plain `<script>`, so a Content Security Policy needs its nonce. Phoenix does not
-generate one for you — whatever puts your policy in place has to make it, remember it, and
-pass it along:
+It is a plain `<script>`, so a Content Security Policy needs its nonce; the next section
+is the whole recipe. Without a CSP, leave the attribute off.
+
+## Content Security Policy
+
+`<Skullet.Boot.boot />` is the one piece of Skullet that needs a nonce: it inlines a
+`<script>`, so a policy like `script-src 'self'` blocks it — and with it the skeleton that
+was meant to be on screen before the first paint. The engine and the stylesheet are ordinary
+assets, served from your own origin.
+
+Make the nonce where the policy is made, keep it for the rest of the request, and hand it to
+the script:
 
 ```elixir
-# a plug, for a policy like: script-src 'self' 'nonce-…'
-def put_csp_nonce(conn, _opts) do
-  nonce = Base.url_encode64(:crypto.strong_rand_bytes(16), padding: false)
+# lib/my_app_web/plugs/csp.ex
+defmodule MyAppWeb.CSP do
+  @behaviour Plug
+  import Plug.Conn
 
-  conn
-  |> assign(:csp_nonce, nonce)
-  |> put_resp_header("content-security-policy", "script-src 'self' 'nonce-#{nonce}';")
+  @impl true
+  def init(opts), do: opts
+
+  @impl true
+  def call(conn, _opts) do
+    nonce = Base.url_encode64(:crypto.strong_rand_bytes(16), padding: false)
+
+    conn
+    |> assign(:csp_nonce, nonce)
+    # the LiveView's own render can only read it from the session
+    |> put_session(:csp_nonce, nonce)
+    |> put_resp_header("content-security-policy", policy(nonce))
+  end
+
+  defp policy(nonce) do
+    "default-src 'self'; " <>
+      "script-src 'self' 'nonce-#{nonce}'; " <>
+      "style-src 'self' 'unsafe-inline'; " <>
+      "img-src 'self' data:; connect-src 'self'; base-uri 'none'"
+  end
 end
 ```
 
-In a LiveView the layout is rendered from the socket's assigns, so copy the nonce across
-once — an `on_mount` that does `assign(socket, :csp_nonce, conn.assigns.csp_nonce)` is
-enough. Without a CSP, leave the attribute off.
+```elixir
+# router.ex, in the :browser pipeline, before any LiveView mounts
+plug :fetch_session
+# …
+plug MyAppWeb.CSP
+```
+
+```elixir
+# the LiveView
+def mount(_params, session, socket) do
+  {:ok, assign(socket, :csp_nonce, session["csp_nonce"])}
+end
+```
+
+```heex
+<%!-- layouts/root.html.heex, at the end of <body>, after the markup it measures --%>
+<Skullet.Boot.boot nonce={@csp_nonce} />
+```
+
+Two things that surprise people:
+
+- **The nonce has to reach the LiveView, not just the request.** The root layout is rendered
+  twice — once for the HTML the request sends, once by the LiveView after it connects — and
+  the second render has only socket assigns. The session is the one place both see, which is
+  why the plug writes it there. Skip that and the attribute is simply dropped on the second
+  render; the script has already run by then, but the markup no longer tells the truth.
+- **The theme is inline styles.** `theme={…}` and `<Skullet.provider theme={…}>` become
+  `style` attributes on the wrapper, and the engine positions every bar through the CSSOM.
+  Keep `style-src` compatible with that — `'unsafe-inline'` is the easy way; a class of your
+  own is the strict one.
+
+Any other inline script of yours (a theme bootstrap, an analytics stub) needs the same
+nonce; the demo's `<script nonce={@csp_nonce}>` in `example/` is one.
 
 ## Debugging
 

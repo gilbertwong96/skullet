@@ -18,7 +18,7 @@
       src={"#{~p"/assets/js/app.js"}?v=#{System.system_time(:second)}"}
     >
     </script>
-    <script>
+    <script nonce={@csp_nonce}>
       (() => {
         const systemTheme = () => matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
@@ -50,6 +50,6 @@
   <body>
     {@inner_content}
     <%!-- Draws the skeleton before the first paint, so the page never shows an empty box. --%>
-    <Skullet.Boot.boot />
+    <Skullet.Boot.boot nonce={@csp_nonce} />
   </body>
 </html>
