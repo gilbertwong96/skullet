@@ -23,6 +23,19 @@ defmodule SkulletDemoWeb.DemoLive do
     {"both", "both"}
   ]
 
+  # `theme/1` keys to the atoms `Skullet` takes. Spelled out rather than `String.to_existing_atom/1`:
+  # that raises for any key no module happens to have interned, which is how changing a
+  # select used to take the LiveView — and the socket with it — down.
+  @theme_keys %{
+    "radius" => :radius,
+    "hold" => :hold,
+    "delay" => :delay,
+    "text_top" => :text_top,
+    "text_bottom" => :text_bottom,
+    "enter_filter" => :enter_filter,
+    "enter_scale" => :enter_scale
+  }
+
   # Demo name (the button's phx-value) to the async assign that feeds it.
   @demos %{
     "card" => :card,
@@ -226,8 +239,9 @@ defmodule SkulletDemoWeb.DemoLive do
     do: theme |> Map.put("enter_filter", "blur(6px)") |> Map.put("enter_scale", "0.98")
 
   defp provider_theme(controls) do
-    theme(controls)
-    |> Map.new(fn {key, value} -> {String.to_existing_atom(key), value} end)
+    controls
+    |> theme()
+    |> Map.new(fn {key, value} -> {Map.fetch!(@theme_keys, key), value} end)
   end
 
   @impl true

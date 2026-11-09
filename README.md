@@ -152,6 +152,10 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 </Skullet.skeleton>
 ```
 
+Every row above is also a `theme` key — the name without the prefix, so
+`theme={%{hold: "300ms", delay: "120ms", enter_filter: "blur(6px)"}}` sets those three for
+this skeleton alone, and `<Skullet.provider theme={…}>` sets them for everything inside.
+
 Colours follow the page's `color-scheme`, so a light page on a dark desktop keeps light
 bars. Under `prefers-reduced-motion` bars hold still and every reveal is instant.
 

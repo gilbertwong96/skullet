@@ -308,6 +308,32 @@ defmodule SkulletTest do
     assert attr(html, "style") =~ "--skullet-text-bottom: baseline"
   end
 
+  test "every custom property the README documents is a theme key" do
+    keys = %{
+      base: "--skullet-base",
+      highlight: "--skullet-highlight",
+      radius: "--skullet-radius",
+      animation: "--skullet-animation",
+      speed: "--skullet-speed",
+      text_top: "--skullet-text-top",
+      text_bottom: "--skullet-text-bottom",
+      hold: "--skullet-hold",
+      fade: "--skullet-fade",
+      resize: "--skullet-resize",
+      cascade: "--skullet-cascade",
+      delay: "--skullet-delay",
+      secondary_delay: "--skullet-secondary-delay",
+      enter_filter: "--skullet-enter-filter",
+      enter_scale: "--skullet-enter-scale"
+    }
+
+    style = skeleton_html(theme: Map.new(keys, fn {key, _var} -> {key, "1"} end)) |> attr("style")
+
+    for {_key, var} <- keys do
+      assert style =~ "#{var}: 1"
+    end
+  end
+
   test "a theme key that is neither atom nor string still raises ArgumentError" do
     assert_raise ArgumentError, ~r/allowed keys/, fn ->
       skeleton_html(theme: %{{:base} => "red"})

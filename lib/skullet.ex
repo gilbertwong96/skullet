@@ -40,8 +40,11 @@ defmodule Skullet do
 
   Theme through custom properties (`--skullet-base`, `--skullet-highlight`,
   `--skullet-radius`, `--skullet-animation`, `--skullet-speed`, `--skullet-text-top`,
-  `--skullet-text-bottom`, `--skullet-hold`, `--skullet-fade`, `--skullet-resize`), set per
-  skeleton with the `theme` attribute or globally in CSS.
+  `--skullet-text-bottom`, and the reveal's `--skullet-hold`, `--skullet-fade`,
+  `--skullet-resize`, `--skullet-cascade`, `--skullet-delay`, `--skullet-secondary-delay`,
+  `--skullet-enter-filter`, `--skullet-enter-scale`), set per skeleton with the `theme`
+  attribute — every property is a theme key, its name without the prefix — or globally in
+  CSS.
   `reveal` is `"smart"` (decides from timing, input and size), `"together"`, `"sequence"`,
   `"sweep"`, `"instant"`, or a name a page registered with `registerReveal/2` in JS.
 
@@ -69,7 +72,15 @@ defmodule Skullet do
     "animation" => "--skullet-animation",
     "speed" => "--skullet-speed",
     "text_top" => "--skullet-text-top",
-    "text_bottom" => "--skullet-text-bottom"
+    "text_bottom" => "--skullet-text-bottom",
+    "hold" => "--skullet-hold",
+    "fade" => "--skullet-fade",
+    "resize" => "--skullet-resize",
+    "cascade" => "--skullet-cascade",
+    "delay" => "--skullet-delay",
+    "secondary_delay" => "--skullet-secondary-delay",
+    "enter_filter" => "--skullet-enter-filter",
+    "enter_scale" => "--skullet-enter-scale"
   }
 
   attr(:id, :string, required: true, doc: "DOM id for the hook; also the future shape key")

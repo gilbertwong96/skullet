@@ -32,3 +32,5 @@ First release.
 - Images that decode after the reveal fade in instead of popping (ten-second timeout).
 - Empty states: `empty` with an `empty_message` slot shows a message in place of content
   that arrived empty, measured and revealed like any other content.
+- Every documented custom property is a `theme` key, including the reveal's `hold`, `fade`,
+  `resize`, `cascade`, `delay`, `secondary_delay`, `enter_filter` and `enter_scale`.
