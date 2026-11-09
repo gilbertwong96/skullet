@@ -29,8 +29,8 @@ jobs:
           key: ${{ runner.os }}-mix-1.18-27-${{ hashFiles('mix.lock') }}
 
       - run: mix deps.get
-      # VibeKit's pipeline: compile, format, test, credo --strict, dialyzer,
-      # ex_dna --max-clones 0, reach.check --arch --smells
+      # VibeKit's pipeline: compile, format, coveralls (the suite, 95% floor),
+      # credo --strict, dialyzer, ex_dna --max-clones 0, reach.check --arch --smells
       - run: mix ci
       - run: mix hex.build
 

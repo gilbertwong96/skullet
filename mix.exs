@@ -15,6 +15,7 @@ defmodule Skullet.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       dialyzer: [plt_add_apps: [:ex_unit]],
+      test_coverage: [tool: ExCoveralls],
       aliases: aliases()
     ]
   end
@@ -29,13 +30,19 @@ defmodule Skullet.MixProject do
 
   def cli do
     [
-      preferred_envs: [ci: :test]
+      preferred_envs: [
+        ci: :test,
+        coveralls: :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test
+      ]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:excoveralls, "~> 0.18", only: [:dev, :test], runtime: false},
       {:spec_lint, "~> 0.1", only: [:dev, :test], runtime: false},
       {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
       {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
@@ -74,7 +81,7 @@ defmodule Skullet.MixProject do
       ci: [
         "compile --warnings-as-errors",
         "format --check-formatted",
-        "test",
+        "coveralls",
         "credo --strict",
         "dialyzer",
         "spec_lint --warnings-as-errors",

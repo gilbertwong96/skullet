@@ -50,21 +50,22 @@ builder.
 One `shared-cpu-1x` machine with 256MB, suspended when idle and resumed on the next request.
 The live demo runs at <https://skullet-demo.fly.dev>.
 
-The build happens on an amd64 machine, so `.github/workflows/deploy-demo.yml` is the
-supported path: it builds with the runner's own Docker (`--local-only`) and deploys on every
-push touching `example/`, `lib/`, or `priv/`, plus manual runs from the Actions tab. Fly's
-remote builders cannot download the Tailwind binary, and Apple Silicon needs Rosetta
-enabled in Docker Desktop to run the Erlang VM under amd64 emulation.
+The build happens on an amd64 machine, so run it there — an amd64 Linux box, a Fly
+machine, or Apple Silicon with Rosetta enabled in Docker Desktop for amd64 emulation
+(the Erlang VM crashes under plain QEMU):
 
 ```bash
 # one-time, from the repository root
 fly apps create skullet-demo                                    # or edit `app` / PHX_HOST
 fly secrets set SECRET_KEY_BASE="$(cd example && mix phx.gen.secret)"
-fly tokens create deploy -a skullet-demo                        # → FLY_API_TOKEN repo secret
 
 # deploy
-git push origin main                                            # or: gh workflow run deploy-demo.yml
+fly deploy --ha=false --local-only \
+  --config example/fly.toml --dockerfile example/Dockerfile
 ```
+
+Drop `--local-only` to build on Fly's builders instead; they cannot always reach GitHub
+for the Tailwind binary, which is why the command above builds in your own Docker.
 
 - `--ha=false` keeps it to one machine; `fly scale count 1` if a second one appears.
 - `auto_stop_machines = "suspend"` freezes the VM instead of shutting it down, so the next
