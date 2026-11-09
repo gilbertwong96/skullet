@@ -32,14 +32,15 @@ mix phx.server          # → http://localhost:4000
 | Empty states | `empty` with an `empty_message` slot: a message where rows would have been |
 | Suspense and failure | async + measured fallback + one error branch, always failing here |
 | Theming | one `<Skullet.provider>` with the controls panel above the page |
-| A provider's mode | dark bars on a light page, from `color-scheme` |
+| A provider's mode | one panel, three `color-scheme`s: what the bars are drawn from |
 | Images | four images served 1.2–3s late, fading in instead of popping |
 
-The panel at the top sets latency, animation, speed, bar mode, radius, text metrics, hold,
-reveal delay and enter filter for **every** demo, through the provider — no demo code
-knows about it. `bar mode` is the provider's `color-scheme`: what the bars' colours follow,
-not the page's theme. The page's own theme is the switch in the header (system / light /
-dark), kept in `localStorage`.
+The panel at the top sets latency, animation, speed, radius, text metrics, hold, reveal
+delay and enter filter for **every** demo, through the provider — no demo code knows about
+it. The page's own theme is the switch in the header (system / light / dark), kept in
+`localStorage`; the bars follow it, since `color-scheme` comes with the theme. `mode` on a
+provider is how one subtree asks for the other scheme — the panel in *A provider's mode*
+does that, and can be flipped to show it.
 
 The footer shows the running engine: state, phase, bars drawn, and whether anything threw.
 

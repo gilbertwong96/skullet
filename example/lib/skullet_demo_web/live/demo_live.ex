@@ -6,7 +6,6 @@ defmodule SkulletDemoWeb.DemoLive do
   @reveals ~w(smart together sequence sweep instant)
   @animations ~w(shimmer group-shimmer pulse none)
   @speeds ~w(slow fast)
-  @modes ~w(system light dark)
   @latencies ~w(0 600 2000)
   @radii [{"default", ""}, {"0.25em", "0.25em"}, {"8px", "8px"}, {"999px", "999px"}]
   @texts [
@@ -103,7 +102,6 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:reveals, @reveals)
      |> assign(:animations, @animations)
      |> assign(:speeds, @speeds)
-     |> assign(:modes, @modes)
      |> assign(:latencies, @latencies)
      |> assign(:radii, @radii)
      |> assign(:texts, @texts)
@@ -167,7 +165,6 @@ defmodule SkulletDemoWeb.DemoLive do
       "latency" => "600",
       "animation" => "shimmer",
       "speed" => "slow",
-      "mode" => "system",
       "radius" => "",
       "text" => "ascender/descender",
       "hold" => "",
@@ -254,7 +251,6 @@ defmodule SkulletDemoWeb.DemoLive do
     ~H"""
     <Layouts.app flash={@flash}>
       <Skullet.provider
-        mode={@controls["mode"]}
         animation={@controls["animation"]}
         speed={@controls["speed"]}
         theme={provider_theme(@controls)}
@@ -277,7 +273,6 @@ defmodule SkulletDemoWeb.DemoLive do
           holds={@holds}
           delays={@delays}
           enters={@enters}
-          modes={@modes}
           animations={@animations}
           speeds={@speeds}
           reveals={@reveals}
@@ -686,7 +681,6 @@ defmodule SkulletDemoWeb.DemoLive do
   attr :holds, :list, required: true
   attr :delays, :list, required: true
   attr :enters, :list, required: true
-  attr :modes, :list, required: true
   attr :animations, :list, required: true
   attr :speeds, :list, required: true
   attr :reveals, :list, required: true
@@ -725,14 +719,6 @@ defmodule SkulletDemoWeb.DemoLive do
           <select name="controls[speed]" class="select select-sm w-full">
             <option :for={speed <- @speeds} value={speed} selected={speed == @controls["speed"]}>
               {speed}
-            </option>
-          </select>
-        </.field>
-
-        <.field label="bar mode">
-          <select name="controls[mode]" class="select select-sm w-full">
-            <option :for={mode <- @modes} value={mode} selected={mode == @controls["mode"]}>
-              {mode}
             </option>
           </select>
         </.field>
