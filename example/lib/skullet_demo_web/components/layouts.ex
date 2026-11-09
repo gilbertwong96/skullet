@@ -44,7 +44,9 @@ defmodule SkulletDemoWeb.Layouts do
           <span class="hidden text-xs opacity-60 sm:inline">
             measured skeletons for Phoenix LiveView
           </span>
-          <nav class="flex w-full flex-wrap items-center justify-between gap-1 text-sm sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
+          <%!-- On a phone the links take a row of their own and the toggle sits beside the
+          title; on wider screens the toggle comes last, after GitHub. --%>
+          <nav class="order-3 flex w-full flex-wrap items-center justify-between gap-1 text-sm sm:order-2 sm:ml-auto sm:w-auto sm:flex-nowrap sm:justify-end">
             <a class="btn btn-ghost btn-xs sm:btn-sm" href="#skeletons">Skeletons</a>
             <a class="btn btn-ghost btn-xs sm:btn-sm" href="#reveals">Reveals</a>
             <a class="btn btn-ghost btn-xs sm:btn-sm" href="#styling">Styling</a>
@@ -53,6 +55,9 @@ defmodule SkulletDemoWeb.Layouts do
               GitHub
             </a>
           </nav>
+          <div class="order-2 ml-auto sm:order-3 sm:ml-0">
+            <.theme_toggle />
+          </div>
         </div>
       </header>
 

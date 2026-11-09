@@ -713,7 +713,7 @@ defmodule SkulletDemoWeb.DemoLive do
           </select>
         </.field>
 
-        <.field label="mode">
+        <.field label="bar mode">
           <select name="controls[mode]" class="select select-sm w-full">
             <option :for={mode <- @modes} value={mode} selected={mode == @controls["mode"]}>
               {mode}

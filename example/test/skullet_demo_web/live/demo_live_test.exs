@@ -12,6 +12,18 @@ defmodule SkulletDemoWeb.DemoLiveTest do
     end
   end
 
+  test "the header offers the three page themes", %{conn: conn} do
+    {:ok, _view, html} = live(conn, "/")
+
+    themes =
+      html
+      |> LazyHTML.from_document()
+      |> LazyHTML.query("header button[data-phx-theme]")
+      |> LazyHTML.attribute("data-phx-theme")
+
+    assert themes == ["system", "light", "dark"]
+  end
+
   defp options(html) do
     html
     |> LazyHTML.from_document()

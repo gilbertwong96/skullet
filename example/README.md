@@ -29,14 +29,17 @@ mix phx.server          # → http://localhost:4000
 | Memory | `remember` draws the next skeleton from the data this one last showed; **Forget** clears it |
 | Reveal modes | `smart`, `together`, `sequence`, `sweep`, `instant`, replayed live |
 | Your own reveal | `registerReveal("wipe-down", …)` in `assets/js/app.js`, asked for by name |
+| Empty states | `empty` with an `empty_message` slot: a message where rows would have been |
 | Suspense and failure | async + measured fallback + one error branch, always failing here |
 | Theming | one `<Skullet.provider>` with the controls panel above the page |
 | A provider's mode | dark bars on a light page, from `color-scheme` |
 | Images | four images served 1.2–3s late, fading in instead of popping |
 
-The panel at the top sets latency, animation, speed, mode, radius, text metrics, hold,
+The panel at the top sets latency, animation, speed, bar mode, radius, text metrics, hold,
 reveal delay and enter filter for **every** demo, through the provider — no demo code
-knows about it.
+knows about it. `bar mode` is the provider's `color-scheme`: what the bars' colours follow,
+not the page's theme. The page's own theme is the switch in the header (system / light /
+dark), kept in `localStorage`.
 
 The footer shows the running engine: state, phase, bars drawn, and whether anything threw.
 
