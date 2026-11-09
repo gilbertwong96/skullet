@@ -25,7 +25,10 @@ jobs:
 
       - uses: superfly/flyctl-actions/setup-flyctl@master
 
+      # --local-only builds with the runner's own amd64 Docker: Fly's remote builders
+      # cannot reach GitHub for the Tailwind binary, and local amd64 builds on Apple
+      # Silicon need Rosetta to run the Erlang VM.
       - name: Deploy
-        run: flyctl deploy --ha=false --config example/fly.toml --dockerfile example/Dockerfile
+        run: flyctl deploy --ha=false --local-only --config example/fly.toml --dockerfile example/Dockerfile
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
