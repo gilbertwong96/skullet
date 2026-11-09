@@ -1096,4 +1096,3 @@ export {
   registerReveal,
   setDebug
 };
-//# sourceMappingURL=skullet.js.map

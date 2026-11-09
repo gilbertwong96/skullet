@@ -36,13 +36,13 @@ imports at that checkout instead.
 
 The CSS file is not optional: it is what keeps the sample invisible before the engine runs.
 
-`priv/static` ships four files — plus the source maps for the two bundles — and only the
-first two are yours to import:
+`priv/static` ships four files and one source map, and only the first two are yours to
+import:
 
 | file | what it is |
 |---|---|
 | `skullet.js` | the engine as one ES module — what a bundler imports |
-| `skullet.min.js` | the same engine as a script: it defines `window.Skullet` (`attach`, `setDebug`, `registerReveal`, `SkulletHook`) |
+| `skullet.min.js` | the same engine as a script, with its source map: it defines `window.Skullet` (`attach`, `setDebug`, `registerReveal`, `SkulletHook`) |
 | `skullet.pre.js` | the pre-paint script `Skullet.Boot` inlines into the page, not a file you load |
 | `skullet.css` | the stylesheet |
 

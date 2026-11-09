@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pnpm typecheck && pnpm clean && pnpm build:esm && pnpm build:script && pnpm build:pre && pnpm build:types",
     "clean": "rm -f ../priv/static/*.js ../priv/static/*.js.map ../priv/static/*.d.ts",
-    "build:esm": "esbuild src/skullet.ts --bundle --format=esm --target=es2022 --sourcemap --outfile=../priv/static/skullet.js",
+    "build:esm": "esbuild src/skullet.ts --bundle --format=esm --target=es2022 --outfile=../priv/static/skullet.js",
     "build:script": "esbuild src/skullet.ts --bundle --format=iife --global-name=Skullet --minify --target=es2022 --sourcemap --outfile=../priv/static/skullet.min.js",
     "build:pre": "esbuild src/pre.ts --bundle --format=iife --global-name=__skulletPre --minify --target=es2022 --outfile=../priv/static/skullet.pre.js",
     "build:types": "cp types/skullet.d.ts ../priv/static/skullet.d.ts",
