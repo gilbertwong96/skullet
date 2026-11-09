@@ -23,12 +23,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # fly.io/install.sh, not the setup-flyctl action: that one resolves the latest
+      # flyctl through the GitHub API, which 504s often enough to fail the job.
+      - name: Install flyctl
+        run: curl -fsSL https://fly.io/install.sh | sh
 
       # --local-only builds with the runner's own amd64 Docker: Fly's remote builders
       # cannot reach GitHub for the Tailwind binary, and local amd64 builds on Apple
       # Silicon need Rosetta to run the Erlang VM.
       - name: Deploy
-        run: flyctl deploy --ha=false --local-only --config example/fly.toml --dockerfile example/Dockerfile
+        run: $HOME/.fly/bin/flyctl deploy --ha=false --local-only --config example/fly.toml --dockerfile example/Dockerfile
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
