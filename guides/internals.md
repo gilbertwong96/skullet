@@ -70,5 +70,6 @@ button that pins the loading state:
 cd example && mix deps.get && mix assets.setup && mix phx.server
 ```
 
-It runs at <http://localhost:4000>; `example/README.md` covers what each card shows and how
-it is deployed.
+It runs at <http://localhost:4000>; the deployed copy is
+<https://skullet-demo.fly.dev/>. `example/README.md` covers what each card shows and how it
+is deployed.

@@ -9,6 +9,9 @@ out for real; rounded bars are drawn over it — one per wrapped line of text, o
 image or control — in a shadow root. Nothing is guessed, so nothing moves when the content
 arrives. A [port of Skullet](https://skullet.lochie.me/docs) to Phoenix LiveView.
 
+**[Live demo](https://skullet-demo.fly.dev/)** — every option on one page, running the
+example app in this repo.
+
 ## Installation
 
 ```elixir

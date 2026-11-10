@@ -61,7 +61,7 @@ straight out of `priv/static`. `example/Dockerfile` lays the repo out that way i
 builder.
 
 One `shared-cpu-1x` machine with 256MB, suspended when idle and resumed on the next request.
-The live demo runs at <https://skullet-demo.fly.dev>.
+The live demo runs at <https://skullet-demo.fly.dev/>.
 
 The build happens on an amd64 machine, so run it there — an amd64 Linux box, a Fly
 machine, or Apple Silicon with Rosetta enabled in Docker Desktop for amd64 emulation
