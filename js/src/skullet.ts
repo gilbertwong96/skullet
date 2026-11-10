@@ -11,8 +11,9 @@ declare global {
   }
 }
 
-// A plain page (and the fixtures) can reach the engine without a bundler.
-window.__skulletEngine = { attach, measure }
+// A plain page (and the fixtures) can reach the engine without a bundler. Guarded: the
+// module is imported by a bundler that may evaluate it outside a browser (SSR, tooling).
+if (typeof window !== "undefined") window.__skulletEngine = { attach, measure }
 
 /** The engine for one `.skullet` root: what the hook drives, and what a plain page can. */
 /**

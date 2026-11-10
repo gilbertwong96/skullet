@@ -1070,7 +1070,7 @@ var SkulletEngine = class {
 };
 
 // src/skullet.ts
-window.__skulletEngine = { attach, measure };
+if (typeof window !== "undefined") window.__skulletEngine = { attach, measure };
 function attach(root, options = {}) {
   const engine = new SkulletEngine(root, options);
   engine.start();

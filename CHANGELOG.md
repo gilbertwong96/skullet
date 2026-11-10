@@ -1,45 +1,50 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## Unreleased
 
-First release.
+## 0.1.0 - 2026-11-10
 
-- `<Skullet.skeleton>`: renders your component from sample data while an async assign or
-  plain data is missing, and draws a measured skeleton of what is coming.
-- Theme through CSS custom properties: base and highlight colours, radius, animation
-  (`shimmer` / `group-shimmer` / `pulse` / `none`), speed, and how much of each line is
-  drawn (`--skullet-text-top` / `--skullet-text-bottom`).
-- `smart` (hold, then crossfade) and `instant` reveals; height eases when the sample and
-  the real content differ.
-- Measuring hints: `skullet-block` and `skullet-ignore`.
-- Optional server-side memory: `remember={scope}` draws the next skeleton from the data
-  the last one showed, in ETS, expiring after `:memory_ttl_ms`.
-- `<Skullet.Boot.boot />`: draws the skeleton before the browser's first paint, sharing the
-  engine's geometry; optional CSP nonce.
-- Reveals: `smart`, `together`, `sequence`, `instant`. Timings are custom properties
-  (`--skullet-hold`, `--skullet-fade`, `--skullet-resize`).
-- `<Skullet.box>` for what cannot be measured; `?skullet-debug` overlay; `skullet-xray`.
-- `skeleton` slot for per-component skeletons (and the Suspense shape: async + measured
-  fallback + error branch).
-- `<Skullet.provider>` for `mode`, `theme`, `animation` and `speed` in one place.
-- `registerReveal/2` and `attach(root, {reveal})`: your own reveal spec, with `order`,
-  `enter`, `wipe`, `delay`, `duration`, `hold` and `choose`.
-- Custom properties for the reveal itself: `--skullet-cascade`, `--skullet-delay`,
-  `--skullet-secondary-delay`, `--skullet-enter-filter`, `--skullet-enter-scale`.
-- `sweep` reveal, and `smart` now decides between instant, a quick refetch crossfade, one
-  crossfade and a page cascade, from how long the skeleton was up, recent input, refetches
-  and the size of what arrives.
-- Images that decode after the reveal fade in instead of popping (ten-second timeout).
-- Empty states: `empty` with an `empty_message` slot shows a message in place of content
-  that arrived empty, measured and revealed like any other content.
-- The light-mode highlight is `rgb(255 255 255 / 0.75)`, not `0.12`: a white band at 12%
-  over `rgb(128 128 128 / 0.2)` bars is a 12/255 difference, invisible next to the dark
-  theme's, so light pages looked like they had no shimmer at all.
-- `theme`, `mode`, `animation` and `speed` are emitted as a `<style>` block keyed by the
-  element's id instead of a `style` attribute, and a `<Skullet.box>` is a class and a rule,
-  so a Content Security Policy needs no `'unsafe-inline'` for styles. Pass `nonce={…}`.
-- `priv/static` ships bundles rather than one file per module: `skullet.js` (ESM),
-  `skullet.min.js` (a script defining `window.Skullet`, with its source map), the inlined
-  `skullet.pre.js` and one hand-written `skullet.d.ts`.
-- Every documented custom property is a `theme` key, including the reveal's `hold`, `fade`,
-  `resize`, `cascade`, `delay`, `secondary_delay`, `enter_filter` and `enter_scale`.
+### Added
+
+- `<Skullet.skeleton>` draws a skeleton of the component itself: your markup is rendered
+  from a sample with its text transparent, measured by the browser, and covered with bars —
+  one per wrapped line, one block per image or control. It takes an `assign_async/3` result,
+  plain data, or a `loading` flag.
+- Slots for the states around loading: `skeleton` for your own markup to measure (the
+  Suspense shape, together with `error`), `empty_message` with the `empty` attribute for a
+  result that arrived empty, and `error` for a failed assign. The library styles none of
+  them.
+- `remember` keeps the data a skeleton last showed, in ETS on the node, so the next
+  skeleton under the same scope and id is drawn from the real thing instead of the sample.
+  `Skullet.Memory.forget/1` clears one scope, `Skullet.Memory.clear/0` clears all of them,
+  and entries expire after `config :skullet, :memory_ttl_ms`.
+- Theming through custom properties — base and highlight colours, radius,
+  `shimmer` / `group-shimmer` / `pulse` / `none`, speed, hold, and how much of each line is
+  drawn — set per skeleton with `theme={…}` or once with `<Skullet.provider>`, which also
+  sets `mode`, `animation` and `speed` for everything inside it.
+- Reveals: `smart` (instant for a flash, a quick crossfade for a refetch, one crossfade for
+  small content, a page cascade otherwise), plus `together`, `sequence`, `sweep` and
+  `instant`, with their timings and enter effects as custom properties.
+- `registerReveal/2` and `attach(root, {reveal: spec})` take a reveal of your own:
+  `order`, `enter`, `wipe`, `delay`, `duration`, `hold` and `choose`.
+- `<Skullet.Boot.boot />` draws the skeletons already in the server's HTML before the
+  browser's first paint, from the same geometry, font metrics and shimmer the engine uses.
+- `<Skullet.box>` stands in for what cannot be measured (a logo, a chart, a canvas);
+  `skullet-block` and `skullet-ignore` hint the measurement.
+- Images that decode after the content arrives fade in instead of popping, and show after
+  ten seconds if they never do.
+- A debug overlay outlines every reveal, and how far the content moved, with
+  `?skullet-debug` in the URL, `skullet-debug` on an element, or `skullet-xray` to see the
+  sample through the skeleton.
+- Works under a Content Security Policy without `'unsafe-inline'`: themes and boxes are
+  `<style>` blocks signed with the page's nonce, and so is the boot script. Pass
+  `nonce={…}` to `skeleton/1`, `provider/1`, `box/1` and `Boot.boot/1`.
+- `priv/static` ships an ES module for bundlers (`skullet.js`), the same engine as a script
+  for pages without a build step (`skullet.min.js`, which defines `window.Skullet`), the
+  inlined pre-paint script, and a hand-written `skullet.d.ts`.
+
+### Compatibility
+
+- Elixir `~> 1.18`, Phoenix LiveView `~> 1.2`, Phoenix.HTML `~> 4.3`.
+- Under a Content Security Policy, `script-src` and `style-src` need the nonce; no
+  `'unsafe-inline'` is required.
