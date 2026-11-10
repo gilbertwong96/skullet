@@ -37,12 +37,18 @@ defmodule SkulletDemoWeb.DemoLiveTest do
     assert themes == ["system", "light", "dark"]
   end
 
-  test "nothing forces a colour scheme: the cards follow the page", %{conn: conn} do
-    {:ok, _view, html} = live(conn, "/")
+  test "the provider card sets its own scheme, whatever the page does", %{conn: conn} do
+    {:ok, view, html} = live(conn, "/")
 
-    # `mode="system"` writes no color-scheme at all, so the bars inherit the page's
-    refute html =~ ~r/<style[^>]*>[^<]*color-scheme/
-    assert html =~ ~s(id="s-provider")
+    assert html =~ ~r/#provider-card \{ color-scheme: dark/
+    assert html =~ "bg-neutral"
+
+    light = render_click(view, "own_mode", %{"mode" => "light"})
+    assert light =~ ~r/#provider-card \{ color-scheme: light/
+    assert light =~ "bg-white"
+
+    assert render_click(view, "own_mode", %{"mode" => "dark"}) =~
+             ~r/#provider-card \{ color-scheme: dark/
   end
 
   defp options(html) do

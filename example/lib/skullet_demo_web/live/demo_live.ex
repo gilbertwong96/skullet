@@ -118,6 +118,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:real_chart, @real_chart)
      |> assign(:images_sample, @images)
      |> assign(:plain_user, @real_card)
+     |> assign(:own_mode, "dark")
      |> assign(:pinned, false)
      |> assign(:controls, controls())
      |> assign(:codes, @codes)
@@ -147,6 +148,10 @@ defmodule SkulletDemoWeb.DemoLive do
 
   def handle_event("pin", _params, socket) do
     {:noreply, update(socket, :pinned, &(!&1))}
+  end
+
+  def handle_event("own_mode", %{"mode" => mode}, socket) do
+    {:noreply, assign(socket, :own_mode, mode)}
   end
 
   def handle_event("forget", _params, socket) do
@@ -582,13 +587,31 @@ defmodule SkulletDemoWeb.DemoLive do
             <.demo
               id="provider"
               title="A provider's mode"
-              blurb="`mode` sets `color-scheme` on the wrapper: the palette the bars are drawn from, not the page's. It is `system` here, so the card and its skeleton follow whichever theme you pick in the header — flip it and watch. Set it to `light` or `dark` only when the surface does not follow the page, or the bars end up a hair off their background."
+              blurb="`mode` sets `color-scheme` on the wrapper, and the palette the bars are drawn from is that wrapper's, not the page's. This card is dark on a light page because it says so, and it flips on its own without the page moving."
             >
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="join">
+                  <button
+                    :for={{label, value} <- [{"light", "light"}, {"dark", "dark"}]}
+                    class={["btn btn-xs join-item", @own_mode == value && "btn-active"]}
+                    phx-click="own_mode"
+                    phx-value-mode={value}
+                  >
+                    {label}
+                  </button>
+                </div>
+                <span class="text-xs opacity-60">the page around it stays as it is</span>
+              </div>
+
               <Skullet.provider
                 id="provider-card"
                 nonce={@csp_nonce}
-                mode="system"
-                class="rounded-lg border border-base-300 bg-base-100 p-4"
+                mode={@own_mode}
+                class={[
+                  "mt-3 rounded-lg p-4",
+                  @own_mode == "dark" && "bg-neutral text-neutral-content",
+                  @own_mode != "dark" && "border border-base-300 bg-white text-neutral-900"
+                ]}
               >
                 <Skullet.skeleton :let={user} id="s-provider" loading={true} sample={@sample_card}>
                   <.person person={user} />
