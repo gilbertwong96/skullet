@@ -37,14 +37,19 @@ defmodule SkulletDemoWeb.DemoLiveTest do
     assert themes == ["system", "light", "dark"]
   end
 
-  test "the provider card can ask for its own colour scheme", %{conn: conn} do
+  test "the provider card swaps the two colour schemes", %{conn: conn} do
     {:ok, view, html} = live(conn, "/")
 
-    assert html =~ ~s(color-scheme: dark)
+    # matched: each card is asked for the palette its background was drawn for
+    assert html =~ ~s(#provider-light { color-scheme: light })
+    assert html =~ ~s(#provider-dark { color-scheme: dark })
 
-    assert render_click(view, "own_mode", %{"mode" => "light"}) =~ "color-scheme: light"
-    # an empty mode means "follow the page", so the wrapper stops overriding it
-    refute render_click(view, "own_mode", %{"mode" => ""}) =~ "color-scheme:"
+    swapped = render_click(view, "swap_modes", %{})
+    assert swapped =~ ~s(#provider-light { color-scheme: dark })
+    assert swapped =~ ~s(#provider-dark { color-scheme: light })
+
+    back = render_click(view, "swap_modes", %{})
+    assert back =~ ~s(#provider-light { color-scheme: light })
   end
 
   defp options(html) do

@@ -118,7 +118,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:real_chart, @real_chart)
      |> assign(:images_sample, @images)
      |> assign(:plain_user, @real_card)
-     |> assign(:own_mode, "dark")
+     |> assign(:swapped, false)
      |> assign(:pinned, false)
      |> assign(:controls, controls())
      |> assign(:codes, @codes)
@@ -150,8 +150,8 @@ defmodule SkulletDemoWeb.DemoLive do
     {:noreply, update(socket, :pinned, &(!&1))}
   end
 
-  def handle_event("own_mode", %{"mode" => mode}, socket) do
-    {:noreply, assign(socket, :own_mode, if(mode == "", do: nil, else: mode))}
+  def handle_event("swap_modes", _params, socket) do
+    {:noreply, update(socket, :swapped, &(!&1))}
   end
 
   def handle_event("forget", _params, socket) do
@@ -587,28 +587,22 @@ defmodule SkulletDemoWeb.DemoLive do
             <.demo
               id="provider"
               title="A provider's mode"
-              blurb="`mode` sets `color-scheme` on the wrapper: the palette the bars are drawn from, not the page's. Both panels below ask for the same mode, and only the one whose background it was drawn for keeps its skeleton — the wrong palette is a hair off the surface it sits on. Unset follows the page, and an inner provider wins over the outer one."
+              blurb="`mode` sets `color-scheme` on the wrapper: the palette the bars are drawn from, not the page's. Each card below is asked for the palette its background was drawn for — then swapped, so each asks for the other. Nothing moves but the bars, which are exactly the same shape either way. Unset follows the page, and an inner provider wins over the outer one."
             >
               <:actions>
-                <div class="join">
-                  <button
-                    :for={
-                      {label, value} <- [{"follow page", ""}, {"light", "light"}, {"dark", "dark"}]
-                    }
-                    class={["btn btn-xs join-item", (@own_mode || "") == value && "btn-active"]}
-                    phx-click="own_mode"
-                    phx-value-mode={value}
-                  >
-                    {label}
-                  </button>
-                </div>
+                <button
+                  class={["btn btn-xs", @swapped && "btn-active"]}
+                  phx-click="swap_modes"
+                >
+                  swap the modes
+                </button>
               </:actions>
               <div class="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Skullet.provider
                     id="provider-light"
                     nonce={@csp_nonce}
-                    mode={@own_mode}
+                    mode={if @swapped, do: "dark", else: "light"}
                     class="rounded-lg bg-white p-4 text-neutral-900"
                   >
                     <Skullet.skeleton
@@ -620,14 +614,16 @@ defmodule SkulletDemoWeb.DemoLive do
                       <.person person={user} />
                     </Skullet.skeleton>
                   </Skullet.provider>
-                  <p class="mt-1 text-xs opacity-60">a white card: wants mode="light"</p>
+                  <p class="mt-1 text-xs opacity-60">
+                    a white card: {if @swapped, do: "mode=\"dark\" — gone", else: "mode=\"light\""}
+                  </p>
                 </div>
 
                 <div>
                   <Skullet.provider
                     id="provider-dark"
                     nonce={@csp_nonce}
-                    mode={@own_mode}
+                    mode={if @swapped, do: "light", else: "dark"}
                     class="rounded-lg bg-neutral p-4 text-neutral-content"
                   >
                     <Skullet.skeleton
@@ -639,7 +635,11 @@ defmodule SkulletDemoWeb.DemoLive do
                       <.person person={user} />
                     </Skullet.skeleton>
                   </Skullet.provider>
-                  <p class="mt-1 text-xs opacity-60">a dark card: wants mode="dark"</p>
+                  <p class="mt-1 text-xs opacity-60">
+                    a dark card: {if @swapped,
+                      do: "mode=\"light\" — a hair off",
+                      else: "mode=\"dark\""}
+                  </p>
                 </div>
               </div>
             </.demo>

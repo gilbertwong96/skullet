@@ -32,7 +32,7 @@ mix phx.server          # → http://localhost:4000
 | Empty states | `empty` with an `empty_message` slot: a message where rows would have been |
 | Suspense and failure | async + measured fallback + one error branch, always failing here |
 | Theming | one `<Skullet.provider>` with the controls panel above the page |
-| A provider's mode | two panels, one `color-scheme` at a time: only the surface a palette was drawn for keeps its skeleton |
+| A provider's mode | a white card and a dark card, each asked for its own palette; **swap the modes** and each gets the other one, which is a hair off the surface it sits on |
 | Images | four images served 1.2–3s late, fading in instead of popping |
 
 The panel at the top sets latency, animation, speed, radius, text metrics, hold, reveal
@@ -41,8 +41,8 @@ it. The page's own theme is the switch in the header (system / light / dark), ke
 `localStorage`; the bars follow it, since `color-scheme` comes with the theme. The line under
 the panel spells out what `hold` and the latency add up to: a hold that is not shorter than
 the latency leaves nothing to see, no skeleton and no reveal to animate. `mode` on a
-provider is how one subtree asks for the other scheme — the panel in *A provider's mode*
-does that, and can be flipped to show it.
+provider is how one subtree asks for the other scheme — *A provider's mode* shows two cards
+doing that, and what happens when they ask for the wrong one.
 
 The footer shows the running engine: state, phase, bars drawn, and whether anything threw.
 
