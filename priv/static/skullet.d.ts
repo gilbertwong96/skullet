@@ -1,6 +1,6 @@
 /**
  * What `priv/static/skullet.js` exports, written by hand so the package ships one file
- * instead of a declaration per source module. The types mirror `js/src/plan.ts`.
+ * instead of a declaration per source module. The types mirror `assets/js/plan.ts`.
  */
 
 /** Where one piece of a reveal sits: a piece of content arriving, or a bar of the skeleton leaving. */

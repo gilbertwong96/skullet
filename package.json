@@ -1,0 +1,28 @@
+{
+  "name": "skullet-tests",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "scripts": {
+    "build": "pnpm typecheck && pnpm clean && pnpm build:esm && pnpm build:script && pnpm build:pre && pnpm build:types",
+    "clean": "rm -f priv/static/*.js priv/static/*.js.map priv/static/*.d.ts",
+    "build:esm": "esbuild assets/js/skullet.ts --bundle --format=esm --target=es2022 --outfile=priv/static/skullet.js",
+    "build:script": "esbuild assets/js/skullet.ts --bundle --format=iife --global-name=Skullet --minify --target=es2022 --sourcemap --outfile=priv/static/skullet.min.js",
+    "build:pre": "esbuild assets/js/pre.ts --bundle --format=iife --global-name=__skulletPre --minify --target=es2022 --outfile=priv/static/skullet.pre.js",
+    "build:types": "cp assets/js/types/skullet.d.ts priv/static/skullet.d.ts",
+    "typecheck": "tsc -p tsconfig.all.json",
+    "lint": "oxlint --deny-warnings assets/js/*.ts assets/test/*.js",
+    "format": "oxfmt assets/js/*.ts assets/test/*.js",
+    "format:check": "oxfmt --check assets/js/*.ts assets/test/*.js",
+    "check": "pnpm typecheck && pnpm lint && pnpm format:check",
+    "test": "pnpm build && node --test assets/test/*.test.js",
+    "verify": "pnpm build && test -z \"$(git status --porcelain -- priv/static)\""
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "playwright": "^1.56.0",
+    "typescript": "^7.0.2"
+  }
+}

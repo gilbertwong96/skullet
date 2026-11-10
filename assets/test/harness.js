@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url"
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, "..", "..")
-const fixtures = join(root, "js", "fixtures")
+const fixtures = join(here, "fixtures")
 const assets = join(root, "priv", "static")
 
 const TYPES = {

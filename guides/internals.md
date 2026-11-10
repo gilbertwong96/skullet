@@ -35,22 +35,21 @@ for the component and [the CSP section](usage.md#content-security-policy) for it
 ## Working on the engine
 
 The package needs no Node: the compiled engine is committed in `priv/static`. Changing it
-needs pnpm and Node:
+needs pnpm and Node, from the repository root:
 
 ```bash
-pnpm --dir js install --allow-build=esbuild   # esbuild's postinstall is declined by default
-pnpm --dir js run check   # tsc (type check), oxlint, oxfmt --check
-pnpm --dir js build       # js/src/*.ts → priv/static/skullet{.js,.min.js}, then skullet.pre.js
-pnpm --dir js test        # builds, then drives Playwright against js/fixtures
+pnpm install --allow-build=esbuild   # esbuild's postinstall is declined by default
+pnpm run check   # tsc (type check), oxlint, oxfmt --check
+pnpm build       # assets/js/*.ts → priv/static/skullet{.js,.min.js}, then skullet.pre.js
+pnpm test        # builds, then drives Playwright against assets/test/fixtures
 ```
 
-`oxfmt` reads `js/.oxfmtrc.json`; run the scripts through `pnpm --dir js` (or from inside
-`js/`) so it finds the config.
+`oxfmt` reads `assets/.oxfmtrc.json`.
 
 `priv/static` holds bundles, not a file per module: one ESM bundle for bundlers, one
 minified script for a `<script>` tag, both maps-free except the script build, plus the
-hand-written `skullet.d.ts`. `pnpm --dir js verify` rebuilds and fails if the committed
-files would change.
+hand-written `skullet.d.ts`. `pnpm verify` rebuilds and fails if the committed files would
+change.
 
 ## Before finishing a change
 
