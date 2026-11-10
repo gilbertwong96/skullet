@@ -32,6 +32,9 @@ First release.
 - Images that decode after the reveal fade in instead of popping (ten-second timeout).
 - Empty states: `empty` with an `empty_message` slot shows a message in place of content
   that arrived empty, measured and revealed like any other content.
+- The light-mode highlight is `rgb(255 255 255 / 0.75)`, not `0.12`: a white band at 12%
+  over `rgb(128 128 128 / 0.2)` bars is a 12/255 difference, invisible next to the dark
+  theme's, so light pages looked like they had no shimmer at all.
 - `theme`, `mode`, `animation` and `speed` are emitted as a `<style>` block keyed by the
   element's id instead of a `style` attribute, and a `<Skullet.box>` is a class and a rule,
   so a Content Security Policy needs no `'unsafe-inline'` for styles. Pass `nonce={…}`.

@@ -1,6 +1,6 @@
 :root {
   --skullet-base: rgb(128 128 128 / 0.2);
-  --skullet-highlight: rgb(255 255 255 / 0.12);
+  --skullet-highlight: rgb(255 255 255 / 0.5);
   --skullet-radius: 0.25em;
   --skullet-hold: 150ms;
   --skullet-fade: 200ms;
@@ -27,7 +27,7 @@
 @supports (color: light-dark(#000, #fff)) {
   :root {
     --skullet-base: light-dark(rgb(128 128 128 / 0.2), rgb(255 255 255 / 0.09));
-    --skullet-highlight: light-dark(rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.16));
+    --skullet-highlight: light-dark(rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.16));
   }
 }
 

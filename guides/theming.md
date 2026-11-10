@@ -4,8 +4,8 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 
 | variable | default | what |
 |---|---|---|
-| `--skullet-base` | `rgb(128 128 128 / 0.2)` | the bars |
-| `--skullet-highlight` | `rgb(255 255 255 / 0.12)` | the shimmer's band |
+| `--skullet-base` | `rgb(128 128 128 / 0.2)` in light, `rgb(255 255 255 / 0.09)` in dark | the bars |
+| `--skullet-highlight` | `rgb(255 255 255 / 0.75)` in light, `rgb(255 255 255 / 0.16)` in dark | the shimmer's band |
 | `--skullet-radius` | `0.25em` | how round each bar is |
 | `--skullet-hold` | `150ms` | how long a skeleton waits before showing, so fast data never shows one |
 | `--skullet-fade` | `200ms` | the crossfade at the reveal |
