@@ -1,6 +1,10 @@
 # Skullet
 
-[![coverage](https://codecov.io/gh/gilbertwong96/skullet/graph/badge.svg?branch=main)](https://codecov.io/gh/gilbertwong96/skullet)
+[![CI](https://github.com/gilbertwong96/skullet/actions/workflows/ci.yml/badge.svg)](https://github.com/gilbertwong96/skullet/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/gilbertwong96/skullet/graph/badge.svg)](https://codecov.io/gh/gilbertwong96/skullet)
+[![Elixir](https://img.shields.io/badge/elixir-1.18+-purple.svg)](https://elixir-lang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Hex.pm](https://img.shields.io/hexpm/v/skullet.svg)](https://hex.pm/packages/skullet)
 
 Draws a skeleton of exactly what is about to load.
 

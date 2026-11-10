@@ -49,7 +49,6 @@ defmodule Skullet.MixProject do
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:vibe_kit, "~> 0.1", only: :dev, runtime: false},
       {:phoenix_live_view, "~> 1.2"},
       {:phoenix_html, "~> 4.3"},
       {:lazy_html, ">= 0.1.0", only: :test},
