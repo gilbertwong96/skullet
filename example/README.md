@@ -32,7 +32,7 @@ mix phx.server          # → http://localhost:4000
 | Empty states | `empty` with an `empty_message` slot: a message where rows would have been |
 | Suspense and failure | async + measured fallback + one error branch, always failing here |
 | Theming | one `<Skullet.provider>` with the controls panel above the page |
-| A provider's mode | one panel, three `color-scheme`s: what the bars are drawn from |
+| A provider's mode | two panels, one `color-scheme` at a time: only the surface a palette was drawn for keeps its skeleton |
 | Images | four images served 1.2–3s late, fading in instead of popping |
 
 The panel at the top sets latency, animation, speed, radius, text metrics, hold, reveal

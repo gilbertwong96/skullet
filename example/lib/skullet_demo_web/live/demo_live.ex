@@ -587,12 +587,14 @@ defmodule SkulletDemoWeb.DemoLive do
             <.demo
               id="provider"
               title="A provider's mode"
-              blurb="`mode` sets `color-scheme` on the wrapper, and that is the palette the bars are drawn from — not the page's. Flip it: the panel's own colours do not move, only what the skeleton inside is made of. An unset mode follows the page, and an inner provider wins over the outer one."
+              blurb="`mode` sets `color-scheme` on the wrapper: the palette the bars are drawn from, not the page's. Both panels below ask for the same mode, and only the one whose background it was drawn for keeps its skeleton — the wrong palette is a hair off the surface it sits on. Unset follows the page, and an inner provider wins over the outer one."
             >
               <:actions>
                 <div class="join">
                   <button
-                    :for={{label, value} <- [{"page", ""}, {"light", "light"}, {"dark", "dark"}]}
+                    :for={
+                      {label, value} <- [{"follow page", ""}, {"light", "light"}, {"dark", "dark"}]
+                    }
                     class={["btn btn-xs join-item", (@own_mode || "") == value && "btn-active"]}
                     phx-click="own_mode"
                     phx-value-mode={value}
@@ -601,15 +603,45 @@ defmodule SkulletDemoWeb.DemoLive do
                   </button>
                 </div>
               </:actions>
-              <Skullet.provider
-                nonce={@csp_nonce}
-                mode={@own_mode}
-                class="rounded-lg bg-neutral p-4 text-neutral-content"
-              >
-                <Skullet.skeleton :let={user} id="s-provider" loading={true} sample={@sample_card}>
-                  <.person person={user} />
-                </Skullet.skeleton>
-              </Skullet.provider>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Skullet.provider
+                    id="provider-light"
+                    nonce={@csp_nonce}
+                    mode={@own_mode}
+                    class="rounded-lg bg-white p-4 text-neutral-900"
+                  >
+                    <Skullet.skeleton
+                      :let={user}
+                      id="s-provider-light"
+                      loading={true}
+                      sample={@sample_card}
+                    >
+                      <.person person={user} />
+                    </Skullet.skeleton>
+                  </Skullet.provider>
+                  <p class="mt-1 text-xs opacity-60">a white card: wants mode="light"</p>
+                </div>
+
+                <div>
+                  <Skullet.provider
+                    id="provider-dark"
+                    nonce={@csp_nonce}
+                    mode={@own_mode}
+                    class="rounded-lg bg-neutral p-4 text-neutral-content"
+                  >
+                    <Skullet.skeleton
+                      :let={user}
+                      id="s-provider-dark"
+                      loading={true}
+                      sample={@sample_card}
+                    >
+                      <.person person={user} />
+                    </Skullet.skeleton>
+                  </Skullet.provider>
+                  <p class="mt-1 text-xs opacity-60">a dark card: wants mode="dark"</p>
+                </div>
+              </div>
             </.demo>
           </section>
 
