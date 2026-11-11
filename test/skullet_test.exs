@@ -117,6 +117,7 @@ defmodule SkulletTest do
     assert empty?(html, ".skullet-status")
   end
 
+  @tag capture_log: true
   test "empty without a message leaves the content alone" do
     html =
       render_component(&Skullet.TestComponents.empty_without_message/1,
@@ -148,6 +149,95 @@ defmodule SkulletTest do
     assert attr(html, "data-skullet-state") == "failed"
     assert text(query(html, "#error")) == "Could not load."
     assert empty?(html, "#empty")
+  end
+
+  test "state says the two cases the inference cannot: empty, and failed over plain data" do
+    empty = render_component(&Skullet.TestComponents.stateful/1, id: "inbox", state: :empty)
+
+    assert attr(empty, "data-skullet-state") == "loaded"
+    assert text(query(empty, "#empty")) == "No messages yet."
+    assert empty?(empty, "#content")
+
+    failed = render_component(&Skullet.TestComponents.stateful/1, id: "inbox", state: :failed)
+
+    assert attr(failed, "data-skullet-state") == "failed"
+    assert text(query(failed, "#error")) == "Could not load."
+    assert empty?(failed, "#content")
+  end
+
+  test "state: :loaded passes the data through, nil included" do
+    html = render_component(&Skullet.TestComponents.stateful/1, id: "inbox", state: :loaded)
+
+    assert attr(html, "data-skullet-state") == "loaded"
+    assert text(query(html, "#content")) == "content"
+  end
+
+  test "state: :loading is the skeleton, whatever the data says" do
+    html =
+      render_component(&Skullet.TestComponents.stateful/1,
+        id: "inbox",
+        state: :loading,
+        data: @real
+      )
+
+    assert attr(html, "data-skullet-state") == "loading"
+  end
+
+  test "Skullet.state/1 reports what the component would do" do
+    assert Skullet.state(data: @real) == :loaded
+    assert Skullet.state(data: nil) == :loading
+    assert Skullet.state(async: AsyncResult.ok(%AsyncResult{}, @real)) == :loaded
+    assert Skullet.state(async: AsyncResult.failed(%AsyncResult{}, :boom)) == :failed
+    assert Skullet.state(data: nil, state: :empty) == :empty
+    assert Skullet.state(data: @real, loading: true) == :loading
+  end
+
+  test "classes of your own join the root, and other attributes pass through" do
+    html =
+      render_component(&Skullet.TestComponents.stateful/1,
+        id: "inbox",
+        class: "space-y-6",
+        role: "region"
+      )
+
+    assert attr(html, "class") == "skullet space-y-6"
+    assert attr(html, "role") == "region"
+
+    bare = render_component(&Skullet.TestComponents.stateful/1, id: "inbox")
+    assert attr(bare, "class") == "skullet"
+  end
+
+  test "the loading pane says it is the sample" do
+    sample = query(skeleton_html([]), "[data-skullet-content]")
+    loaded = query(skeleton_html(data: @real), "[data-skullet-content]")
+
+    assert LazyHTML.attribute(sample, "data-skullet-sample") == ["true"]
+    assert LazyHTML.attribute(loaded, "data-skullet-sample") == ["false"]
+  end
+
+  test "a nil sample warns once" do
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        render_component(&Skullet.TestComponents.no_sample/1, id: "nil-sample")
+        render_component(&Skullet.TestComponents.no_sample/1, id: "nil-sample")
+      end)
+
+    assert log =~ "nil-sample"
+    assert log =~ "has no sample"
+    assert log |> String.split("has no sample") |> length() == 2
+  end
+
+  test "empty without an empty_message slot warns once" do
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        render_component(&Skullet.TestComponents.empty_without_message/1,
+          id: "no-empty-slot",
+          data: @real
+        )
+      end)
+
+    assert log =~ "no-empty-slot"
+    assert log =~ "empty without an :empty_message slot"
   end
 
   test "the overlay is rendered by the server, so LiveView keeps it" do

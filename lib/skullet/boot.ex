@@ -24,12 +24,21 @@ defmodule Skullet.Boot do
 
   attr(:nonce, :string, default: nil, doc: "the CSP nonce for the inline script")
 
+  attr(:src, :string,
+    default: nil,
+    doc: """
+    serve `priv/static/skullet.pre.js` from your own assets and let the browser fetch it
+    instead of inlining it — the call that starts it is all that stays inline.
+    """
+  )
+
   @spec boot(map()) :: Phoenix.LiveView.Rendered.t()
   def boot(assigns) do
     assigns = assign(assigns, script: Phoenix.HTML.raw(@script <> ";__skulletPre.boot()"))
 
     ~H"""
-    <script nonce={@nonce} data-skullet-boot><%= @script %></script>
+    <script :if={@src} src={@src} nonce={@nonce} data-skullet-boot></script>
+    <script nonce={@nonce} data-skullet-boot><%= if @src, do: "__skulletPre.boot()", else: @script %></script>
     """
   end
 end

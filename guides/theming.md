@@ -70,3 +70,13 @@ band across the whole skeleton, which reads better when the bars are close toget
 follow the same rule as upstream: the band is capped at 320px, bands are 2.5 band-widths
 apart on a 110° slant, and the loop is timed to a 1280px reference width so the pace is the
 same on any screen. `pulse` fades the bars in and out, and `none` holds them still.
+
+A text-dense page is where the two differ: one band per bar means a hundred bars read as a
+hundred highlights, however well their phases line up. For a dashboard, a table, or anything
+that measures into more than a screenful of bars, set the group:
+
+```heex
+<Skullet.provider animation="group-shimmer">
+```
+
+The band then belongs to the container and crosses them all as one sweep.

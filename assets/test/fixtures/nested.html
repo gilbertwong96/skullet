@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+  </head>
+  <body>
+    <div id="outer" class="skullet" data-skullet-state="loading">
+      <div class="skullet-content" data-skullet-content>
+        <div id="inner" class="skullet" data-skullet-state="loading">
+          <div class="skullet-content" data-skullet-content>
+            <p>Inner content, measured by both if nobody stops it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { attach } from "/skullet.js"
+
+      // The inner root mounts first, as it would in a LiveView patch.
+      window.inner = attach(document.getElementById("inner"))
+      window.outer = attach(document.getElementById("outer"))
+    </script>
+  </body>
+</html>

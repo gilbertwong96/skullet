@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Added
+
+- `state` on `Skullet.skeleton` — `:loading`, `:loaded`, `:failed` or `:empty` — for the two
+  states an assign cannot express: loaded and empty, and a failure that did not come from an
+  async assign.
+- `Skullet.state/1`, the same decision for your own helpers, so "nil means loading" lives in
+  one place.
+- `class` and any other attribute (`role`, `data-*`) pass through to the skeleton's root, so
+  a layout rhythm no longer needs a wrapper inside the content.
+- `Skullet.Boot.boot(src: …)` fetches the pre-paint script as a blocking `<script src>`
+  instead of inlining it.
+
+### Changed
+
+- The no-JS fallback marks the pane it reveals with `data-skullet-sample="true"`, and
+  `--skullet-nojs-reveal: none` keeps it hidden where the sample is not safe to show.
+
+### Fixed
+
+- A skeleton nested inside another loading skeleton no longer draws a second overlay over
+  the same pixels.
+- Turning the OS's reduced-motion setting on or off while the page is open now stops or
+  starts the bars; it was read once, at creation.
+- `sample: nil`, and `empty` without an `:empty_message` slot, warn once per skeleton
+  instead of rendering something that quietly does nothing.
+
 ## 0.1.0 - 2026-11-10
 
 ### Added

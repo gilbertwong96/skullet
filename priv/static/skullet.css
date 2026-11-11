@@ -63,9 +63,14 @@
  * With no JS at all the fallback below is the only thing that will show the sample, so
  * it is on until the engine says otherwise. The flag lives on <html>, which LiveView
  * never patches; an attribute on the skeleton would be stripped by the next patch.
+ *
+ * Five seconds is long enough that a slow bundle is not mistaken for a dead page, and
+ * short enough that nobody stares at an empty box. A sample is not always safe to show —
+ * the pane is marked `data-skullet-sample` while it holds one — so an app that would
+ * rather leave the box empty sets `--skullet-nojs-reveal: none`.
  */
 html:not(.skullet-js) .skullet[data-skullet-state="loading"] > [data-skullet-content] {
-  animation: skullet-nojs-reveal 0s 5000ms forwards;
+  animation: var(--skullet-nojs-reveal, skullet-nojs-reveal 0s 5000ms forwards);
 }
 
 /* skullet-debug on any ancestor shows the skeleton through what is being measured. */

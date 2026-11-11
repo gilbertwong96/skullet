@@ -45,6 +45,9 @@ reset — pass `reset: true` (or assign a fresh `AsyncResult.loading()`).
 | `data` | any | `nil` | plain data; `nil` is loading |
 | `loading` | boolean | `false` | forces the skeleton, even over data |
 | `empty` | boolean | `false` | shows the `empty_message` slot in place of the content (see [empty states](#empty-states)) |
+| `state` | atom | `nil` | `:loading`, `:loaded`, `:failed` or `:empty` — says it outright instead of inferring it |
+| `class` | any | `nil` | extra classes on the skeleton root, for a layout rhythm of your own |
+| `rest` | global | — | any other attribute lands on the root: `role`, `data-*`, `aria-*` |
 | `reveal` | `"smart"` \| `"together"` \| `"sequence"` \| `"instant"` | `"smart"` | how content replaces its skeleton (see [reveals](reveals.md)) |
 | `theme` | map | `%{}` | custom properties for this skeleton alone (see [theming](theming.md)) |
 | `label` | string | `"Loading"` | read to screen readers while loading |
@@ -88,6 +91,32 @@ With an async assign, emptiness rides on the result:
 ```heex
 empty={@messages.ok? and @messages.result == []}
 ```
+
+## Saying the state outright
+
+`async`, `data` and `loading` cover most cases, and `nil` always means loading — which
+leaves two states without a value: a section that loaded and holds nothing, and a failure
+that did not come from an assign. `state` names them:
+
+```heex
+<Skullet.skeleton id="inbox" data={@messages} sample={@sample} state={:empty}>
+  <Inbox.messages messages={@messages} />
+  <:empty_message>No messages yet.</:empty_message>
+</Skullet.skeleton>
+```
+
+`state={:failed}` renders the `error` slot the same way, `:loaded` renders the content
+with `data` as it is (nil included), and `:loading` forces the skeleton whatever the data
+says. `Skullet.state/1` answers the same question for your own helpers, so "nil means
+loading" lives in one place:
+
+```elixir
+Skullet.state(async: @messages)   #=> :loading | :loaded | :failed
+Skullet.state(data: nil, state: :empty)
+```
+
+Two silent mistakes are logged once per skeleton id: a `sample` of `nil` (which draws no
+bars) and `empty` without an `:empty_message` slot (which renders the content anyway).
 
 ## Errors
 
@@ -156,6 +185,26 @@ one error branch. There is no separate component for it:
 </Skullet.skeleton>
 ```
 
+## One skeleton, not two
+
+A skeleton inside another skeleton's content draws a second overlay over the same pixels,
+and two shimmer passes read as a broken animation. The engine spots a loading `.skullet`
+around it and leaves the drawing to the outer one, but the shape is still wrong: for a card
+that loads on its own inside a region that also loads, put the local skeleton in the
+`:skeleton` slot of one component rather than nesting a second root.
+
+## When the engine never runs
+
+The sample is also the no-JS fallback: with no JavaScript at all the content pane stays
+hidden for five seconds, then shows the sample rather than an empty box forever. The pane
+carries `data-skullet-sample="true"` while it holds a sample, so an app can style it (a
+badge, a muted tone) or leave it out entirely:
+
+```css
+/* the sample is not safe to show: keep the box empty instead */
+.skullet { --skullet-nojs-reveal: none; }
+```
+
 ## Hints
 
 Measuring gets most markup right. Where it does not — a logo, a chart, a canvas — say so
@@ -190,6 +239,15 @@ default). Clear a person's memory when they sign out:
 Skullet.Memory.forget(current_user.id)
 ```
 
+Before you ship, three things about memory:
+
+- call `Skullet.Memory.forget(current_user.id)` on sign-out — otherwise the next person on a
+  shared device gets the previous one's skeleton shape on the first load;
+- the TTL is a backstop, not a policy: `config :skullet, :memory_ttl_ms` decides how long a
+  forgotten scope lingers;
+- if the shape of the data changes (a field added, a value's type changed) the remembered
+  entry renders through your component until it expires, so bump `id` when the shape changes.
+
 ## Images
 
 An image that is still decoding when the content arrives would pop in. It waits at zero
@@ -214,6 +272,14 @@ as the engine; the engine then takes those bars over.
 
 It is a plain `<script>`, so a Content Security Policy needs its nonce; the next section
 is the whole recipe. Without a CSP, leave the attribute off.
+
+If your policy allows it, `src:` keeps the 9KB out of every response: copy
+`priv/static/skullet.pre.js` where your assets are served and point at it. The browser
+fetches it as a blocking script, and only the call that starts it stays inline.
+
+```heex
+<Skullet.Boot.boot src="/assets/skullet.pre.js" nonce={@csp_nonce} />
+```
 
 ## Content Security Policy
 

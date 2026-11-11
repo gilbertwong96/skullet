@@ -40,6 +40,8 @@ defmodule Skullet do
 
   use Phoenix.Component
 
+  require Logger
+
   alias Phoenix.LiveView.AsyncResult
 
   @theme_vars %{
@@ -76,6 +78,16 @@ defmodule Skullet do
     doc: "shows the `empty_message` slot in place of the content"
   )
 
+  attr(:state, :atom,
+    default: nil,
+    values: [nil, :loading, :loaded, :failed, :empty],
+    doc: """
+    says the state outright instead of inferring it from `async`, `data` and `loading` —
+    for the two cases those cannot express: `:empty` (loaded, and there is nothing to show)
+    and `:failed` with plain data.
+    """
+  )
+
   attr(:reveal, :string,
     default: "smart",
     doc:
@@ -90,6 +102,13 @@ defmodule Skullet do
   )
 
   attr(:label, :string, default: "Loading", doc: "read to screen readers while loading")
+
+  attr(:class, :any,
+    default: nil,
+    doc: "extra classes on the skeleton root, for a layout rhythm of your own"
+  )
+
+  attr(:rest, :global)
 
   attr(:remember, :any,
     default: nil,
@@ -125,22 +144,25 @@ defmodule Skullet do
   def skeleton(assigns) do
     {state, value} = state_and_value(assigns)
     if state == :loaded, do: remember(assigns, value)
+    warn_misuse(assigns)
 
     assigns =
       assign(assigns,
         state: state,
         value: value,
+        empty: Map.get(assigns, :empty, false) or Map.get(assigns, :state) == :empty,
         style_tag: style_tag(theme_css(assigns.id, assigns.theme), assigns.nonce)
       )
 
     ~H"""
     <div
-      class="skullet"
+      class={["skullet" | List.wrap(@class)]}
       id={@id}
       phx-hook="Skullet"
       data-skullet-state={@state}
       data-skullet-reveal={@reveal}
       aria-busy={to_string(@state == :loading)}
+      {@rest}
     >
       {@style_tag}
       <span
@@ -164,12 +186,45 @@ defmodule Skullet do
             {render_slot(@empty_message)}
           </div>
         <% true -> %>
-          <div class="skullet-content" data-skullet-content>
+          <div
+            class="skullet-content"
+            data-skullet-content
+            data-skullet-sample={to_string(@state == :loading)}
+          >
             {render_slot(@inner_block, @value)}
           </div>
       <% end %>
     </div>
     """
+  end
+
+  @doc """
+  Says what a skeleton would render, without rendering it: `:loading`, `:loaded`, `:failed`
+  or `:empty`.
+
+  The same rules `skeleton/1` uses, so an app can map an assign to a state once instead of
+  re-deriving "nil means loading" in every helper:
+
+  state = Skullet.state(async: @user)
+  """
+  @spec state(Keyword.t() | map()) :: :loading | :loaded | :failed | :empty
+  def state(assigns) do
+    assigns =
+      assigns
+      |> Map.new()
+      |> Map.put_new(:state, nil)
+      |> Map.put_new(:loading, false)
+      |> Map.put_new(:async, nil)
+      |> Map.put_new(:data, nil)
+      |> Map.put_new(:sample, nil)
+      |> Map.put_new(:id, nil)
+      |> Map.put_new(:remember, nil)
+
+    case {assigns.state, state_and_value(assigns)} do
+      {:empty, _} -> :empty
+      {nil, {state, _value}} -> state
+      {state, _} -> state
+    end
   end
 
   attr(:id, :string, default: nil, doc: "DOM id for the wrapper")
@@ -293,6 +348,11 @@ defmodule Skullet do
   defp css_length(value) when is_number(value), do: "#{value}px"
   defp css_length(value), do: to_string(value)
 
+  defp state_and_value(%{state: :loading} = assigns), do: {:loading, sample(assigns)}
+  defp state_and_value(%{state: :failed} = assigns), do: {:failed, sample(assigns)}
+  defp state_and_value(%{state: :empty} = assigns), do: {:loaded, sample(assigns)}
+  defp state_and_value(%{state: :loaded} = assigns), do: {:loaded, assigns.data}
+
   defp state_and_value(%{loading: true} = assigns), do: {:loading, sample(assigns)}
 
   defp state_and_value(%{async: %AsyncResult{ok?: true, result: result}}),
@@ -307,6 +367,31 @@ defmodule Skullet do
   defp state_and_value(%{data: data}) when not is_nil(data), do: {:loaded, data}
 
   defp state_and_value(assigns), do: {:loading, sample(assigns)}
+
+  # Both of these render something, so nothing fails — it just does not do what was meant.
+  # Said once per id, which is enough to catch it without filling a log.
+  defp warn_misuse(assigns) do
+    if Map.get(assigns, :sample) == nil do
+      warn_once({:sample, assigns.id}, """
+      Skullet.skeleton #{inspect(assigns.id)} has no sample: the skeleton will be empty. \
+      Pass the data it is standing in for, or use the :skeleton slot for markup of your own.\
+      """)
+    end
+
+    if Map.get(assigns, :empty, false) and Map.get(assigns, :empty_message, []) == [] do
+      warn_once({:empty, assigns.id}, """
+      Skullet.skeleton #{inspect(assigns.id)} sets empty without an :empty_message slot, \
+      which renders the content as usual. Add the slot, or drop empty.\
+      """)
+    end
+  end
+
+  defp warn_once(key, message) do
+    unless :persistent_term.get({__MODULE__, key}, false) do
+      :persistent_term.put({__MODULE__, key}, true)
+      Logger.warning(message)
+    end
+  end
 
   defp sample(assigns) do
     case Map.get(assigns, :remember) do

@@ -82,6 +82,24 @@ const ACTIVE_WINDOW = 400
 let lastInput = Number.NEGATIVE_INFINITY
 let listening = false
 
+/** Every engine on the page, so one listener can react to a setting that applies to all. */
+const engines = new Set<SkulletEngine>()
+let motionListening = false
+
+/**
+ * `prefers-reduced-motion` can change while the page is open — the OS setting is a switch,
+ * and the bars are inline styles we own. Redraw every live engine when it flips.
+ */
+function listenForMotion(): void {
+  if (motionListening || typeof matchMedia !== "function") return
+  motionListening = true
+
+  const media = matchMedia("(prefers-reduced-motion: reduce)")
+  media.addEventListener?.("change", () => {
+    for (const engine of engines) engine.motionChanged()
+  })
+}
+
 function listenForInput(): void {
   if (listening || typeof addEventListener !== "function") return
 
@@ -165,7 +183,9 @@ export class SkulletEngine {
   start(): void {
     if (this.started) return
     this.started = true
+    engines.add(this)
     listenForInput()
+    listenForMotion()
 
     const content = this.content
     if (!content) return
@@ -226,6 +246,12 @@ export class SkulletEngine {
       if (previous === "loaded") {
         this.refetched = true
         this.show()
+      } else if (this.nested) {
+        this.hideOverlay(false)
+      } else if (!this.phase) {
+        // It was nested when it first rendered and the skeleton around it has since
+        // revealed: start now, from the top.
+        this.show()
       } else this.schedule()
     }
   }
@@ -246,7 +272,13 @@ export class SkulletEngine {
     this.overlay = null
     this.bars = null
     this.release()
+    engines.delete(this)
     this.started = false
+  }
+
+  /** The OS's reduced-motion setting changed: re-apply (or remove) the animation. */
+  motionChanged(): void {
+    if (this.phase) this.schedule()
   }
 
   private get instant(): boolean {
@@ -258,8 +290,16 @@ export class SkulletEngine {
     return this.spec().hold ?? settingsOf(this.root).hold
   }
 
+  /**
+   * True while the nearest skeleton around this one is loading: both would animate the same
+   * pixels, and two overlays read as a broken animation.
+   */
+  private get nested(): boolean {
+    return this.root.parentElement?.closest('.skullet[data-skullet-state="loading"]') != null
+  }
+
   private show(): void {
-    if (this.state !== "loading") return
+    if (this.state !== "loading" || this.nested) return
 
     this.createOverlay()
     this.pass = "instant"
@@ -751,7 +791,7 @@ export class SkulletEngine {
 
   private draw(): void {
     this.resolve()
-    if (stateOf(this.root) !== "loading") return
+    if (stateOf(this.root) !== "loading" || this.nested) return
 
     if (!this.overlay?.isConnected || !this.bars?.isConnected) {
       this.createOverlay()

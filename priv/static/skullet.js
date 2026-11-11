@@ -520,6 +520,16 @@ function orderSettings(root) {
 var ACTIVE_WINDOW = 400;
 var lastInput = Number.NEGATIVE_INFINITY;
 var listening = false;
+var engines = /* @__PURE__ */ new Set();
+var motionListening = false;
+function listenForMotion() {
+  if (motionListening || typeof matchMedia !== "function") return;
+  motionListening = true;
+  const media = matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener?.("change", () => {
+    for (const engine of engines) engine.motionChanged();
+  });
+}
 function listenForInput() {
   if (listening || typeof addEventListener !== "function") return;
   listening = true;
@@ -583,7 +593,9 @@ var SkulletEngine = class {
   start() {
     if (this.started) return;
     this.started = true;
+    engines.add(this);
     listenForInput();
+    listenForMotion();
     const content = this.content;
     if (!content) return;
     document.documentElement.classList.add("skullet-js");
@@ -630,6 +642,10 @@ var SkulletEngine = class {
       if (previous === "loaded") {
         this.refetched = true;
         this.show();
+      } else if (this.nested) {
+        this.hideOverlay(false);
+      } else if (!this.phase) {
+        this.show();
       } else this.schedule();
     }
   }
@@ -647,7 +663,12 @@ var SkulletEngine = class {
     this.overlay = null;
     this.bars = null;
     this.release();
+    engines.delete(this);
     this.started = false;
+  }
+  /** The OS's reduced-motion setting changed: re-apply (or remove) the animation. */
+  motionChanged() {
+    if (this.phase) this.schedule();
   }
   get instant() {
     return this.root.getAttribute("data-skullet-reveal") === "instant" || prefersReducedMotion();
@@ -656,8 +677,15 @@ var SkulletEngine = class {
   hold() {
     return this.spec().hold ?? settingsOf(this.root).hold;
   }
+  /**
+   * True while the nearest skeleton around this one is loading: both would animate the same
+   * pixels, and two overlays read as a broken animation.
+   */
+  get nested() {
+    return this.root.parentElement?.closest('.skullet[data-skullet-state="loading"]') != null;
+  }
   show() {
-    if (this.state !== "loading") return;
+    if (this.state !== "loading" || this.nested) return;
     this.createOverlay();
     this.pass = "instant";
     this.easing = false;
@@ -1042,7 +1070,7 @@ var SkulletEngine = class {
   }
   draw() {
     this.resolve();
-    if (stateOf(this.root) !== "loading") return;
+    if (stateOf(this.root) !== "loading" || this.nested) return;
     if (!this.overlay?.isConnected || !this.bars?.isConnected) {
       this.createOverlay();
       this.setPhase(this.phase);
