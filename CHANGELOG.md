@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.1 - 2026-11-11
+
 ### Added
 
 - `state` on `Skullet.skeleton` — `:loading`, `:loaded`, `:failed` or `:empty` — for the two
