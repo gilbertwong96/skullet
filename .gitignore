@@ -27,4 +27,4 @@ skullet-*.tar
 /.worktrees/
 
 # js tooling
-/node_modules/
+/assets/node_modules/

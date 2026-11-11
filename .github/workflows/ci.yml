@@ -46,18 +46,21 @@ jobs:
 
   engine:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: assets
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: package.json
+          package_json_file: assets/package.json
 
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          cache-dependency-path: assets/pnpm-lock.yaml
 
       # esbuild's postinstall is a build script pnpm declines to run by default; on a cold
       # store that is an error (ERR_PNPM_IGNORED_BUILDS), so approve it explicitly.

@@ -35,13 +35,14 @@ for the component and [the CSP section](usage.md#content-security-policy) for it
 ## Working on the engine
 
 The package needs no Node: the compiled engine is committed in `priv/static`. Changing it
-needs pnpm and Node, from the repository root:
+needs pnpm and Node, from `assets/`:
 
 ```bash
+cd assets
 pnpm install --allow-build=esbuild   # esbuild's postinstall is declined by default
 pnpm run check   # tsc (type check), oxlint, oxfmt --check
-pnpm build       # assets/js/*.ts → priv/static/skullet{.js,.min.js}, then skullet.pre.js
-pnpm test        # builds, then drives Playwright against assets/test/fixtures
+pnpm build       # js/*.ts → ../priv/static/skullet{.js,.min.js}, then skullet.pre.js
+pnpm test        # builds, then drives Playwright against test/fixtures
 ```
 
 `oxfmt` reads `assets/.oxfmtrc.json`.

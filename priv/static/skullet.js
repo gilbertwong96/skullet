@@ -1,4 +1,4 @@
-// assets/js/measure.ts
+// js/measure.ts
 var LINE_GAP = 0.4;
 var TOPS = ["ascender", "cap-height", "x-height"];
 var BOTTOMS = ["baseline", "descender"];
@@ -153,7 +153,7 @@ function toRect(rect, origin) {
   };
 }
 
-// assets/js/metrics.ts
+// js/metrics.ts
 var context;
 var byFont = /* @__PURE__ */ new Map();
 function textContext() {
@@ -209,7 +209,7 @@ function resetFontCache() {
   context = void 0;
 }
 
-// assets/js/reveal.ts
+// js/reveal.ts
 var DEFAULT_DURATIONS = { hold: 150, fade: 200, resize: 280, sequence: 320 };
 var LONGEST_MS = 5e3;
 function durationsOf(element) {
@@ -254,7 +254,7 @@ function settle(element) {
   element.style.removeProperty("opacity");
 }
 
-// assets/js/shimmer.ts
+// js/shimmer.ts
 var SHIMMER_DURATIONS = { slow: 4e3, fast: 2e3 };
 var PULSE_DURATIONS = { slow: 2400, fast: 1200 };
 var REFERENCE_WIDTH = 1280;
@@ -323,7 +323,7 @@ function oneOf2(value, allowed, fallback) {
   return allowed.includes(value) ? value : fallback;
 }
 
-// assets/js/shadow.ts
+// js/shadow.ts
 var SHADOW_CSS = `:host{display:block;position:absolute;inset:0;overflow:hidden;pointer-events:none}
 [data-skullet-bars]{position:absolute;inset:0;opacity:0}
 [data-skullet-bars][data-skullet-phase="bars"]{opacity:1}
@@ -352,7 +352,7 @@ function attachShadow(overlay) {
   return { bars };
 }
 
-// assets/js/registry.ts
+// js/registry.ts
 var registered = /* @__PURE__ */ new Map();
 function registerReveal(name, spec) {
   registered.set(name, spec);
@@ -361,7 +361,7 @@ function registeredReveal(name) {
   return registered.get(name);
 }
 
-// assets/js/plan.ts
+// js/plan.ts
 var SKELETON_DELAY = DEFAULT_DURATIONS.hold;
 var QUICK_FADE = 120;
 var SMALL_HEIGHT = 72;
@@ -474,7 +474,7 @@ function planReveal(spec, context2, defaults) {
   return { kind: "together", delay, duration: duration2, enter };
 }
 
-// assets/js/bar.ts
+// js/bar.ts
 function createBar(rect) {
   const bar = document.createElement("span");
   bar.setAttribute("data-skullet-bar", "");
@@ -482,7 +482,7 @@ function createBar(rect) {
   return bar;
 }
 
-// assets/js/engine.ts
+// js/engine.ts
 var DEBUG = (() => {
   try {
     return new URLSearchParams(location.search).has("skullet-debug");
@@ -1097,7 +1097,7 @@ var SkulletEngine = class {
   }
 };
 
-// assets/js/skullet.ts
+// js/skullet.ts
 if (typeof window !== "undefined") window.__skulletEngine = { attach, measure };
 function attach(root, options = {}) {
   const engine = new SkulletEngine(root, options);
