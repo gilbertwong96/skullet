@@ -277,6 +277,13 @@ function motionOf(element) {
   const durations = animation === "pulse" ? PULSE_DURATIONS : SHIMMER_DURATIONS;
   return { animation, duration: durations[speed] };
 }
+function publishDurations(root) {
+  const style = getComputedStyle(root);
+  const speed = oneOf2(style.getPropertyValue("--skullet-speed").trim(), SPEEDS, "slow");
+  const published = document.documentElement.style;
+  published.setProperty("--skullet-shimmer-duration", `${SHIMMER_DURATIONS[speed]}ms`);
+  published.setProperty("--skullet-pulse-duration", `${PULSE_DURATIONS[speed]}ms`);
+}
 function drawShimmer(bar, box, container, motion) {
   bar.style.animationName = "none";
   bar.style.backgroundImage = "";
@@ -1085,6 +1092,7 @@ var SkulletEngine = class {
     }
     if (debugOn(this.root)) this.root.style.outline = DEBUG_LOADING;
     const motion = motionOf(this.root);
+    publishDurations(this.root);
     const host = this.root.getBoundingClientRect();
     const container = { width: host.width, height: host.height };
     const fragment = document.createDocumentFragment();

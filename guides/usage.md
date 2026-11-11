@@ -273,13 +273,31 @@ as the engine; the engine then takes those bars over.
 It is a plain `<script>`, so a Content Security Policy needs its nonce; the next section
 is the whole recipe. Without a CSP, leave the attribute off.
 
-If your policy allows it, `src:` keeps the 9KB out of every response: copy
-`priv/static/skullet.pre.js` where your assets are served and point at it. The browser
-fetches it as a blocking script, and only the call that starts it stays inline.
+If you would rather not inline it, `src:` fetches it instead. There is no copy step: serve
+the dependency's own directory.
+
+```elixir
+# endpoint.ex
+plug Plug.Static, at: "/skullet", from: {:skullet, "priv/static"}, only: ["skullet.pre.js"]
+```
 
 ```heex
-<Skullet.Boot.boot src="/assets/skullet.pre.js" nonce={@csp_nonce} />
+<%!-- layouts/root.html.heex --%>
+<Skullet.Boot.boot src={~p"/skullet/skullet.pre.js"} nonce={@csp_nonce} />
 ```
+
+The two are a trade, not an upgrade. Inline costs 8.7KB (3.5KB gzipped) in every response
+and needs a nonce on every response, but nothing has to be fetched before the first paint.
+`src:` is cached across pages and needs no nonce for the file, but the first view of a page
+waits one round trip for a script whose whole job is to run before the paint. Pick by how
+much the first paint matters to you; the demo inlines it.
+
+With `src:`, the tag is a classic parser-blocking script, so the one-line `<script>` that
+calls `__skulletPre.boot()` after it runs in order. That ordering is the mechanism; deferring
+or `async`-ing the file would break the point of it.
+
+Render the component in the layouts that actually have skeletons — it does work on every
+page it appears on, and pages without a skeleton gain nothing from it.
 
 ## Content Security Policy
 

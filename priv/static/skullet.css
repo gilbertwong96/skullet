@@ -12,6 +12,10 @@
   --skullet-enter-scale: 1;
   --skullet-animation: shimmer;
   --skullet-speed: slow;
+  /* The resolved durations, for a placeholder of the app's own: the engine rewrites these
+     on <html> as it draws, so they follow `--skullet-speed` rather than drift. */
+  --skullet-shimmer-duration: 4000ms;
+  --skullet-pulse-duration: 2400ms;
   /* How much of each line is drawn: from the font's ascender/cap-height/x-height
      down to its baseline/descender. */
   --skullet-text-top: ascender;

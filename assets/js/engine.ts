@@ -1,6 +1,6 @@
 import { measure, type Rect } from "./measure.js"
 import { barBox, resetFontCache } from "./metrics.js"
-import { drawShimmer, motionOf } from "./shimmer.js"
+import { drawShimmer, motionOf, publishDurations } from "./shimmer.js"
 import { attachShadow } from "./shadow.js"
 import {
   MAX_DELAY,
@@ -812,6 +812,7 @@ export class SkulletEngine {
     if (debugOn(this.root)) this.root.style.outline = DEBUG_LOADING
 
     const motion = motionOf(this.root)
+    publishDurations(this.root)
     const host = this.root.getBoundingClientRect()
     const container = { width: host.width, height: host.height }
     const fragment = document.createDocumentFragment()

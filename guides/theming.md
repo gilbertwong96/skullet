@@ -17,6 +17,8 @@ Everything is a CSS custom property, so one skeleton can differ from the page:
 | `--skullet-enter-scale` | `1` | where pieces come from: e.g. `0.98` |
 | `--skullet-animation` | `shimmer` | `shimmer`, `group-shimmer`, `pulse` or `none` |
 | `--skullet-speed` | `slow` | `slow` or `fast` |
+| `--skullet-shimmer-duration` | `4000ms` | read-only: written on `<html>` as the engine draws, for placeholders of your own |
+| `--skullet-pulse-duration` | `2400ms` | read-only: the same, for `pulse` |
 | `--skullet-text-top` | `ascender` | `ascender`, `cap-height` or `x-height` — where each line's bar starts |
 | `--skullet-text-bottom` | `descender` | `baseline` or `descender` — where it ends |
 
@@ -49,6 +51,25 @@ Everything inside a provider inherits its look, so you set it once:
 
 `theme`, `animation` and `speed` become the custom properties the skeletons inside inherit;
 a skeleton's own `theme` still wins.
+
+## A placeholder of your own
+
+A chart box, a canvas, a map: things that measure badly and get a static placeholder instead.
+If it animates, it has to run on the same clock as the bars or the page reads as several
+things loading at once. The engine publishes the durations it resolved on `<html>` as it
+draws, so nothing needs copying:
+
+```css
+[data-chart-placeholder] {
+  background: var(--skullet-base);
+  animation: chart-pulse var(--skullet-pulse-duration, 2400ms) linear infinite;
+}
+```
+
+`pulse` is exactly that number. `shimmer` is scaled at draw time by the container's width
+over a 1280px reference, so `--skullet-shimmer-duration` carries the value at that reference:
+a fixed-size box matching a skeleton of its own width multiplies it by `width / 1280`, and a
+rough match is usually better than an exact one — the eye reads the pace, not the phase.
 
 ## Mode
 

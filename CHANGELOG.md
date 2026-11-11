@@ -6,6 +6,9 @@
 
 ### Added
 
+- `--skullet-shimmer-duration` and `--skullet-pulse-duration`, published on `<html>` as the
+  engine draws, so a placeholder of your own can run on the same clock instead of copying
+  the numbers from the source.
 - `state` on `Skullet.skeleton` — `:loading`, `:loaded`, `:failed` or `:empty` — for the two
   states an assign cannot express: loaded and empty, and a failure that did not come from an
   async assign.
@@ -18,6 +21,9 @@
 
 ### Changed
 
+- The guide shows `Boot.boot(src:)` served straight out of the dependency with
+  `Plug.Static from: {:skullet, "priv/static"}`, and what the inline versus fetched script
+  actually costs.
 - The no-JS fallback marks the pane it reveals with `data-skullet-sample="true"`, and
   `--skullet-nojs-reveal: none` keeps it hidden where the sample is not safe to show.
 

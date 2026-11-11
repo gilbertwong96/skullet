@@ -39,6 +39,22 @@ export function motionOf(element: Element): Motion {
 }
 
 /**
+ * Publishes the durations this page is using on `<html>`, so a placeholder of the app's own
+ * — a chart box, a canvas — runs on the same clock instead of copying the numbers.
+ *
+ * Shimmer is scaled by the container's width when it is drawn; the property carries its
+ * value at `REFERENCE_WIDTH`, which is what a fixed-size placeholder wants anyway.
+ */
+export function publishDurations(root: Element): void {
+  const style = getComputedStyle(root)
+  const speed = oneOf(style.getPropertyValue("--skullet-speed").trim(), SPEEDS, "slow")
+  const published = document.documentElement.style
+
+  published.setProperty("--skullet-shimmer-duration", `${SHIMMER_DURATIONS[speed]}ms`)
+  published.setProperty("--skullet-pulse-duration", `${PULSE_DURATIONS[speed]}ms`)
+}
+
+/**
  * Puts one bar on the page's single sweep. The delay is the negative of the clock
  * position, so a bar that mounts late joins the sweep already running instead of
  * starting its own.

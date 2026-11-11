@@ -58,6 +58,28 @@ test("the pace follows the width", async () => {
   })
 })
 
+test("the durations the page is using are published for placeholders of your own", async () => {
+  const published = (page) =>
+    page.evaluate(() => {
+      const style = getComputedStyle(document.documentElement)
+      return {
+        shimmer: style.getPropertyValue("--skullet-shimmer-duration").trim(),
+        pulse: style.getPropertyValue("--skullet-pulse-duration").trim()
+      }
+    })
+
+  await withPage(async (page) => {
+    await open(page, "shimmer")
+    await mount(page, "a")
+
+    assert.deepEqual(await published(page), { shimmer: "4000ms", pulse: "2400ms" })
+
+    await mount(page, "fast")
+
+    assert.deepEqual(await published(page), { shimmer: "2000ms", pulse: "1200ms" })
+  })
+})
+
 test("fast halves it", async () => {
   await withPage(async (page) => {
     await open(page, "shimmer")
