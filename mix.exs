@@ -100,7 +100,7 @@ defmodule Skullet.MixProject do
         "dialyzer",
         "spec_lint --warnings-as-errors",
         "ex_dna --max-clones 0",
-        "reach.check --arch --smells"
+        "reach.check --arch --dead-code --smells"
       ]
     ]
   end
