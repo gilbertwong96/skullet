@@ -440,8 +440,10 @@ defmodule Skullet do
         var
 
       :error ->
+        allowed = Enum.map_join(@theme_vars, ", ", fn {name, _var} -> name end)
+
         raise ArgumentError,
-              "unknown theme key #{inspect(key)}, allowed keys: #{Enum.join(Map.keys(@theme_vars), ", ")}"
+              "unknown theme key #{inspect(key)}, allowed keys: #{allowed}"
     end
   end
 
