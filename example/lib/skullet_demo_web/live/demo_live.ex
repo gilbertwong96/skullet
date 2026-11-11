@@ -492,7 +492,7 @@ defmodule SkulletDemoWeb.DemoLive do
             <.demo
               id="empty"
               title="Empty states"
-              blurb="The result arrived empty, which is neither loading nor an error: `empty` swaps in the `empty_message` slot, and the reveal measures that message like any other content."
+              blurb="The result arrived empty, which is neither loading nor an error. `state={:empty}` says so outright and swaps in the `empty_message` slot; the reveal measures that message like any other content."
             >
               <:actions>
                 <button class="btn btn-xs" phx-click="replay" phx-value-demo="empty">Replay</button>
@@ -502,7 +502,7 @@ defmodule SkulletDemoWeb.DemoLive do
                 id="s-empty"
                 async={@empty}
                 sample={@sample_messages}
-                empty={@empty.ok? and @empty.result == []}
+                state={if @empty.ok? and @empty.result == [], do: :empty}
               >
                 <div class="grid gap-2">
                   <div

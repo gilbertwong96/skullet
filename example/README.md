@@ -29,7 +29,7 @@ mix phx.server          # → http://localhost:4000
 | Memory | `remember` draws the next skeleton from the data this one last showed; **Forget** clears it |
 | Reveal modes | `smart`, `together`, `sequence`, `sweep`, `instant`, replayed live |
 | Your own reveal | `registerReveal("wipe-down", …)` in `assets/js/app.js`, asked for by name |
-| Empty states | `empty` with an `empty_message` slot: a message where rows would have been |
+| Empty states | `state={:empty}` with an `empty_message` slot: a message where rows would have been |
 | Suspense and failure | async + measured fallback + one error branch, always failing here |
 | Theming | one `<Skullet.provider>` with the controls panel above the page |
 | A provider's mode | one card whose skeleton follows the page's colour scheme, and what `mode` is for when a surface does not |
