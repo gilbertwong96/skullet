@@ -27,8 +27,15 @@ defmodule Skullet.Boot do
   attr(:src, :string,
     default: nil,
     doc: """
-    serve `priv/static/skullet.pre.js` from your own assets and let the browser fetch it
-    instead of inlining it — the call that starts it is all that stays inline.
+    fetch the pre-paint script instead of inlining it — the call that starts it is all that
+    stays inline. Serve it straight out of the dependency, no copy step:
+
+        plug Plug.Static, at: "/skullet", from: {:skullet, "priv/static"}, only: ["skullet.pre.js"]
+        <Skullet.Boot.boot src={~p"/skullet/skullet.pre.js"} nonce={@csp_nonce} />
+
+    Inlining costs ~9KB in every response but needs no request before the first paint; the
+    fetched form is cached and needs no nonce for the file, and pays one round trip on the
+    first view. [usage](usage.html#before-the-first-paint) has the trade.
     """
   )
 

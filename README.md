@@ -52,8 +52,9 @@ two are yours to import:
 | `skullet.pre.js` | the pre-paint script `Skullet.Boot` inlines into the page, not a file you load |
 | `skullet.css` | the stylesheet |
 
-No build step? Copy `skullet.min.js` and `skullet.css` where your static files live and use
-the engine off `window.Skullet`:
+No build step? Serve the two files straight out of the dependency — `Plug.Static,
+at: "/skullet", from: {:skullet, "priv/static"}` — or copy them where your static files live,
+and use the engine off `window.Skullet`:
 
 ```html
 <link rel="stylesheet" href="/assets/skullet.css">
