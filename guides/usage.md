@@ -189,9 +189,11 @@ one error branch. There is no separate component for it:
 
 A skeleton inside another skeleton's content draws a second overlay over the same pixels,
 and two shimmer passes read as a broken animation. The engine spots a loading `.skullet`
-around it and leaves the drawing to the outer one, but the shape is still wrong: for a card
-that loads on its own inside a region that also loads, put the local skeleton in the
-`:skeleton` slot of one component rather than nesting a second root.
+around it and leaves the drawing to the outer one — including the bars the pre-paint script
+would have drawn — and the inner one starts drawing on its own next patch, once its parent
+has revealed. The shape is still wrong, though: for a card that loads on its own inside a
+region that also loads, put the local skeleton in the `:skeleton` slot of one component
+rather than nesting a second root.
 
 ## When the engine never runs
 

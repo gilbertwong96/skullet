@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="/skullet.css" />
+  </head>
+  <body>
+    <div id="outer" class="skullet" data-skullet-state="loading">
+      <div data-skullet-overlay aria-hidden="true"></div>
+      <div class="skullet-content" data-skullet-content>
+        <p>Outer content, with a card of its own inside.</p>
+        <div id="inner" class="skullet" data-skullet-state="loading">
+          <div data-skullet-overlay aria-hidden="true"></div>
+          <div class="skullet-content" data-skullet-content>
+            <p>Inner content.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/skullet.pre.js"></script>
+    <script type="module">
+      import { attach } from "/skullet.js"
+
+      __skulletPre.boot()
+      window.inner = attach(document.getElementById("inner"))
+      window.outer = attach(document.getElementById("outer"))
+    </script>
+  </body>
+</html>

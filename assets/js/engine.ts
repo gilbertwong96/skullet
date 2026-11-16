@@ -95,9 +95,13 @@ function listenForMotion(): void {
   motionListening = true
 
   const media = matchMedia("(prefers-reduced-motion: reduce)")
-  media.addEventListener?.("change", () => {
+  const redraw = (): void => {
     for (const engine of engines) engine.motionChanged()
-  })
+  }
+
+  // Safari before 14 has no addEventListener on a MediaQueryList.
+  if (typeof media.addEventListener === "function") media.addEventListener("change", redraw)
+  else media.addListener?.(redraw)
 }
 
 function listenForInput(): void {
@@ -195,7 +199,11 @@ export class SkulletEngine {
     document.documentElement.classList.add("skullet-js")
 
     this.state = stateOf(this.root)
-    if (this.state === "loading") this.show()
+    if (this.state === "loading" && this.nested) {
+      // The pre-paint script may have drawn this root before the outer one existed.
+      this.createOverlay()
+      this.hideOverlay(false)
+    } else if (this.state === "loading") this.show()
     this.observe(content)
   }
 
@@ -722,7 +730,7 @@ export class SkulletEngine {
     const overlay =
       this.overlay?.isConnected === true
         ? this.overlay
-        : (this.root.querySelector<HTMLElement>("[data-skullet-overlay]") ??
+        : (this.root.querySelector<HTMLElement>(":scope > [data-skullet-overlay]") ??
           document.createElement("div"))
 
     overlay.setAttribute("data-skullet-overlay", "")

@@ -281,8 +281,11 @@ function publishDurations(root) {
   const style = getComputedStyle(root);
   const speed = oneOf2(style.getPropertyValue("--skullet-speed").trim(), SPEEDS, "slow");
   const published = document.documentElement.style;
-  published.setProperty("--skullet-shimmer-duration", `${SHIMMER_DURATIONS[speed]}ms`);
-  published.setProperty("--skullet-pulse-duration", `${PULSE_DURATIONS[speed]}ms`);
+  const set = (name, value) => {
+    if (published.getPropertyValue(name) !== value) published.setProperty(name, value);
+  };
+  set("--skullet-shimmer-duration", `${SHIMMER_DURATIONS[speed]}ms`);
+  set("--skullet-pulse-duration", `${PULSE_DURATIONS[speed]}ms`);
 }
 function drawShimmer(bar, box, container, motion) {
   bar.style.animationName = "none";
@@ -533,9 +536,11 @@ function listenForMotion() {
   if (motionListening || typeof matchMedia !== "function") return;
   motionListening = true;
   const media = matchMedia("(prefers-reduced-motion: reduce)");
-  media.addEventListener?.("change", () => {
+  const redraw = () => {
     for (const engine of engines) engine.motionChanged();
-  });
+  };
+  if (typeof media.addEventListener === "function") media.addEventListener("change", redraw);
+  else media.addListener?.(redraw);
 }
 function listenForInput() {
   if (listening || typeof addEventListener !== "function") return;
@@ -607,7 +612,10 @@ var SkulletEngine = class {
     if (!content) return;
     document.documentElement.classList.add("skullet-js");
     this.state = stateOf(this.root);
-    if (this.state === "loading") this.show();
+    if (this.state === "loading" && this.nested) {
+      this.createOverlay();
+      this.hideOverlay(false);
+    } else if (this.state === "loading") this.show();
     this.observe(content);
   }
   /** Runs before LiveView patches the content in: the last moment the old shape exists. */
@@ -1027,7 +1035,7 @@ var SkulletEngine = class {
     }
   }
   createOverlay() {
-    const overlay = this.overlay?.isConnected === true ? this.overlay : this.root.querySelector("[data-skullet-overlay]") ?? document.createElement("div");
+    const overlay = this.overlay?.isConnected === true ? this.overlay : this.root.querySelector(":scope > [data-skullet-overlay]") ?? document.createElement("div");
     overlay.setAttribute("data-skullet-overlay", "");
     overlay.setAttribute("aria-hidden", "true");
     if (!overlay.isConnected) this.root.append(overlay);

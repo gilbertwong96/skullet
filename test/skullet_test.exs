@@ -216,6 +216,8 @@ defmodule SkulletTest do
   end
 
   test "a nil sample warns once" do
+    :persistent_term.erase({Skullet, :sample})
+
     log =
       ExUnit.CaptureLog.capture_log(fn ->
         render_component(&Skullet.TestComponents.no_sample/1, id: "nil-sample")
@@ -228,6 +230,8 @@ defmodule SkulletTest do
   end
 
   test "empty without an empty_message slot warns once" do
+    :persistent_term.erase({Skullet, :empty})
+
     log =
       ExUnit.CaptureLog.capture_log(fn ->
         render_component(&Skullet.TestComponents.empty_without_message/1,
@@ -448,6 +452,33 @@ defmodule SkulletTest do
   test "a theme key that is neither atom nor string still raises ArgumentError" do
     assert_raise ArgumentError, ~r/allowed keys/, fn ->
       skeleton_html(theme: %{{:base} => "red"})
+    end
+  end
+
+  test "a theme value cannot close its rule" do
+    for value <- ["1px} body { display: none", "1px; --skullet-base: red", "<style>"] do
+      assert_raise ArgumentError, ~r/theme value/, fn ->
+        skeleton_html(theme: %{radius: value})
+      end
+    end
+  end
+
+  test "an empty state does not remember its sample as data" do
+    scope = {:test, System.unique_integer()}
+
+    render_component(&Skullet.TestComponents.stateful/1,
+      id: "empty-memory",
+      state: :empty,
+      remember: scope,
+      data: []
+    )
+
+    assert Skullet.Memory.get(scope, "empty-memory") == nil
+  end
+
+  test "Skullet.state/1 refuses a state it does not know" do
+    assert_raise ArgumentError, ~r/unknown state/, fn ->
+      Skullet.state(data: 1, state: :bogus)
     end
   end
 

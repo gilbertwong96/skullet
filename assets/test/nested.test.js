@@ -24,6 +24,26 @@ test("a skeleton inside a loading one leaves the drawing to it", async () => {
   })
 })
 
+test("the pre-paint script leaves the inner one clean too", async () => {
+  await withPage(async (page) => {
+    await open(page, "nested-pre")
+    await page.waitForTimeout(400)
+
+    const bars = await page.evaluate(() => {
+      const count = (id) => {
+        const root = document.getElementById(id)
+        const overlay = root.querySelector("[data-skullet-overlay]")
+        return overlay?.shadowRoot?.querySelectorAll("[data-skullet-bar]").length ?? 0
+      }
+
+      return { inner: count("inner"), outer: count("outer") }
+    })
+
+    assert.ok(bars.outer > 0, "the outer skeleton draws")
+    assert.equal(bars.inner, 0, "the inner one was not painted before, or kept")
+  })
+})
+
 test("reduced motion is followed when the setting changes", async () => {
   await withPage(async (page) => {
     await open(page, "reveal")

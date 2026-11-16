@@ -143,7 +143,9 @@ defmodule Skullet do
   @spec skeleton(map()) :: Phoenix.LiveView.Rendered.t()
   def skeleton(assigns) do
     {state, value} = state_and_value(assigns)
-    if state == :loaded, do: remember(assigns, value)
+    # `state: :empty` resolves to a loaded pane holding the *sample*; remembering that would
+    # hand the next skeleton a sample dressed up as the last real data.
+    if state == :loaded and Map.get(assigns, :state) != :empty, do: remember(assigns, value)
     warn_misuse(assigns)
 
     assigns =
@@ -221,9 +223,18 @@ defmodule Skullet do
       |> Map.put_new(:remember, nil)
 
     case {assigns.state, state_and_value(assigns)} do
-      {:empty, _} -> :empty
-      {nil, {state, _value}} -> state
-      {state, _} -> state
+      {:empty, _} ->
+        :empty
+
+      {nil, {state, _value}} ->
+        state
+
+      {state, _} when state in [:loading, :loaded, :failed] ->
+        state
+
+      {state, _} ->
+        raise ArgumentError,
+              "unknown state #{inspect(state)}, allowed: :loading, :loaded, :failed, :empty"
     end
   end
 
@@ -326,9 +337,9 @@ defmodule Skullet do
   defp box_style(assigns) do
     [
       "display:inline-block",
-      "width:#{css_length(assigns.width)}",
-      "height:#{css_length(assigns.height)}",
-      if(assigns.radius, do: "border-radius:#{css_length(assigns.radius)}")
+      "width:#{declaration!(css_length(assigns.width))}",
+      "height:#{declaration!(css_length(assigns.height))}",
+      if(assigns.radius, do: "border-radius:#{declaration!(css_length(assigns.radius))}")
     ]
     |> Enum.reject(&is_nil/1)
     |> Enum.join(";")
@@ -369,17 +380,18 @@ defmodule Skullet do
   defp state_and_value(assigns), do: {:loading, sample(assigns)}
 
   # Both of these render something, so nothing fails — it just does not do what was meant.
-  # Said once per id, which is enough to catch it without filling a log.
+  # Said once per reason: per id would be unbounded, and `:persistent_term.put/2` is a global
+  # update, too expensive to run for every row of a table.
   defp warn_misuse(assigns) do
     if Map.get(assigns, :sample) == nil do
-      warn_once({:sample, assigns.id}, """
+      warn_once(:sample, """
       Skullet.skeleton #{inspect(assigns.id)} has no sample: the skeleton will be empty. \
       Pass the data it is standing in for, or use the :skeleton slot for markup of your own.\
       """)
     end
 
     if Map.get(assigns, :empty, false) and Map.get(assigns, :empty_message, []) == [] do
-      warn_once({:empty, assigns.id}, """
+      warn_once(:empty, """
       Skullet.skeleton #{inspect(assigns.id)} sets empty without an :empty_message slot, \
       which renders the content as usual. Add the slot, or drop empty.\
       """)
@@ -431,7 +443,22 @@ defmodule Skullet do
   defp theme_style(theme) when map_size(theme) == 0, do: nil
 
   defp theme_style(theme) do
-    Enum.map_join(theme, "; ", fn {key, value} -> "#{theme_var!(key)}: #{value}" end)
+    Enum.map_join(theme, "; ", fn {key, value} -> "#{theme_var!(key)}: #{declaration!(value)}" end)
+  end
+
+  # A value is one declaration: anything that could close the rule or start markup is a bug
+  # in the caller, and in a `<style>` block it is a way into the rest of the page's CSS.
+  defp declaration!(value) do
+    value = to_string(value)
+
+    if String.contains?(value, ["<", ">", "{", "}", ";"]),
+      do:
+        raise(
+          ArgumentError,
+          "a theme value cannot contain <, >, {, } or ;, got: #{inspect(value)}"
+        )
+
+    value
   end
 
   defp theme_var!(key) do

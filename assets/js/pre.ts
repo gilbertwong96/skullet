@@ -63,6 +63,10 @@ export function boot(): void {
   for (const root of document.querySelectorAll<HTMLElement>(
     ".skullet[data-skullet-state='loading']"
   )) {
+    // A skeleton inside a loading one is already covered by the outer skeleton's bars:
+    // painting it too is the double overlay the engine refuses to draw.
+    if (root.parentElement?.closest('.skullet[data-skullet-state="loading"]')) continue
+
     paint(root)
   }
 }

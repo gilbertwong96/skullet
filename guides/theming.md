@@ -52,6 +52,10 @@ Everything inside a provider inherits its look, so you set it once:
 `theme`, `animation` and `speed` become the custom properties the skeletons inside inherit;
 a skeleton's own `theme` still wins.
 
+A provider that carries a theme needs an `id`. Without one the library derives it from the
+declarations, and two providers that look the same derive the same id — one of the two
+elements then answers to a rule that was written for the other.
+
 ## A placeholder of your own
 
 A chart box, a canvas, a map: things that measure badly and get a static placeholder instead.

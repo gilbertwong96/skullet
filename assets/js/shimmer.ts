@@ -49,9 +49,12 @@ export function publishDurations(root: Element): void {
   const style = getComputedStyle(root)
   const speed = oneOf(style.getPropertyValue("--skullet-speed").trim(), SPEEDS, "slow")
   const published = document.documentElement.style
+  const set = (name: string, value: string): void => {
+    if (published.getPropertyValue(name) !== value) published.setProperty(name, value)
+  }
 
-  published.setProperty("--skullet-shimmer-duration", `${SHIMMER_DURATIONS[speed]}ms`)
-  published.setProperty("--skullet-pulse-duration", `${PULSE_DURATIONS[speed]}ms`)
+  set("--skullet-shimmer-duration", `${SHIMMER_DURATIONS[speed]}ms`)
+  set("--skullet-pulse-duration", `${PULSE_DURATIONS[speed]}ms`)
 }
 
 /**

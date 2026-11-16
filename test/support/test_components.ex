@@ -94,6 +94,7 @@ defmodule Skullet.TestComponents do
 
   attr(:id, :string, required: true)
   attr(:data, :any, default: nil)
+  attr(:remember, :any, default: nil)
   attr(:state, :atom, default: nil)
   attr(:class, :any, default: nil)
   attr(:rest, :global)
@@ -106,6 +107,7 @@ defmodule Skullet.TestComponents do
       sample={Skullet.Sample.sample_user()}
       data={@data}
       state={@state}
+      remember={@remember}
       class={@class}
       {@rest}
     >

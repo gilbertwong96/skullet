@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Changed
+
+- `Skullet.state/1` raises on a state it does not know instead of handing back the atom.
+- A theme value that could close its rule — `{`, `}`, `;`, `<`, `>` — is rejected: the value
+  is one declaration, and a `<style>` block is not an attribute.
+
+### Fixed
+
+- A skeleton nested in a loading one no longer keeps the bars the pre-paint script drew for
+  it; the script skips it in the first place, and the engine clears anything left.
+- An overlay is looked up among its own skeleton's children, so a nested skeleton cannot
+  lend its overlay to its parent.
+- `state: :empty` no longer writes its sample into memory as if it were the last real data.
+- Expired memory is pruned: on read, and by a sweep every minute, so a key nobody reads
+  again does not keep its row for the node's lifetime.
+- The misuse warnings are said once per reason rather than once per skeleton id: ids are
+  unbounded, and every `:persistent_term.put/2` is a global update.
+
 ## 0.1.2 - 2026-11-11
 
 ### Added

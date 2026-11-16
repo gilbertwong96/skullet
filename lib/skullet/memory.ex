@@ -41,6 +41,7 @@ defmodule Skullet.Memory do
 
   @table __MODULE__
   @default_ttl :timer.minutes(30)
+  @default_sweep :timer.minutes(1)
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(_opts) do
@@ -51,7 +52,16 @@ defmodule Skullet.Memory do
   @spec init(:ok) :: {:ok, nil}
   def init(:ok) do
     :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
+    schedule_sweep()
     {:ok, nil}
+  end
+
+  # A key nobody reads again would otherwise keep its row forever: the TTL only hides it.
+  @impl true
+  def handle_info(:sweep, state) do
+    if :ets.whereis(@table) != :undefined, do: expire(now() - ttl_ms())
+    schedule_sweep()
+    {:noreply, state}
   end
 
   @doc "Remembers `value` for `scope` and `id`."
@@ -75,7 +85,7 @@ defmodule Skullet.Memory do
 
     with true <- :ets.whereis(@table) != :undefined,
          [{_, value, at}] <- :ets.lookup(@table, {scope, id}) do
-      if now() - at <= ttl, do: value
+      if now() - at <= ttl, do: value, else: forget_key(scope, id)
     else
       _ -> nil
     end
@@ -99,6 +109,23 @@ defmodule Skullet.Memory do
     end
 
     :ok
+  end
+
+  defp forget_key(scope, id) do
+    :ets.delete(@table, {scope, id})
+    nil
+  end
+
+  defp expire(cutoff) do
+    :ets.select_delete(@table, [{{:_, :_, :"$1"}, [{:"=<", :"$1", cutoff}], [true]}])
+  end
+
+  defp schedule_sweep do
+    Process.send_after(
+      self(),
+      :sweep,
+      Application.get_env(:skullet, :memory_sweep_ms, @default_sweep)
+    )
   end
 
   defp ttl_ms, do: Application.get_env(:skullet, :memory_ttl_ms, @default_ttl)
