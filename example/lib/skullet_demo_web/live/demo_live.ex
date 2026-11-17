@@ -47,6 +47,7 @@ defmodule SkulletDemoWeb.DemoLive do
     "suspense" => :suspense,
     "empty" => :empty,
     "reveal_event" => :reveal_event,
+    "placeholder" => :placeholder,
     "images" => :images
   }
 
@@ -135,6 +136,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> replay(:suspense)
      |> replay(:empty)
      |> replay(:reveal_event)
+     |> replay(:placeholder)
      |> replay(:images)}
   end
 
@@ -214,6 +216,7 @@ defmodule SkulletDemoWeb.DemoLive do
   defp data_for(:custom), do: @real_card
   defp data_for(:empty), do: []
   defp data_for(:reveal_event), do: @real_card
+  defp data_for(:placeholder), do: @real_card
 
   defp data_for(:images) do
     token = System.unique_integer([:positive])
@@ -660,15 +663,20 @@ defmodule SkulletDemoWeb.DemoLive do
             <.demo
               id="placeholder"
               title="A placeholder of your own"
-              blurb="A chart box is not measured, it animates. The engine publishes the durations it resolved on `<html>`, so a placeholder of your own runs on the same clock — set `animation` to `pulse` in the panel, then change `speed`, and watch both move together."
+              blurb="A chart box is not measured, it animates. The engine publishes the durations it resolved on `<html>` as it draws, so a placeholder of your own runs on the same clock: set `animation` to `pulse`, change `speed`, then Replay — both move together."
             >
+              <:actions>
+                <button class="btn btn-xs" phx-click="replay" phx-value-demo="placeholder">
+                  Replay
+                </button>
+              </:actions>
               <div class="flex items-center gap-4">
                 <div data-demo-placeholder class="h-14 w-24 shrink-0 rounded-lg"></div>
                 <div class="min-w-0 flex-1">
                   <Skullet.skeleton
                     :let={user}
                     id="s-placeholder"
-                    loading={true}
+                    async={@placeholder}
                     sample={@sample_card}
                   >
                     <.person person={user} />
