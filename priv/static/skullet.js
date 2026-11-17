@@ -681,6 +681,10 @@ var SkulletEngine = class {
     engines.delete(this);
     this.started = false;
   }
+  /** Whether `start()` has run and `destroy()` has not. */
+  get active() {
+    return this.started;
+  }
   /** The OS's reduced-motion setting changed: re-apply (or remove) the animation. */
   motionChanged() {
     if (this.phase) this.schedule();
@@ -1115,8 +1119,12 @@ var SkulletEngine = class {
 
 // js/skullet.ts
 if (typeof window !== "undefined") window.__skulletEngine = { attach, measure };
+var attached = /* @__PURE__ */ new WeakMap();
 function attach(root, options = {}) {
+  const running = attached.get(root);
+  if (running?.active) return running;
   const engine = new SkulletEngine(root, options);
+  attached.set(root, engine);
   engine.start();
   return engine;
 }

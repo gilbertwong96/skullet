@@ -5,11 +5,22 @@
 ### Changed
 
 - `Skullet.state/1` raises on a state it does not know instead of handing back the atom.
+- The pre-paint script publishes the resolved durations too, so a placeholder of your own
+  reads the page's speed before the engine starts.
 - A theme value that could close its rule — `{`, `}`, `;`, `<`, `>` — is rejected: the value
   is one declaration, and a `<style>` block is not an attribute.
 
 ### Fixed
 
+- The sample is hidden from screen readers while it loading (`aria-hidden`), so the label is
+  what gets read rather than fabricated data.
+- `attach/2` returns the engine already running on that root instead of starting a second
+  one over the same overlay; a destroyed root can be attached again.
+- `data-skullet-sample` is a bare attribute: it is absent once the content arrives, so a
+  `[data-skullet-sample]` rule no longer styles real content.
+- A failed skeleton with no `:error` slot warns instead of rendering an empty pane, like
+  `empty` without `:empty_message` already did.
+- `Boot.boot(src:)` no longer throws when the script did not load: the call is guarded.
 - A skeleton nested in a loading one no longer keeps the bars the pre-paint script drew for
   it; the script skips it in the first place, and the engine clears anything left.
 - An overlay is looked up among its own skeleton's children, so a nested skeleton cannot

@@ -284,6 +284,11 @@ export class SkulletEngine {
     this.started = false
   }
 
+  /** Whether `start()` has run and `destroy()` has not. */
+  get active(): boolean {
+    return this.started
+  }
+
   /** The OS's reduced-motion setting changed: re-apply (or remove) the animation. */
   motionChanged(): void {
     if (this.phase) this.schedule()

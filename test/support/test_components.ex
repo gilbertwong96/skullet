@@ -118,6 +118,17 @@ defmodule Skullet.TestComponents do
     """
   end
 
+  attr(:id, :string, required: true)
+
+  def no_error_state(assigns) do
+    ~H"""
+    <.skeleton id={@id} sample={Skullet.Sample.sample_user()} state={:failed}>
+      <div id="content">content</div>
+    </.skeleton>
+    """
+  end
+
+  attr(:id, :string, required: true)
   attr(:data, :any, default: nil)
 
   def no_sample(assigns) do
@@ -127,6 +138,9 @@ defmodule Skullet.TestComponents do
     </.skeleton>
     """
   end
+
+  attr(:id, :string, required: true)
+  attr(:data, :any, default: nil)
 
   def empty_without_message(assigns) do
     ~H"""

@@ -19,7 +19,9 @@ defmodule Skullet.Memory do
 
   The store is this node's memory only: it is not shared between nodes, it expires after
   `config :skullet, :memory_ttl_ms` (30 minutes by default), and it must be cleared when
-  somebody signs out — `forget/1` with their scope, from wherever that happens.
+  somebody signs out — `forget/1` with their scope, from wherever that happens. Expired
+  entries are dropped on read, and a sweep every `config :skullet, :memory_sweep_ms` (a
+  minute) removes the ones nobody reads again.
   """
 
   use GenServer

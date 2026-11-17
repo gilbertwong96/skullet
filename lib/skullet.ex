@@ -146,7 +146,7 @@ defmodule Skullet do
     # `state: :empty` resolves to a loaded pane holding the *sample*; remembering that would
     # hand the next skeleton a sample dressed up as the last real data.
     if state == :loaded and Map.get(assigns, :state) != :empty, do: remember(assigns, value)
-    warn_misuse(assigns)
+    warn_misuse(assigns, state)
 
     assigns =
       assign(assigns,
@@ -180,7 +180,7 @@ defmodule Skullet do
         <% @state == :failed -> %>
           {render_slot(@error)}
         <% @state == :loading and @skeleton != [] -> %>
-          <div class="skullet-content" data-skullet-content>
+          <div class="skullet-content" data-skullet-content aria-hidden="true">
             {render_slot(@skeleton)}
           </div>
         <% @state == :loaded and @empty and @empty_message != [] -> %>
@@ -191,7 +191,8 @@ defmodule Skullet do
           <div
             class="skullet-content"
             data-skullet-content
-            data-skullet-sample={to_string(@state == :loading)}
+            data-skullet-sample={@state == :loading}
+            aria-hidden={@state == :loading && "true"}
           >
             {render_slot(@inner_block, @value)}
           </div>
@@ -382,11 +383,18 @@ defmodule Skullet do
   # Both of these render something, so nothing fails — it just does not do what was meant.
   # Said once per reason: per id would be unbounded, and `:persistent_term.put/2` is a global
   # update, too expensive to run for every row of a table.
-  defp warn_misuse(assigns) do
+  defp warn_misuse(assigns, state) do
     if Map.get(assigns, :sample) == nil do
       warn_once(:sample, """
       Skullet.skeleton #{inspect(assigns.id)} has no sample: the skeleton will be empty. \
       Pass the data it is standing in for, or use the :skeleton slot for markup of your own.\
+      """)
+    end
+
+    if state == :failed and Map.get(assigns, :error, []) == [] do
+      warn_once(:error, """
+      Skullet.skeleton #{inspect(assigns.id)} failed without an :error slot, which renders \
+      an empty pane. Add the slot, or handle the failure before it reaches the skeleton.\
       """)
     end
 

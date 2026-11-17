@@ -41,11 +41,18 @@ defmodule Skullet.Boot do
 
   @spec boot(map()) :: Phoenix.LiveView.Rendered.t()
   def boot(assigns) do
-    assigns = assign(assigns, script: Phoenix.HTML.raw(@script <> ";__skulletPre.boot()"))
+    # The script may not have loaded (a wrong src, a proxy); nothing to call is no error.
+    call = "if (typeof __skulletPre !== \"undefined\") __skulletPre.boot()"
+
+    assigns =
+      assign(assigns,
+        script: Phoenix.HTML.raw(@script <> ";" <> call),
+        call: Phoenix.HTML.raw(call)
+      )
 
     ~H"""
     <script :if={@src} src={@src} nonce={@nonce} data-skullet-boot></script>
-    <script nonce={@nonce} data-skullet-boot><%= if @src, do: "__skulletPre.boot()", else: @script %></script>
+    <script nonce={@nonce} data-skullet-boot><%= if @src, do: @call, else: @script %></script>
     """
   end
 end

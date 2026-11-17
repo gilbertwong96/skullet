@@ -1,6 +1,6 @@
 import { measure } from "./measure.js"
 import { barBox } from "./metrics.js"
-import { drawShimmer, motionOf } from "./shimmer.js"
+import { drawShimmer, motionOf, publishDurations } from "./shimmer.js"
 import { durationsOf } from "./reveal.js"
 import { attachShadow } from "./shadow.js"
 import { createBar } from "./bar.js"
@@ -67,6 +67,7 @@ export function boot(): void {
     // painting it too is the double overlay the engine refuses to draw.
     if (root.parentElement?.closest('.skullet[data-skullet-state="loading"]')) continue
 
+    publishDurations(root)
     paint(root)
   }
 }

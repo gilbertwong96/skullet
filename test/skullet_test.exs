@@ -207,12 +207,37 @@ defmodule SkulletTest do
     assert attr(bare, "class") == "skullet"
   end
 
-  test "the loading pane says it is the sample" do
+  test "the loading pane says it is the sample, and only then" do
     sample = query(skeleton_html([]), "[data-skullet-content]")
     loaded = query(skeleton_html(data: @real), "[data-skullet-content]")
 
-    assert LazyHTML.attribute(sample, "data-skullet-sample") == ["true"]
-    assert LazyHTML.attribute(loaded, "data-skullet-sample") == ["false"]
+    assert LazyHTML.attribute(sample, "data-skullet-sample") == [""]
+    assert LazyHTML.attribute(loaded, "data-skullet-sample") == []
+  end
+
+  test "the sample is hidden from screen readers, the content is not" do
+    loading = query(skeleton_html([]), "[data-skullet-content]")
+    loaded = query(skeleton_html(data: @real), "[data-skullet-content]")
+
+    assert LazyHTML.attribute(loading, "aria-hidden") == ["true"]
+    assert LazyHTML.attribute(loaded, "aria-hidden") == []
+
+    custom =
+      render_component(&Skullet.TestComponents.with_custom_skeleton/1, id: "chart", data: nil)
+
+    assert LazyHTML.attribute(query(custom, "[data-skullet-content]"), "aria-hidden") == ["true"]
+  end
+
+  test "a failure with nowhere to render warns once" do
+    :persistent_term.erase({Skullet, :error})
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        render_component(&Skullet.TestComponents.no_error_state/1, id: "no-error-slot")
+      end)
+
+    assert log =~ "no-error-slot"
+    assert log =~ "without an :error slot"
   end
 
   test "a nil sample warns once" do
