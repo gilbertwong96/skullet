@@ -9,7 +9,13 @@ test("the script build leaves the same engine on window", async () => {
     await open(page, "script")
 
     const api = await page.evaluate(() => Object.keys(window.Skullet ?? {}).sort())
-    assert.deepEqual(api, ["SkulletHook", "attach", "registerReveal", "setDebug"])
+    assert.deepEqual(api, [
+      "SkulletHook",
+      "attach",
+      "createSkeletonBox",
+      "registerReveal",
+      "setDebug"
+    ])
 
     const bars = await page.evaluate(async () => {
       window.Skullet.attach(document.getElementById("root"))

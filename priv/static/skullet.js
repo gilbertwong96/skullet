@@ -584,6 +584,7 @@ var SkulletEngine = class {
   started = false;
   resizes = [];
   mutations = null;
+  onParentRevealed = null;
   state = "loading";
   phase = null;
   pass = "instant";
@@ -608,6 +609,8 @@ var SkulletEngine = class {
     engines.add(this);
     listenForInput();
     listenForMotion();
+    this.onParentRevealed = () => this.recheck();
+    this.root.addEventListener("skullet:parent-revealed", this.onParentRevealed);
     const content = this.content;
     if (!content) return;
     document.documentElement.classList.add("skullet-js");
@@ -665,6 +668,10 @@ var SkulletEngine = class {
     }
   }
   destroy() {
+    if (this.onParentRevealed) {
+      this.root.removeEventListener("skullet:parent-revealed", this.onParentRevealed);
+      this.onParentRevealed = null;
+    }
     this.clearHold();
     this.clearSafety();
     if (this.frame) cancelAnimationFrame(this.frame);
@@ -684,6 +691,24 @@ var SkulletEngine = class {
   /** Whether `start()` has run and `destroy()` has not. */
   get active() {
     return this.started;
+  }
+  /**
+   * Content has replaced the skeleton: the page hears it, and any skeleton that was waiting
+   * for this one — nested inside it — can start drawing.
+   */
+  announce() {
+    this.root.dispatchEvent(
+      new CustomEvent("skullet:reveal", { bubbles: true, detail: { id: this.root.id } })
+    );
+    const nested = this.content?.querySelectorAll('[data-skullet-state="loading"]') ?? [];
+    for (const root of nested) {
+      if (root.classList.contains("skullet"))
+        root.dispatchEvent(new CustomEvent("skullet:parent-revealed"));
+    }
+  }
+  /** A skeleton around this one has revealed: draw now if we were waiting on it. */
+  recheck() {
+    if (this.state === "loading" && !this.nested && !this.phase) this.show();
   }
   /** The OS's reduced-motion setting changed: re-apply (or remove) the animation. */
   motionChanged() {
@@ -736,6 +761,7 @@ var SkulletEngine = class {
   reveal() {
     this.clearHold();
     this.revealImages();
+    this.announce();
     this.late = performance.now() - batchStart();
     const plan = this.plan();
     this.refetched = false;
@@ -1117,6 +1143,19 @@ var SkulletEngine = class {
   }
 };
 
+// js/box.ts
+var length = (value) => typeof value === "number" ? `${value}px` : value;
+function createSkeletonBox(options = {}) {
+  const box = document.createElement("span");
+  box.className = "skullet-box";
+  box.setAttribute("skullet-block", "");
+  box.style.display = "inline-block";
+  box.style.width = length(options.width ?? "60%");
+  box.style.height = length(options.height ?? "1em");
+  if (options.radius != null) box.style.borderRadius = length(options.radius);
+  return box;
+}
+
 // js/skullet.ts
 if (typeof window !== "undefined") window.__skulletEngine = { attach, measure };
 var attached = /* @__PURE__ */ new WeakMap();
@@ -1145,6 +1184,7 @@ var SkulletHook = {
 export {
   SkulletHook,
   attach,
+  createSkeletonBox,
   registerReveal,
   setDebug
 };

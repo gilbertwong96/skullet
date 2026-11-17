@@ -391,6 +391,22 @@ Two things that surprise people:
   a box is a class: per-instance styling belongs in a `<style>` block with the nonce on it.
   A chart of your own with per-bar heights wants the same treatment.
 
+## After the reveal
+
+The engine dispatches `skullet:reveal` on the skeleton as content replaces it, and the event
+bubbles, so one listener at the document covers the page. `event.target` is the `.skullet`
+root, `detail.id` its id. It fires when the reveal starts — the moment to move focus, not
+after the animation:
+
+```js
+document.addEventListener("skullet:reveal", (event) => {
+  event.target.querySelector("[data-focus]")?.focus()
+})
+```
+
+It is a DOM event, not a LiveView callback: anything the page can attach a listener to — a
+hook, a colocated script, your `app.js` — can hear it.
+
 ## Debugging
 
 Add `?skullet-debug` to the URL to outline every skeleton: blue while it loads, then green
@@ -417,5 +433,15 @@ LiveView hook does: `beforeUpdate()`, then `update()` after the new markup is in
 
 The markup is the component's: a `.skullet` root with `data-skullet-state` (`loading` or
 `loaded`), a `[data-skullet-overlay]` for the bars, and a `[data-skullet-content]` around
-the content. Loading it without a bundler is in
+the content. Without a server to render `<Skullet.box>`, build the placeholder yourself:
+
+```js
+import { createSkeletonBox } from "../../deps/skullet/priv/static/skullet.js"
+
+// where the chart goes in the sample markup
+document.querySelector("[data-chart]").append(createSkeletonBox({ width: 240, height: 120 }))
+```
+
+It is the same `skullet-block` span the component renders, sized through the CSSOM, so it
+needs no nonce and no stylesheet of its own. Loading it without a bundler is in
 [installation](readme.html#installation).

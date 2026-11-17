@@ -1,6 +1,8 @@
 import { type EngineOptions, SkulletEngine } from "./engine.js"
 import { measure } from "./measure.js"
 
+export { createSkeletonBox } from "./box.js"
+export type { SkeletonBoxOptions } from "./box.js"
 export { setDebug } from "./engine.js"
 export { registerReveal } from "./registry.js"
 export type { Piece, Plan, RevealContext, RevealMode, RevealSpec, Wipe, WipePane } from "./plan.js"

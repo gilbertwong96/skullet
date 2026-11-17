@@ -48,7 +48,7 @@ two are yours to import:
 | file | what it is |
 |---|---|
 | `skullet.js` | the engine as one ES module — what a bundler imports |
-| `skullet.min.js` | the same engine as a script, with its source map: it defines `window.Skullet` (`attach`, `setDebug`, `registerReveal`, `SkulletHook`) |
+| `skullet.min.js` | the same engine as a script, with its source map: it defines `window.Skullet` (`attach`, `createSkeletonBox`, `setDebug`, `registerReveal`, `SkulletHook`) |
 | `skullet.pre.js` | the pre-paint script `Skullet.Boot` inlines into the page, not a file you load |
 | `skullet.css` | the stylesheet |
 

@@ -24,6 +24,20 @@ test("a skeleton inside a loading one leaves the drawing to it", async () => {
   })
 })
 
+test("the inner one starts once the outer one reveals", async () => {
+  await withPage(async (page) => {
+    await open(page, "nested")
+    await page.waitForTimeout(400)
+
+    assert.equal(await bars(page, "inner"), 0, "held back while the outer one loads")
+
+    await page.evaluate(() => window.revealOuter())
+    await page.waitForTimeout(500)
+
+    assert.ok((await bars(page, "inner")) > 0, "and drawn once the outer one is done")
+  })
+})
+
 test("the pre-paint script leaves the inner one clean too", async () => {
   await withPage(async (page) => {
     await open(page, "nested-pre")

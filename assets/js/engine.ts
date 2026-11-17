@@ -164,6 +164,7 @@ export class SkulletEngine {
   private started = false
   private resizes: ResizeObserver[] = []
   private mutations: MutationObserver | null = null
+  private onParentRevealed: (() => void) | null = null
   private state = "loading"
   private phase: Phase | null = null
   private pass: Pass = "instant"
@@ -190,6 +191,8 @@ export class SkulletEngine {
     engines.add(this)
     listenForInput()
     listenForMotion()
+    this.onParentRevealed = () => this.recheck()
+    this.root.addEventListener("skullet:parent-revealed", this.onParentRevealed)
 
     const content = this.content
     if (!content) return
@@ -265,6 +268,11 @@ export class SkulletEngine {
   }
 
   destroy(): void {
+    if (this.onParentRevealed) {
+      this.root.removeEventListener("skullet:parent-revealed", this.onParentRevealed)
+      this.onParentRevealed = null
+    }
+
     this.clearHold()
     this.clearSafety()
     if (this.frame) cancelAnimationFrame(this.frame)
@@ -287,6 +295,28 @@ export class SkulletEngine {
   /** Whether `start()` has run and `destroy()` has not. */
   get active(): boolean {
     return this.started
+  }
+
+  /**
+   * Content has replaced the skeleton: the page hears it, and any skeleton that was waiting
+   * for this one — nested inside it — can start drawing.
+   */
+  private announce(): void {
+    this.root.dispatchEvent(
+      new CustomEvent("skullet:reveal", { bubbles: true, detail: { id: this.root.id } })
+    )
+
+    const nested = this.content?.querySelectorAll('[data-skullet-state="loading"]') ?? []
+
+    for (const root of nested) {
+      if (root.classList.contains("skullet"))
+        root.dispatchEvent(new CustomEvent("skullet:parent-revealed"))
+    }
+  }
+
+  /** A skeleton around this one has revealed: draw now if we were waiting on it. */
+  private recheck(): void {
+    if (this.state === "loading" && !this.nested && !this.phase) this.show()
   }
 
   /** The OS's reduced-motion setting changed: re-apply (or remove) the animation. */
@@ -353,6 +383,7 @@ export class SkulletEngine {
   private reveal(): void {
     this.clearHold()
     this.revealImages()
+    this.announce()
 
     this.late = performance.now() - batchStart()
     const plan = this.plan()

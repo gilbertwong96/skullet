@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- `skullet:reveal`, a bubbling DOM event dispatched as content replaces its skeleton, for
+  the work that has to happen then — moving focus, closing a menu, announcing a region.
+- `createSkeletonBox/1`, the `<Skullet.box>` equivalent for a page with no server to render
+  it: the same `skullet-block` span, sized through the CSSOM.
+
 ### Changed
 
 - `Skullet.state/1` raises on a state it does not know instead of handing back the atom.
@@ -12,6 +19,8 @@
 
 ### Fixed
 
+- A skeleton nested in a loading one now starts drawing when the outer one reveals, instead
+  of waiting for a patch of its own.
 - The sample is hidden from screen readers while it loading (`aria-hidden`), so the label is
   what gets read rather than fabricated data.
 - `attach/2` returns the engine already running on that root instead of starting a second

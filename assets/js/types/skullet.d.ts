@@ -104,6 +104,21 @@ export declare class SkulletEngine {
  */
 export declare function attach(root: Element, options?: EngineOptions): SkulletEngine
 
+export type SkeletonBoxOptions = {
+  /** Any CSS length, or a number of pixels. 60% by default, like `<Skullet.box>`. */
+  width?: number | string
+  /** Any CSS length, or a number of pixels. 1em by default. */
+  height?: number | string
+  /** Any CSS length, or a number of pixels; the theme's radius when left out. */
+  radius?: number | string
+}
+
+/**
+ * The placeholder block a plain page cannot get from the server: the same `skullet-block`
+ * span `<Skullet.box>` renders, sized through the CSSOM.
+ */
+export declare function createSkeletonBox(options?: SkeletonBoxOptions): HTMLSpanElement
+
 /** Turns the overlay on or off for the whole page, from a console or a devtool. */
 export declare function setDebug(on: boolean): void
 
@@ -123,6 +138,9 @@ export declare const SkulletHook: {
 
 declare global {
   interface Window {
-    __skulletEngine?: { attach: typeof attach; measure: (content: Element, overlay: Element) => unknown }
+    __skulletEngine?: {
+      attach: typeof attach
+      measure: (content: Element, overlay: Element) => unknown
+    }
   }
 }

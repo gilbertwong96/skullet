@@ -23,6 +23,14 @@
       // The inner root mounts first, as it would in a LiveView patch.
       window.inner = attach(document.getElementById("inner"))
       window.outer = attach(document.getElementById("outer"))
+
+      // What a patch does when the outer's data lands: its content stays, its state flips.
+      window.revealOuter = () => {
+        const root = document.getElementById("outer")
+        window.outer.beforeUpdate()
+        root.setAttribute("data-skullet-state", "loaded")
+        window.outer.update()
+      }
     </script>
   </body>
 </html>
