@@ -43,6 +43,15 @@ const liveSocket = new LiveSocket("/live", Socket, {
   params: {_csrf_token: csrfToken},
   hooks: {
     ...colocatedHooks,
+    // The library dispatches `skullet:reveal` as content lands; the demo forwards it to
+    // the LiveView, which is what an app does to move focus or announce a region.
+    RevealLog: {
+      mounted() {
+        this.el.addEventListener("skullet:reveal", event => {
+          this.pushEvent("reveal", {id: event.target.id})
+        })
+      }
+    },
     // Wrapped only in the demo so the browser can look inside the engine.
     Skullet: {
       ...SkulletHook,

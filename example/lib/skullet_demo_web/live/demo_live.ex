@@ -46,6 +46,7 @@ defmodule SkulletDemoWeb.DemoLive do
     "custom" => :custom,
     "suspense" => :suspense,
     "empty" => :empty,
+    "reveal_event" => :reveal_event,
     "images" => :images
   }
 
@@ -115,6 +116,8 @@ defmodule SkulletDemoWeb.DemoLive do
      |> assign(:real_long, @real_long)
      |> assign(:sample_chart, @sample_chart)
      |> assign(:sample_messages, @sample_messages)
+     |> assign(:reveal_count, 0)
+     |> assign(:last_reveal, nil)
      |> assign(:real_chart, @real_chart)
      |> assign(:images_sample, @images)
      |> assign(:plain_user, @real_card)
@@ -131,6 +134,7 @@ defmodule SkulletDemoWeb.DemoLive do
      |> replay(:custom)
      |> replay(:suspense)
      |> replay(:empty)
+     |> replay(:reveal_event)
      |> replay(:images)}
   end
 
@@ -148,6 +152,12 @@ defmodule SkulletDemoWeb.DemoLive do
 
   def handle_event("pin", _params, socket) do
     {:noreply, update(socket, :pinned, &(!&1))}
+  end
+
+  # The page heard `skullet:reveal`: the demo's hook forwards it, which is what an app does
+  # when it wants to move focus or announce the region.
+  def handle_event("reveal", %{"id" => id}, socket) do
+    {:noreply, socket |> update(:reveal_count, &(&1 + 1)) |> assign(:last_reveal, id)}
   end
 
   def handle_event("own_mode", %{"mode" => mode}, socket) do
@@ -203,6 +213,7 @@ defmodule SkulletDemoWeb.DemoLive do
   defp data_for(:reveal_demo), do: @real_card
   defp data_for(:custom), do: @real_card
   defp data_for(:empty), do: []
+  defp data_for(:reveal_event), do: @real_card
 
   defp data_for(:images) do
     token = System.unique_integer([:positive])
@@ -490,6 +501,33 @@ defmodule SkulletDemoWeb.DemoLive do
             </.demo>
 
             <.demo
+              id="reveal-event"
+              title="After the reveal"
+              blurb="The engine dispatches `skullet:reveal` as content replaces its skeleton, and it bubbles. This card's hook listens for it and tells the LiveView — what an app does to move focus or announce a region."
+            >
+              <:actions>
+                <button class="btn btn-xs" phx-click="replay" phx-value-demo="reveal_event">
+                  Replay
+                </button>
+              </:actions>
+              <div id="reveal-log" phx-hook="RevealLog">
+                <Skullet.skeleton
+                  :let={user}
+                  id="s-reveal-event"
+                  async={@reveal_event}
+                  sample={@sample_card}
+                >
+                  <.person person={user} />
+                </Skullet.skeleton>
+              </div>
+              <p id="reveal-log-line" class="mt-3 text-xs opacity-60">
+                {if @last_reveal,
+                  do: "the page heard skullet:reveal from #{@last_reveal} — #{@reveal_count} so far",
+                  else: "no reveal yet: press Replay"}
+              </p>
+            </.demo>
+
+            <.demo
               id="empty"
               title="Empty states"
               blurb="The result arrived empty, which is neither loading nor an error. `state={:empty}` says so outright and swaps in the `empty_message` slot; the reveal measures that message like any other content."
@@ -617,6 +655,26 @@ defmodule SkulletDemoWeb.DemoLive do
                   <.person person={user} />
                 </Skullet.skeleton>
               </Skullet.provider>
+            </.demo>
+
+            <.demo
+              id="placeholder"
+              title="A placeholder of your own"
+              blurb="A chart box is not measured, it animates. The engine publishes the durations it resolved on `<html>`, so a placeholder of your own runs on the same clock — set `animation` to `pulse` in the panel, then change `speed`, and watch both move together."
+            >
+              <div class="flex items-center gap-4">
+                <div data-demo-placeholder class="h-14 w-24 shrink-0 rounded-lg"></div>
+                <div class="min-w-0 flex-1">
+                  <Skullet.skeleton
+                    :let={user}
+                    id="s-placeholder"
+                    loading={true}
+                    sample={@sample_card}
+                  >
+                    <.person person={user} />
+                  </Skullet.skeleton>
+                </div>
+              </div>
             </.demo>
           </section>
 

@@ -31,8 +31,10 @@ mix phx.server          # → http://localhost:4000
 | Your own reveal | `registerReveal("wipe-down", …)` in `assets/js/app.js`, asked for by name |
 | Empty states | `state={:empty}` with an `empty_message` slot: a message where rows would have been |
 | Suspense and failure | async + measured fallback + one error branch, always failing here |
+| After the reveal | the `skullet:reveal` event, forwarded by a hook to the LiveView |
 | Theming | one `<Skullet.provider>` with the controls panel above the page |
 | A provider's mode | one card whose skeleton follows the page's colour scheme, and what `mode` is for when a surface does not |
+| A placeholder of your own | a chart box animating on `--skullet-pulse-duration`, beside bars on the same clock |
 | Images | four images served 1.2–3s late, fading in instead of popping |
 
 The panel at the top sets latency, animation, speed, radius, text metrics, hold, reveal

@@ -155,3 +155,25 @@
   color: var(--color-base-content, #374151);
   opacity: 0.75;
 }
+
+/* A placeholder of the demo's own, on the clock the engine publishes on <html>. */
+@keyframes demo-placeholder {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+[data-demo-placeholder] {
+  background-color: var(--skullet-base);
+  animation: demo-placeholder var(--skullet-pulse-duration, 2400ms) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-demo-placeholder] {
+    animation: none;
+  }
+}
