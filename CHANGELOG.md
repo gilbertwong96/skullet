@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-11-17
+
+### Breaking changes
+
+- `Skullet.state/1` raises on a state it does not know, instead of handing back the atom.
+- A theme value that could close its rule — `{`, `}`, `;`, `<`, `>` — is rejected: the value
+  is one declaration, and `<style>` is not an attribute. A value that carries one now fails
+  to render instead of injecting what follows it.
+- `data-skullet-sample` is a bare attribute, present only while the pane holds a sample; it
+  used to render `data-skullet-sample="false"` over real content. A rule that matched the
+  old value stops matching.
+
 ### Added
 
 - `skullet:reveal`, a bubbling DOM event dispatched as content replaces its skeleton, for
@@ -11,27 +23,21 @@
 
 ### Changed
 
-- `Skullet.state/1` raises on a state it does not know instead of handing back the atom.
 - The pre-paint script publishes the resolved durations too, so a placeholder of your own
   reads the page's speed before the engine starts.
-- A theme value that could close its rule — `{`, `}`, `;`, `<`, `>` — is rejected: the value
-  is one declaration, and a `<style>` block is not an attribute.
 
 ### Fixed
 
-- A skeleton nested in a loading one now starts drawing when the outer one reveals, instead
-  of waiting for a patch of its own.
-- The sample is hidden from screen readers while it loading (`aria-hidden`), so the label is
+- The sample is hidden from screen readers while it loads (`aria-hidden`), so the label is
   what gets read rather than fabricated data.
+- A skeleton nested in a loading one now starts drawing when the outer one reveals, instead
+  of waiting for a patch of its own — and no longer keeps the bars the pre-paint script drew
+  for it: the script skips it, and the engine clears anything left.
 - `attach/2` returns the engine already running on that root instead of starting a second
   one over the same overlay; a destroyed root can be attached again.
-- `data-skullet-sample` is a bare attribute: it is absent once the content arrives, so a
-  `[data-skullet-sample]` rule no longer styles real content.
 - A failed skeleton with no `:error` slot warns instead of rendering an empty pane, like
   `empty` without `:empty_message` already did.
 - `Boot.boot(src:)` no longer throws when the script did not load: the call is guarded.
-- A skeleton nested in a loading one no longer keeps the bars the pre-paint script drew for
-  it; the script skips it in the first place, and the engine clears anything left.
 - An overlay is looked up among its own skeleton's children, so a nested skeleton cannot
   lend its overlay to its parent.
 - `state: :empty` no longer writes its sample into memory as if it were the last real data.
