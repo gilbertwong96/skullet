@@ -338,6 +338,19 @@ defmodule SkulletTest do
     assert body =~ "data-skullet-bar"
   end
 
+  test "served with src, it is one tag and no inline script" do
+    html =
+      render_component(&Skullet.Boot.boot/1, %{
+        nonce: nil,
+        src: "/skullet/skullet.pre.js"
+      })
+
+    scripts = html |> LazyHTML.from_document() |> LazyHTML.query("script")
+
+    assert LazyHTML.attribute(scripts, "src") == ["/skullet/skullet.pre.js"]
+    assert LazyHTML.text(scripts) == ""
+  end
+
   test "a box stands in for what cannot be measured" do
     html = render_component(&Skullet.box/1, width: 240, height: 120, radius: "8px")
     box = LazyHTML.from_document(html) |> LazyHTML.query(".skullet-box")

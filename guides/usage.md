@@ -380,6 +380,25 @@ nonce, and a box becomes a class plus its own rule — which is why nothing need
 attribute. Without a `nonce`, the same blocks are emitted unsigned and a strict policy drops
 them, so the theme silently falls back to the defaults.
 
+### Without a nonce at all
+
+A policy with no nonce to give — or one you would rather not thread through the session —
+still works. Three changes, and nothing inline is left:
+
+- **Load the pre-paint script instead of inlining it.** `<Skullet.Boot.boot src={~p"/skullet/skullet.pre.js"} />` renders one `<script src>` and no inline call: the file starts itself when it is loaded that way, so `script-src 'self'` is enough.
+- **Set the theme in CSS.** Every `theme={…}` key is a custom property, so `--skullet-radius`, `--skullet-speed` and the rest can live in your stylesheet: `.skullet { --skullet-radius: 6px; }`, or on whatever wraps it. The component emits no `<style>` block when it has no theme.
+- **Use a class where a box would go.** `<Skullet.box>` carries its size in a generated rule; a class of your own carries it in your stylesheet:
+
+```css
+.chart-skeleton { display: inline-block; width: 15rem; height: 7.5rem; }
+```
+
+```heex
+<Skullet.skeleton :let={chart} id="chart" async={@chart} sample={@sample}>
+  <div class="chart-skeleton" skullet-block></div>
+</Skullet.skeleton>
+```
+
 Two things that surprise people:
 
 - **The nonce has to reach the LiveView, not just the request.** The root layout is rendered

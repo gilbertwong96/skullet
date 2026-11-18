@@ -71,3 +71,10 @@ export function boot(): void {
     paint(root)
   }
 }
+
+// Loaded with `<script src>`, it has to start itself: that is what lets a strict
+// `script-src 'self'` policy paint the skeleton with no nonce and no inline call. Inlined,
+// `src` is empty and the caller runs `boot()` right after it.
+const script = document.currentScript as HTMLScriptElement | null
+
+if (script?.src) boot()

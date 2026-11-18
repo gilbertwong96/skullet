@@ -96,6 +96,8 @@ is `'unsafe-inline'`:
 
 [usage](guides/usage.md#content-security-policy) has the plug, the session hop and the rest.
 
+**No nonce at all** is also a configuration. Leave `<Skullet.Boot.boot />` out and the bars arrive with the bundle instead of before the paint; set the theme in CSS (`--skullet-radius` and friends on `.skullet`) instead of `theme={…}`; use a class for a placeholder instead of `<Skullet.box>`. What is left is one ES module and one stylesheet, both from your own origin. If you want the pre-paint script without a nonce, serve it and load it with `<Skullet.Boot.boot src={…} />`: it starts itself, so there is no inline script.
+
 ## Where to read next
 
 [Usage](guides/usage.md) covers the data sources, attributes, slots and the empty and error

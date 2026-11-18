@@ -27,8 +27,9 @@ defmodule Skullet.Boot do
   attr(:src, :string,
     default: nil,
     doc: """
-    fetch the pre-paint script instead of inlining it — the call that starts it is all that
-    stays inline. Serve it straight out of the dependency, no copy step:
+    fetch the pre-paint script instead of inlining it. Nothing inline is left: loaded with a
+    `src`, the file starts itself, so a policy needs only `script-src 'self'` — no nonce.
+    Serve it straight out of the dependency, no copy step:
 
         plug Plug.Static, at: "/skullet", from: {:skullet, "priv/static"}, only: ["skullet.pre.js"]
         <Skullet.Boot.boot src={~p"/skullet/skullet.pre.js"} nonce={@csp_nonce} />
@@ -52,7 +53,7 @@ defmodule Skullet.Boot do
 
     ~H"""
     <script :if={@src} src={@src} nonce={@nonce} data-skullet-boot></script>
-    <script nonce={@nonce} data-skullet-boot><%= if @src, do: @call, else: @script %></script>
+    <script :if={!@src} nonce={@nonce} data-skullet-boot><%= @script %></script>
     """
   end
 end

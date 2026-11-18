@@ -23,6 +23,8 @@
 
 ### Changed
 
+- Served with `Boot.boot(src: …)`, the pre-paint script starts itself: no inline call and no
+  nonce, so a strict `script-src 'self'` policy can paint the skeleton before first paint.
 - The pre-paint script publishes the resolved durations too, so a placeholder of your own
   reads the page's speed before the engine starts.
 
